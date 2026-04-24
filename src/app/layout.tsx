@@ -19,6 +19,12 @@ import { Toaster } from "react-hot-toast";
 export const metadata: Metadata = {
   title: "Peñarol Pádel",
   description: "Reserva tu turno de pádel en segundos.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Peñarol Pádel",
+  },
 };
 
 export default function RootLayout({
