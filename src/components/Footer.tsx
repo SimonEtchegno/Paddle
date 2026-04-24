@@ -16,7 +16,7 @@ export function Footer() {
             className="group flex items-center gap-2 bg-white/5 px-6 py-3 rounded-full border border-white/5 hover:border-primary/30 transition-all hover:scale-105 active:scale-95"
           >
             <Instagram size={18} className="text-primary group-hover:rotate-12 transition-transform" />
-            <span className="text-sm font-bold tracking-tight">Datatech Bahia</span>
+            <span className="text-sm font-bold tracking-tight">Datatech Bahia · Simón Etchegno</span>
           </a>
         </div>
 
