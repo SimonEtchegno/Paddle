@@ -22,6 +22,7 @@ export default function AdminPage() {
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [espera, setEspera] = useState<ListaEspera[]>([]);
   const [loading, setLoading] = useState(false);
+  const [systemMsg, setSystemMsg] = useState('');
 
   const ALLOWED_ADMINS = ['setchegno@etman.com.ar', 'octavioducos24@gmail.com'];
 
@@ -123,6 +124,23 @@ export default function AdminPage() {
     fetchData();
   };
 
+  const sendSystemNotification = async () => {
+    if (!systemMsg) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('notificaciones_sistema').insert({
+        mensaje: systemMsg
+      });
+      if (error) throw error;
+      toast.success('Aviso enviado a todos los usuarios');
+      setSystemMsg('');
+    } catch (e: any) {
+      toast.error('Error al enviar: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -182,6 +200,32 @@ export default function AdminPage() {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{stat.label}</span>
             </div>
           ))}
+        </div>
+
+        {/* System Notifications Section */}
+        <div className="glass p-8 rounded-[2.5rem] border border-white/5 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-500/10 rounded-xl">
+              <Crown className="text-blue-400" size={20} />
+            </div>
+            <h3 className="text-sm font-bold uppercase tracking-widest opacity-60">Enviar Aviso General</h3>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input 
+              type="text" 
+              value={systemMsg}
+              onChange={(e) => setSystemMsg(e.target.value)}
+              placeholder="Ej: Mañana el complejo cierra por lluvia..."
+              className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-blue-400 transition-all"
+            />
+            <button 
+              onClick={sendSystemNotification}
+              disabled={loading || !systemMsg}
+              className="bg-blue-500 text-white px-10 py-4 sm:py-0 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-600 transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)] disabled:opacity-50"
+            >
+              Enviar Notificación
+            </button>
+          </div>
         </div>
 
         {/* Controls Layout */}

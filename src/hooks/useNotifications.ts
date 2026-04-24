@@ -129,6 +129,32 @@ export function useNotifications() {
           localStorage.setItem('tracked_reservas', JSON.stringify(resData));
         }
 
+        // 4. Chequear mensajes de sistema
+        const { data: sysData } = await supabase
+          .from('notificaciones_sistema')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (sysData) {
+          sysData.forEach((s: any) => {
+            const notifId = `sys_${s.id}`;
+            newNotifs.push({
+              id: notifId,
+              type: 'sistema',
+              message: s.mensaje,
+              time: s.created_at,
+              isRead: false
+            });
+
+            if (!notifiedIds.current.has(notifId)) {
+              notifiedIds.current.add(notifId);
+              hasNewToasts = true;
+              toast(s.mensaje, { icon: '📢', position: 'top-center', duration: 6000 });
+            }
+          });
+        }
+
         if (hasNewToasts) {
           localStorage.setItem('notified_toast_ids', JSON.stringify(Array.from(notifiedIds.current)));
         }
