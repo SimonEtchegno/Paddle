@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PartidoAbierto, UnionPartido } from '@/types';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
-import { Users, Calendar, Clock, Trophy, Send, Trash2, Check, X, User, AlertTriangle } from 'lucide-react';
+import { Users, Calendar, Clock, Trophy, Send, Trash2, Check, X, User, AlertTriangle, Share2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { clsx } from 'clsx';
 import { PageWrapper } from '@/components/PageWrapper';
@@ -23,6 +23,9 @@ export default function PartidosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
   const [hasActiveReservation, setHasActiveReservation] = useState(false);
+  const [filterLevel, setFilterLevel] = useState('Todos');
+
+  const CATEGORIES = ['Todos', 'Principiante', '7ma', '6ta', '5ta', '4ta', '3ra', 'Pro'];
 
   const fetchData = async (isBackground = false) => {
     if (!profile) {
@@ -148,6 +151,17 @@ export default function PartidosPage() {
     }
   };
 
+  const handleShare = (p: PartidoAbierto) => {
+    const text = encodeURIComponent(`🎾 ¡Faltan ${p.jugadores_faltantes} para jugar al Pádel!
+📅 Fecha: ${format(parseISO(p.fecha), 'EEEE d/MM', { locale: es })}
+⏰ Hora: ${p.hora} hs
+🏆 Nivel: ${p.nivel}
+📍 Complejo: Peñarol Pádel
+
+¿Quién se suma? Sumate desde acá: ${window.location.origin}/partidos`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
   const handleConfirmPlayer = async (u: UnionPartido) => {
     try {
       await supabase.from('uniones_partidos').update({ estado: 'confirmado' }).eq('id', u.id);
@@ -249,22 +263,42 @@ export default function PartidosPage() {
 
         {/* Lista de Partidos */}
         <section className="space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Partidos Disponibles</h3>
-            <button 
-              onClick={() => {
-                if (!profile) {
-                  return toast.error('Completá tu perfil primero');
-                }
-                if (!hasActiveReservation) {
-                  return toast.error('¡Tenés que tener un turno reservado para buscar pareja!');
-                }
-                setIsModalOpen(true);
-              }}
-              className="text-[10px] font-black uppercase tracking-widest bg-primary text-white px-6 py-2.5 rounded-full hover:scale-105 transition-all shadow-[0_0_20px_rgba(76,175,80,0.2)]"
-            >
-              + Publicar Partido
-            </button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Partidos Disponibles</h3>
+              <button 
+                onClick={() => {
+                  if (!profile) {
+                    return toast.error('Completá tu perfil primero');
+                  }
+                  if (!hasActiveReservation) {
+                    return toast.error('¡Tenés que tener un turno reservado para buscar pareja!');
+                  }
+                  setIsModalOpen(true);
+                }}
+                className="text-[10px] font-black uppercase tracking-widest bg-primary text-white px-6 py-2.5 rounded-full hover:scale-105 transition-all shadow-[0_0_20px_rgba(76,175,80,0.2)]"
+              >
+                + Publicar Partido
+              </button>
+            </div>
+
+            {/* Selector de Categorías */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 px-2 no-scrollbar">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setFilterLevel(cat)}
+                  className={clsx(
+                    "whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border",
+                    filterLevel === cat 
+                      ? "bg-primary text-white border-primary shadow-[0_0_15px_rgba(136,130,220,0.3)]" 
+                      : "bg-white/5 text-white/40 border-white/5 hover:bg-white/10"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
 
           {loading ? (
@@ -276,7 +310,9 @@ export default function PartidosPage() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {partidos.map((p) => {
+              {partidos
+                .filter(p => filterLevel === 'Todos' || p.nivel === filterLevel)
+                .map((p) => {
                 const esMio = profile && p.contacto_whatsapp === profile.telefono;
                 const completo = p.jugadores_faltantes <= 0;
                 return (
@@ -316,14 +352,25 @@ export default function PartidosPage() {
                         </p>
                       </div>
 
-                      {esMio ? (
-                        <button 
-                          onClick={() => handleDeleteMatch(p.id)}
-                          className="p-3 bg-error/10 text-error rounded-2xl hover:bg-error hover:text-white transition-all border border-error/20"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      ) : !completo && (
+                      {esMio && (
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleShare(p)}
+                            className="p-3 bg-white/5 text-white/40 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
+                            title="Compartir partido"
+                          >
+                            <Share2 size={20} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteMatch(p.id)}
+                            className="p-3 bg-error/10 text-error rounded-2xl hover:bg-error hover:text-white transition-all border border-error/20"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      )}
+
+                      {!esMio && !completo && (
                         <button 
                           onClick={() => handleJoin(p)}
                           className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_20px_rgba(136,130,220,0.2)]"
