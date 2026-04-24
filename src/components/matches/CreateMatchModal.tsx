@@ -28,19 +28,8 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
     
     setLoading(true);
     try {
-      // VALIDACIÓN: WhatsApp Único (1 partido activo por persona)
+      // Eliminamos la restricción de WhatsApp Único para permitir múltiples publicaciones
       const hoy = format(new Date(), 'yyyy-MM-dd');
-      const { data: existing, error: checkError } = await supabase
-        .from('partidos_abiertos')
-        .select('id')
-        .eq('contacto_whatsapp', profile.telefono)
-        .gte('fecha', hoy);
-
-      if (checkError) throw checkError;
-
-      if (existing && existing.length > 0) {
-        throw new Error('Ya tenés un partido publicado hoy o a futuro. Borrá el anterior para crear uno nuevo.');
-      }
 
       const { error } = await supabase.from('partidos_abiertos').insert({
         creador_id: profile.uid || profile.telefono, // Intentar con UID si existe, sino teléfono
