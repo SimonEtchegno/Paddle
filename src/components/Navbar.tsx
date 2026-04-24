@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Calendar, Users, History, User, Trophy, Bell, X, Check } from 'lucide-react';
+import { Calendar, Users, History, User, Trophy, Bell, X, Check, Crown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -39,7 +39,8 @@ export function Navbar() {
   const navItems = [
     { name: 'Reservar', href: '/', icon: Calendar },
     { name: 'Partidos', href: '/partidos', icon: Users },
-    { name: 'Ranking', href: '/ranking', icon: Trophy },
+    { name: 'Torneos', href: '/torneos', icon: Trophy },
+    { name: 'Ranking', href: '/ranking', icon: Crown },
     { name: 'Mis Turnos', href: '/mis-turnos', icon: History },
     { name: 'Perfil', href: '/perfil', icon: User },
   ];
@@ -68,7 +69,7 @@ export function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => {
+            {navItems.filter(i => i.name !== 'Perfil').map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href;
               return (

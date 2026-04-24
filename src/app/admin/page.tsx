@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -23,6 +23,11 @@ export default function AdminPage() {
   const [espera, setEspera] = useState<ListaEspera[]>([]);
   const [loading, setLoading] = useState(false);
   const [systemMsg, setSystemMsg] = useState('');
+  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos'>('turnos');
+  
+  const [torneos, setTorneos] = useState<any[]>([]);
+  const [inscripciones, setInscripciones] = useState<any[]>([]);
+  const [newTourney, setNewTourney] = useState({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
 
   const ALLOWED_ADMINS = ['setchegno@etman.com.ar', 'octavioducos24@gmail.com'];
 
@@ -106,6 +111,12 @@ export default function AdminPage() {
         .eq('fecha', selectedDate);
       setEspera(eData || []);
 
+      // Fetch Torneos e Inscripciones
+      const { data: tData } = await supabase.from('torneos').select('*').order('fecha', { ascending: true });
+      setTorneos(tData || []);
+      const { data: iData } = await supabase.from('inscripciones_torneos').select('*, torneos(*)').order('created_at', { ascending: false });
+      setInscripciones(iData || []);
+
     } catch (e) {
       console.error(e);
     } finally {
@@ -139,6 +150,28 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const createTournament = async () => {
+    if (!newTourney.nombre || !newTourney.fecha) return toast.error('Completá nombre y fecha');
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('torneos').insert(newTourney);
+      if (error) throw error;
+      toast.success('Torneo creado');
+      setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
+      fetchData();
+    } catch (e: any) {
+      toast.error('Error: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTournament = async (id: string) => {
+    if (!confirm('¿Borrar torneo? Se borrarán todas las inscripciones.')) return;
+    await supabase.from('torneos').delete().eq('id', id);
+    fetchData();
   };
 
   if (!isLoggedIn) {
@@ -201,6 +234,31 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+
+        {/* Tabs Selector */}
+        <div className="flex gap-4 mb-8">
+          <button 
+            onClick={() => setActiveTab('turnos')}
+            className={clsx(
+              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              activeTab === 'turnos' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
+            )}
+          >
+            Gestión de Turnos
+          </button>
+          <button 
+            onClick={() => setActiveTab('torneos')}
+            className={clsx(
+              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              activeTab === 'torneos' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
+            )}
+          >
+            Gestión de Torneos
+          </button>
+        </div>
+
+        {activeTab === 'turnos' ? (
+          <>
 
         {/* System Notifications Section */}
         <div className="glass p-8 rounded-[2.5rem] border border-white/5 space-y-4">
@@ -317,8 +375,122 @@ export default function AdminPage() {
             ))
           )}
         </div>
-      </div>
-    </PageWrapper>
+        </>
+      ) : (
+        <div className="space-y-12">
+          {/* Create Tournament Form */}
+          <div className="glass p-10 rounded-[3rem] border border-white/5 space-y-8">
+            <div className="flex items-center gap-3">
+              <Trophy className="text-primary" size={24} />
+              <h3 className="text-xl font-black uppercase tracking-tighter italic">Nuevo Torneo</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre del Torneo</label>
+                <input 
+                  type="text" 
+                  value={newTourney.nombre}
+                  onChange={(e) => setNewTourney({...newTourney, nombre: e.target.value})}
+                  placeholder="Ej: Open de Verano"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Fecha / Mes</label>
+                <input 
+                  type="text" 
+                  value={newTourney.fecha}
+                  onChange={(e) => setNewTourney({...newTourney, fecha: e.target.value})}
+                  placeholder="Ej: Sáb 15 y Dom 16 Mayo"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Categoría</label>
+                <input 
+                  type="text" 
+                  value={newTourney.categoria}
+                  onChange={(e) => setNewTourney({...newTourney, categoria: e.target.value})}
+                  placeholder="Ej: 5ta y 6ta"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Precio Inscripción</label>
+                <input 
+                  type="number" 
+                  value={newTourney.precio}
+                  onChange={(e) => setNewTourney({...newTourney, precio: parseFloat(e.target.value) || 0})}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Descripción corta</label>
+                <input 
+                  type="text" 
+                  value={newTourney.descripcion}
+                  onChange={(e) => setNewTourney({...newTourney, descripcion: e.target.value})}
+                  placeholder="Detalles del torneo..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+            </div>
+            <button 
+              onClick={createTournament}
+              disabled={loading}
+              className="w-full bg-primary text-black py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_15px_30px_rgba(200,255,0,0.2)] hover:scale-[1.01] transition-all"
+            >
+              Publicar Torneo
+            </button>
+          </div>
+
+          {/* Listado de Torneos e Inscripciones */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 ml-4">Torneos Activos</h3>
+              {torneos.map((t) => (
+                <div key={t.id} className="glass p-6 rounded-3xl border border-white/5 flex items-center justify-between group">
+                  <div>
+                    <h4 className="text-xl font-black uppercase tracking-tight italic">{t.nombre}</h4>
+                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{t.fecha} · {t.categoria}</p>
+                  </div>
+                  <button 
+                    onClick={() => deleteTournament(t.id)}
+                    className="p-3 bg-error/10 text-error rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-error/20"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 ml-4">Parejas Inscriptas</h3>
+              <div className="space-y-4">
+                {inscripciones.map((i) => (
+                  <div key={i.id} className="glass p-6 rounded-3xl border border-white/5 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{i.torneos?.nombre}</p>
+                        <h4 className="text-lg font-black uppercase italic leading-none">{i.jugador1}</h4>
+                        <h4 className="text-lg font-black uppercase italic leading-none mt-1">{i.jugador2}</h4>
+                      </div>
+                      <a 
+                        href={`https://wa.me/${i.telefono_contacto}`}
+                        className="p-3 bg-primary/20 text-primary rounded-xl border border-primary/30"
+                      >
+                        <Phone size={18} />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </PageWrapper>
   );
 }
 
