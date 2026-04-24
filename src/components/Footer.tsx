@@ -7,9 +7,9 @@ export function Footer() {
   return (
     <footer className="w-full border-t border-white/5 py-12 px-4 mt-20">
       <div className="max-w-7xl mx-auto flex flex-col items-center gap-10">
-        <div className="flex flex-col items-center text-center space-y-6 w-full">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-16 h-16 rounded-full overflow-hidden border border-white/10 shadow-2xl hover:scale-110 transition-transform duration-500 bg-white">
+        <div className="flex flex-col items-center text-center space-y-6 w-full mt-12">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shadow-2xl hover:scale-110 transition-transform duration-500 bg-white">
               <img src="/logo_complejo.png" alt="Logo Complejo" className="w-full h-full object-cover scale-110" />
             </div>
             <div className="text-left">
