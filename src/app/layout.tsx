@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "react-hot-toast";
+import { SupportButton } from "@/components/SupportButton";
 
 export const metadata: Metadata = {
   title: "Peñarol Pádel",
@@ -53,6 +54,7 @@ export default function RootLayout({
             },
           }}
         />
+        <SupportButton />
       </body>
     </html>
   );
