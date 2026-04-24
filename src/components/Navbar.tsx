@@ -107,15 +107,18 @@ export function Navbar() {
 
                 {/* Dropdown */}
                 {showNotifs && (
-                  <div className="absolute top-full right-0 mt-3 w-80 glass bg-black/95 border border-white/10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col z-50">
-                    <div className="p-4 bg-black/40 border-b border-white/5 flex justify-between items-center">
+                  <div className="absolute top-full right-0 mt-3 w-80 bg-[#0a0b0e]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col z-50 animate-in fade-in zoom-in duration-200">
+                    <div className="p-4 bg-white/[0.02] border-b border-white/5 flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Notificaciones</span>
                       {unreadCount > 0 && <span className="text-[9px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest">{unreadCount} nuevas</span>}
                     </div>
                     <div className="max-h-[60vh] overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="p-8 text-center opacity-30 text-[10px] font-black uppercase tracking-widest">
-                          No tienes notificaciones
+                        <div className="p-10 flex flex-col items-center justify-center gap-3 opacity-20">
+                          <Bell size={24} strokeWidth={1.5} />
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-center">
+                            Sin notificaciones
+                          </span>
                         </div>
                       ) : (
                         notifications.map((n) => (
