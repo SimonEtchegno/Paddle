@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Peñarol Pádel",
   },
+  icons: {
+    apple: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
