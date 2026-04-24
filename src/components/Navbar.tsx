@@ -147,7 +147,14 @@ export function Navbar() {
                               }}
                             >
                               <div className="flex items-start gap-2">
-                                <p className="text-xs font-bold text-white/90 leading-snug">{n.message}</p>
+                                <div className="flex flex-col">
+                                  {n.type === 'sistema' && (
+                                    <span className="text-[8px] font-black bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-widest mb-1 w-fit">
+                                      Aviso Oficial
+                                    </span>
+                                  )}
+                                  <p className="text-xs font-bold text-white/90 leading-snug">{n.message}</p>
+                                </div>
                                 <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5 shadow-[0_0_8px_rgba(200,255,0,0.6)]" />
                               </div>
                               <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mt-1">
