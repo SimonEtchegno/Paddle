@@ -88,7 +88,7 @@ export function Navbar() {
           </div>
 
           {/* Profile & Notifications Section */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             
             {/* Notifications Bell */}
             {profile && (
@@ -178,7 +178,7 @@ export function Navbar() {
             )}
 
             {profile ? (
-              <Link href="/perfil" className="flex items-center gap-2 bg-white/5 p-1.5 pr-4 rounded-full border border-white/10 hover:bg-white/10 transition-all">
+              <Link href="/perfil" className="hidden sm:flex items-center gap-2 bg-white/5 p-1.5 pr-4 rounded-full border border-white/10 hover:bg-white/10 transition-all">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black font-black text-sm uppercase shadow-[0_0_15px_rgba(200,255,0,0.3)]">
                   {profile.nombre[0]}
                 </div>
@@ -188,8 +188,8 @@ export function Navbar() {
                 </div>
               </Link>
             ) : (
-              <Link href="/perfil" className="bg-primary text-black px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all active:scale-95 shadow-[0_0_20px_rgba(200,255,0,0.2)]">
-                Completar Perfil
+              <Link href="/perfil" className="hidden sm:flex bg-primary text-black px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all active:scale-95 shadow-[0_0_20px_rgba(200,255,0,0.2)]">
+                Perfil
               </Link>
             )}
           </div>

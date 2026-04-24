@@ -118,7 +118,7 @@ export function useNotifications() {
                   if (!notifiedIds.current.has(notifId)) {
                     notifiedIds.current.add(notifId);
                     hasNewToasts = true;
-                    toast.error(`Turno cancelado por administración (${oldRes.fecha} - ${oldRes.hora}hs)`, { position: 'top-center', duration: 8000 });
+                    toast.error(`Turno cancelado por administración (${oldRes.fecha} - ${oldRes.hora}hs)`, { position: 'top-center', duration: 3000 });
                   }
                 }
                 // Limpiamos la flag por las dudas
@@ -150,7 +150,7 @@ export function useNotifications() {
             if (!notifiedIds.current.has(notifId)) {
               notifiedIds.current.add(notifId);
               hasNewToasts = true;
-              toast(s.mensaje, { icon: '📢', position: 'top-center', duration: 6000 });
+              toast(s.mensaje, { icon: '📢', position: 'top-center', duration: 3000 });
             }
           });
         }
