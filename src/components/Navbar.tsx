@@ -107,7 +107,7 @@ export function Navbar() {
 
                 {/* Dropdown */}
                 {showNotifs && (
-                  <div className="absolute top-full right-0 mt-3 w-80 glass bg-black/90 border border-white/10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col z-50">
+                  <div className="absolute top-full right-0 mt-3 w-80 glass bg-black/95 border border-white/10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col z-50">
                     <div className="p-4 bg-black/40 border-b border-white/5 flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Notificaciones</span>
                       {unreadCount > 0 && <span className="text-[9px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest">{unreadCount} nuevas</span>}
