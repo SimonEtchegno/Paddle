@@ -10,14 +10,14 @@ export function SupportButton() {
   const whatsappNumber = "2923659885"; // Número del complejo
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4">
+    <div className="fixed bottom-24 md:bottom-6 right-6 z-[100] flex flex-col items-end gap-4">
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-[#0a0b0e]/95 backdrop-blur-2xl border border-white/10 p-6 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-72 mb-2"
+            className="bg-[#0a0b0e]/95 backdrop-blur-2xl border border-white/10 p-6 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-72 max-w-[calc(100vw-3rem)] mb-2"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
