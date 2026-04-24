@@ -9,8 +9,8 @@ export function Footer() {
       <div className="max-w-7xl mx-auto flex flex-col items-center gap-10">
         <div className="flex flex-col items-center text-center space-y-6 w-full">
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
-              <img src="/logo_complejo.png" alt="Logo Complejo" className="w-full h-full object-cover" />
+            <div className="w-16 h-16 rounded-full overflow-hidden border border-white/10 shadow-2xl hover:scale-110 transition-transform duration-500 bg-white">
+              <img src="/logo_complejo.png" alt="Logo Complejo" className="w-full h-full object-cover scale-110" />
             </div>
             <div className="text-left">
               <h3 className="text-2xl font-black uppercase tracking-tighter italic leading-none">Complejo <span className="text-primary">CAP</span></h3>
