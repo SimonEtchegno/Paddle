@@ -10,6 +10,7 @@ import { Info } from 'lucide-react';
 import { PageWrapper } from '@/components/PageWrapper';
 import { Calendar } from '@/components/ui/Calendar';
 import { parseISO } from 'date-fns';
+import { WeatherWidget } from '@/components/WeatherWidget';
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -61,6 +62,8 @@ export default function Home() {
                 {format(parseISO(selectedDate + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es })}
               </p>
             </div>
+
+            <WeatherWidget date={selectedDate} />
           </aside>
 
           <main className="space-y-6">
