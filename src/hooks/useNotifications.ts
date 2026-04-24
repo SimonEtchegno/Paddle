@@ -191,6 +191,41 @@ export function useNotifications() {
           localStorage.setItem('tracked_match_joins', JSON.stringify(currentJoins));
         }
 
+        // 6. Chequear inscripciones a torneos canceladas
+        const { data: currentInsc } = await supabase
+          .from('inscripciones_torneos')
+          .select('id, torneo_id, torneos(nombre)')
+          .eq('telefono_contacto', profile.telefono);
+
+        if (currentInsc) {
+          const currentInscIds = new Set(currentInsc.map((i: any) => i.id));
+          const trackedInscStr = localStorage.getItem('tracked_torneo_inscs');
+
+          if (trackedInscStr) {
+            const trackedInsc = JSON.parse(trackedInscStr);
+            trackedInsc.forEach((oldInsc: any) => {
+              if (!currentInscIds.has(oldInsc.id)) {
+                // La inscripción desapareció
+                const notifId = `tourney_canc_${oldInsc.id}`;
+                newNotifs.push({
+                  id: notifId,
+                  type: 'cancelacion',
+                  message: `Tu inscripción al torneo "${oldInsc.torneos?.nombre}" fue cancelada`,
+                  time: new Date().toISOString(),
+                  isRead: false
+                });
+
+                if (!notifiedIds.current.has(notifId)) {
+                  notifiedIds.current.add(notifId);
+                  hasNewToasts = true;
+                  toast.error(`Inscripción cancelada: ${oldInsc.torneos?.nombre}`, { position: 'top-center', duration: 4000 });
+                }
+              }
+            });
+          }
+          localStorage.setItem('tracked_torneo_inscs', JSON.stringify(currentInsc));
+        }
+
         if (hasNewToasts) {
           localStorage.setItem('notified_toast_ids', JSON.stringify(Array.from(notifiedIds.current)));
         }

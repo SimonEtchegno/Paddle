@@ -192,6 +192,12 @@ export default function AdminPage() {
     fetchData();
   };
 
+  const deleteInscription = async (id: string) => {
+    if (!confirm('¿Borrar esta pareja del torneo?')) return;
+    await supabase.from('inscripciones_torneos').delete().eq('id', id);
+    fetchData();
+  };
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -508,12 +514,20 @@ export default function AdminPage() {
                         <h4 className="text-lg font-black uppercase italic leading-none">{i.jugador1}</h4>
                         <h4 className="text-lg font-black uppercase italic leading-none mt-1">{i.jugador2}</h4>
                       </div>
-                      <a 
-                        href={`https://wa.me/${i.telefono_contacto}`}
-                        className="p-3 bg-primary/20 text-primary rounded-xl border border-primary/30"
-                      >
-                        <Phone size={18} />
-                      </a>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => deleteInscription(i.id)}
+                          className="p-3 bg-error/10 text-error rounded-xl border border-error/20"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                        <a 
+                          href={`https://wa.me/${i.telefono_contacto}`}
+                          className="p-3 bg-primary/20 text-primary rounded-xl border border-primary/30"
+                        >
+                          <Phone size={18} />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}
