@@ -28,6 +28,7 @@ export default function AdminPage() {
   const [torneos, setTorneos] = useState<any[]>([]);
   const [inscripciones, setInscripciones] = useState<any[]>([]);
   const [newTourney, setNewTourney] = useState({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
+  const [tourneyDates, setTourneyDates] = useState({ inicio: '', fin: '' });
 
   const ALLOWED_ADMINS = ['setchegno@etman.com.ar', 'octavioducos24@gmail.com'];
 
@@ -153,13 +154,30 @@ export default function AdminPage() {
   };
 
   const createTournament = async () => {
-    if (!newTourney.nombre || !newTourney.fecha) return toast.error('Completá nombre y fecha');
+    if (!newTourney.nombre || !tourneyDates.inicio || !tourneyDates.fin) return toast.error('Completá nombre y fechas');
+    
     setLoading(true);
     try {
-      const { error } = await supabase.from('torneos').insert(newTourney);
+      const start = parseISO(tourneyDates.inicio);
+      const end = parseISO(tourneyDates.fin);
+      
+      let fechaFormateada = '';
+      if (tourneyDates.inicio === tourneyDates.fin) {
+        fechaFormateada = format(start, "eeee d 'de' MMMM", { locale: es });
+      } else {
+        fechaFormateada = `${format(start, "d 'de' MMM")} al ${format(end, "d 'de' MMM")}`;
+      }
+
+      const tourneyToSave = {
+        ...newTourney,
+        fecha: fechaFormateada
+      };
+
+      const { error } = await supabase.from('torneos').insert(tourneyToSave);
       if (error) throw error;
       toast.success('Torneo creado');
       setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
+      setTourneyDates({ inicio: '', fin: '' });
       fetchData();
     } catch (e: any) {
       toast.error('Error: ' + e.message);
@@ -395,25 +413,40 @@ export default function AdminPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Fecha / Mes</label>
-                <input 
-                  type="text" 
-                  value={newTourney.fecha}
-                  onChange={(e) => setNewTourney({...newTourney, fecha: e.target.value})}
-                  placeholder="Ej: Sáb 15 y Dom 16 Mayo"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
-                />
-              </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Desde (Inicio)</label>
+                  <input 
+                    type="date" 
+                    value={tourneyDates.inicio}
+                    onChange={(e) => setTourneyDates({...tourneyDates, inicio: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all color-scheme-dark"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Hasta (Fin)</label>
+                  <input 
+                    type="date" 
+                    value={tourneyDates.fin}
+                    onChange={(e) => setTourneyDates({...tourneyDates, fin: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all color-scheme-dark"
+                  />
+                </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Categoría</label>
-                <input 
-                  type="text" 
+                <select 
                   value={newTourney.categoria}
                   onChange={(e) => setNewTourney({...newTourney, categoria: e.target.value})}
-                  placeholder="Ej: 5ta y 6ta"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
-                />
+                  className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary appearance-none cursor-pointer font-bold"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Principiante">Principiante</option>
+                  <option value="7ma">7ma Categoría</option>
+                  <option value="6ta">6ta Categoría</option>
+                  <option value="5ta">5ta Categoría</option>
+                  <option value="4ta">4ta Categoría</option>
+                  <option value="3ra">3ra Categoría</option>
+                  <option value="Pro">Profesional / Open</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Precio Inscripción</label>
