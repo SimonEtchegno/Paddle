@@ -4,6 +4,7 @@ import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
 import { Reserva } from '@/types';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
+import { useGuestProfile } from '@/hooks/useGuestProfile';
 
 interface BookingGridProps {
   reservas: Reserva[];
@@ -15,6 +16,7 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate }: BookingGri
   const date = new Date(selectedDate + 'T00:00:00');
   const dayOfWeek = date.getDay();
   const fixedTurns = TURNOS_FIJOS[dayOfWeek] || {};
+  const { profile } = useGuestProfile();
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
@@ -41,6 +43,7 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate }: BookingGri
             {[1, 2].map((cancha) => {
               const reserva = reservas.find(r => r.hora === hora && r.cancha === cancha);
               const fijo = fixedTurns[hora]?.[cancha];
+              const isMine = reserva && profile && reserva.telefono === profile.telefono;
               const ocupado = !!reserva || !!fijo;
               const nombre = reserva ? reserva.nombre : (fijo || 'Libre');
 
@@ -54,22 +57,24 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate }: BookingGri
                   className={clsx(
                     "relative min-h-[70px] sm:min-h-[90px] rounded-xl sm:rounded-[1.5rem] p-2 sm:p-4 flex flex-col items-center justify-center transition-all border shadow-lg group overflow-hidden",
                     ocupado 
-                      ? "bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed grayscale" 
+                      ? isMine
+                        ? "bg-primary/20 border-primary/50 cursor-default shadow-[0_0_20px_rgba(200,255,0,0.1)]"
+                        : "bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed grayscale" 
                       : "bg-white/[0.05] border-white/10 hover:border-primary/60 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
                   )}
                 >
                   <div className={clsx(
                     "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] mb-0.5 sm:mb-1 text-center leading-tight",
-                    ocupado ? "text-white/40" : "text-primary drop-shadow-[0_0_8px_rgba(136,130,220,0.4)]"
+                    ocupado ? isMine ? "text-primary" : "text-white/40" : "text-primary drop-shadow-[0_0_8px_rgba(136,130,220,0.4)]"
                   )}>
-                    {ocupado ? (fijo ? 'Fijo' : 'Ocupado') : 'Disponible'}
+                    {ocupado ? (isMine ? 'Tu Reserva' : (fijo ? 'Fijo' : 'Ocupado')) : 'Disponible'}
                   </div>
                   
                   <div className={clsx(
                     "text-[10px] sm:text-xs font-bold truncate max-w-[95%] px-1 sm:px-2 mt-0.5",
-                    ocupado ? "text-white/10" : "text-white group-hover:text-primary transition-colors"
+                    ocupado ? isMine ? "text-white" : "text-white/10" : "text-white group-hover:text-primary transition-colors"
                   )}>
-                    {ocupado ? 'No disp.' : 'Libre'}
+                    {ocupado ? (isMine ? 'Confirmado' : 'No disp.') : 'Libre'}
                   </div>
 
 
