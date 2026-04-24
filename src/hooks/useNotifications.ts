@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 
 export interface AppNotification {
   id: string;
-  type: 'confirmacion' | 'solicitud' | 'cancelacion';
+  type: 'confirmacion' | 'solicitud' | 'cancelacion' | 'sistema';
   message: string;
   time: string;
   isRead: boolean;
@@ -140,7 +140,15 @@ export function useNotifications() {
             .filter(n => !dismissed.has(n.id))
             .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
           
-          setNotifications(finalNotifs);
+          // Sonido si hay nuevas notificaciones (comparando longitud)
+          setNotifications(prev => {
+            if (finalNotifs.length > prev.length) {
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+              audio.volume = 0.4;
+              audio.play().catch(() => {}); // Ignorar errores si el usuario no interactuó aún
+            }
+            return finalNotifs;
+          });
         } catch(e) {}
 
       } catch (error) {
@@ -166,9 +174,19 @@ export function useNotifications() {
     } catch(e) {}
   };
 
+  const clearAllNotifications = () => {
+    try {
+      const dismissed = new Set(JSON.parse(localStorage.getItem('dismissed_notifs') || '[]'));
+      notifications.forEach(n => dismissed.add(n.id));
+      localStorage.setItem('dismissed_notifs', JSON.stringify(Array.from(dismissed)));
+      setNotifications([]);
+    } catch(e) {}
+  };
+
   return {
     notifications,
     unreadCount: notifications.length,
-    dismissNotification
+    dismissNotification,
+    clearAllNotifications
   };
 }

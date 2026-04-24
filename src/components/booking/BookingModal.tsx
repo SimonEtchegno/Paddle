@@ -37,15 +37,15 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
 
     setSubmitting(true);
     try {
-      // 1-per-day limit check
+      // 3-per-day limit check
       const { data: existing } = await supabase
         .from('reservas')
         .select('id')
         .eq('fecha', fecha)
         .eq('telefono', telefono);
 
-      if (existing && existing.length > 0) {
-        throw new Error('Ya tenés un turno reservado para este día. ¡Dejá jugar al resto! 😉');
+      if (existing && existing.length >= 3) {
+        throw new Error('Ya tenés 3 turnos reservados para este día. ¡Dejá jugar al resto! 😉');
       }
 
       const { error } = await supabase.from('reservas').insert({

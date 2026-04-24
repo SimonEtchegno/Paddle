@@ -18,7 +18,7 @@ export function Navbar() {
   const notifRef = useRef<HTMLDivElement>(null);
   
   // Activar notificaciones en tiempo real
-  const { notifications, unreadCount, dismissNotification } = useNotifications();
+  const { notifications, unreadCount, dismissNotification, clearAllNotifications } = useNotifications();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -99,7 +99,7 @@ export function Navbar() {
                 >
                   <Bell size={18} className={unreadCount > 0 ? 'text-primary' : 'text-white/60'} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-error text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-error text-white text-[9px] font-black rounded-full flex items-center justify-center animate-bounce shadow-[0_0_10px_rgba(255,82,82,0.5)]">
                       {unreadCount}
                     </span>
                   )}
@@ -110,7 +110,17 @@ export function Navbar() {
                   <div className="absolute top-full right-0 mt-3 w-80 bg-[#0a0b0e]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col z-50 animate-in fade-in zoom-in duration-200">
                     <div className="p-4 bg-white/[0.02] border-b border-white/5 flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Notificaciones</span>
-                      {unreadCount > 0 && <span className="text-[9px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest">{unreadCount} nuevas</span>}
+                      <div className="flex items-center gap-3">
+                        {unreadCount > 0 && <span className="text-[9px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest">{unreadCount} nuevas</span>}
+                        {notifications.length > 0 && (
+                          <button 
+                            onClick={clearAllNotifications}
+                            className="text-[9px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors"
+                          >
+                            Limpiar todo
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="max-h-[60vh] overflow-y-auto">
                       {notifications.length === 0 ? (
@@ -126,6 +136,7 @@ export function Navbar() {
                             <div className="mt-0.5 text-base leading-none">
                               {n.type === 'confirmacion' ? '🎾' : 
                                n.type === 'cancelacion' ? <span className="text-error">⚠️</span> : 
+                               n.type === 'sistema' ? <Bell size={16} className="text-blue-400 mt-1" /> :
                                <Users size={16} className="text-primary mt-1" />}
                             </div>
                             <div 
@@ -135,7 +146,10 @@ export function Navbar() {
                                 router.push('/partidos');
                               }}
                             >
-                              <p className="text-xs font-bold text-white/90 leading-snug">{n.message}</p>
+                              <div className="flex items-start gap-2">
+                                <p className="text-xs font-bold text-white/90 leading-snug">{n.message}</p>
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5 shadow-[0_0_8px_rgba(200,255,0,0.6)]" />
+                              </div>
                               <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mt-1">
                                 {new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
