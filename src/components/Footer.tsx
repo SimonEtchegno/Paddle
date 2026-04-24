@@ -18,8 +18,8 @@ export function Footer() {
             </div>
           </div>
 
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">Ubicación del Complejo</p>
-          <div className="w-full h-64 md:h-80 rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl relative group">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 pt-12 border-t border-white/5 w-fit px-8">Ubicación del Complejo</p>
+          <div className="w-full h-64 md:h-80  rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl relative group">
             <div className="absolute inset-0 bg-primary/5 pointer-events-none group-hover:opacity-0 transition-opacity duration-700" />
             <iframe 
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3160.726605601371!2d-62.411914800000005!3d-37.6085929!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95eb95039e0676d7%3A0xcbaa46816f025697!2sClub%20Pe%C3%B1arol!5e0!3m2!1ses!2sar!4v1777045228694!5m2!1ses!2sar" 
