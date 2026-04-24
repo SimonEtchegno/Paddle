@@ -155,6 +155,42 @@ export function useNotifications() {
           });
         }
 
+        // 5. Chequear participaciones canceladas (borradas por el creador)
+        const { data: currentJoins } = await supabase
+          .from('uniones_partidos')
+          .select('id, partido_id, partidos_abiertos(fecha, hora)')
+          .eq('whatsapp_interesado', profile.telefono)
+          .eq('estado', 'confirmado');
+
+        if (currentJoins) {
+          const currentJoinIds = new Set(currentJoins.map((j: any) => j.id));
+          const trackedJoinsStr = localStorage.getItem('tracked_match_joins');
+          
+          if (trackedJoinsStr) {
+            const trackedJoins = JSON.parse(trackedJoinsStr);
+            trackedJoins.forEach((oldJoin: any) => {
+              if (!currentJoinIds.has(oldJoin.id)) {
+                // Si la unión desapareció, significa que el partido fue borrado o el creador te sacó
+                const notifId = `match_canc_${oldJoin.id}`;
+                newNotifs.push({
+                  id: notifId,
+                  type: 'cancelacion',
+                  message: `El partido del ${oldJoin.partidos_abiertos?.fecha} a las ${oldJoin.partidos_abiertos?.hora} hs fue cancelado`,
+                  time: new Date().toISOString(),
+                  isRead: false
+                });
+
+                if (!notifiedIds.current.has(notifId)) {
+                  notifiedIds.current.add(notifId);
+                  hasNewToasts = true;
+                  toast.error(`Partido cancelado (${oldJoin.partidos_abiertos?.fecha} - ${oldJoin.partidos_abiertos?.hora}hs)`, { position: 'top-center', duration: 4000 });
+                }
+              }
+            });
+          }
+          localStorage.setItem('tracked_match_joins', JSON.stringify(currentJoins));
+        }
+
         if (hasNewToasts) {
           localStorage.setItem('notified_toast_ids', JSON.stringify(Array.from(notifiedIds.current)));
         }
