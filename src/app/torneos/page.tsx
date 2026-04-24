@@ -29,6 +29,7 @@ export default function TorneosPage() {
   const [jugador2, setJugador2] = useState('');
   const [telefono, setTelefono] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [myInscriptions, setMyInscriptions] = useState<string[]>([]);
 
   useEffect(() => {
     fetchTorneos();
@@ -38,8 +39,19 @@ export default function TorneosPage() {
     if (profile) {
       setJugador1(`${profile.nombre} ${profile.apellido}`);
       setTelefono(profile.telefono);
+      fetchMyInscriptions(profile.telefono);
     }
   }, [profile]);
+
+  const fetchMyInscriptions = async (phone: string) => {
+    const { data } = await supabase
+      .from('inscripciones_torneos')
+      .select('torneo_id')
+      .eq('telefono_contacto', phone);
+    if (data) {
+      setMyInscriptions(data.map(i => i.torneo_id));
+    }
+  };
 
   const fetchTorneos = async () => {
     setLoading(true);
@@ -77,6 +89,9 @@ export default function TorneosPage() {
       toast.success('¡Inscripción enviada!');
       setSelectedTorneo(null);
       setJugador2('');
+      if (selectedTorneo) {
+        setMyInscriptions([...myInscriptions, selectedTorneo.id]);
+      }
       
       // WhatsApp aviso al complejo
       const msg = encodeURIComponent(`¡Hola! Quisiera inscribirme al torneo "${selectedTorneo?.nombre}".
@@ -141,7 +156,11 @@ Tel: ${telefono}`);
                     <p className="text-2xl font-black text-primary">${t.precio.toLocaleString()}</p>
                   </div>
                   
-                  {t.abierto ? (
+                  {myInscriptions.includes(t.id) ? (
+                    <div className="flex items-center gap-2 text-primary text-[10px] font-black uppercase tracking-widest bg-primary/10 px-8 py-4 rounded-2xl border border-primary/20 shadow-[0_0_15px_rgba(200,255,0,0.1)]">
+                      <CheckCircle2 size={16} /> ¡Ya Inscripto!
+                    </div>
+                  ) : t.abierto ? (
                     <button 
                       onClick={() => setSelectedTorneo(t)}
                       className="w-full md:w-auto bg-primary text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-[0_10px_20px_rgba(200,255,0,0.2)] active:scale-95"
