@@ -44,8 +44,13 @@ export default function MisTurnosPage() {
   }, [profile]);
 
   const handleCancelTrigger = (id: string, fecha: string, hora: string) => {
-    const isPast = !isAfter(parseISO(fecha), new Date());
-    if (isPast) return toast.error('No se pueden cancelar turnos pasados');
+    // Combinar fecha y hora para una comparación precisa
+    const turnDate = new Date(`${fecha}T${hora}:00`);
+    const now = new Date();
+
+    if (turnDate < now) {
+      return toast.error('No se pueden cancelar turnos pasados');
+    }
     setTurnoToCancel({ id, fecha, hora });
   };
 
@@ -94,8 +99,9 @@ export default function MisTurnosPage() {
         ) : (
           <div className="grid gap-4">
             {turnos.map((t) => {
+              const turnDate = new Date(`${t.fecha}T${t.hora}:00`);
+              const isUpcoming = turnDate >= new Date();
               const dateObj = parseISO(t.fecha);
-              const isUpcoming = isAfter(dateObj, new Date()) || t.fecha === format(new Date(), 'yyyy-MM-dd');
               
               return (
                 <div key={t.id} className="glass p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-6 overflow-hidden relative group">
