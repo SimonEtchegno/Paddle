@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,6 +29,9 @@ export default function AdminPage() {
   const [inscripciones, setInscripciones] = useState<any[]>([]);
   const [newTourney, setNewTourney] = useState({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
   const [tourneyDates, setTourneyDates] = useState({ inicio: '', fin: '' });
+  
+  const [editingZonesTourney, setEditingZonesTourney] = useState<any | null>(null);
+  const [tempZones, setTempZones] = useState<any[]>([]);
 
   const ALLOWED_ADMINS = ['setchegno@etman.com.ar', 'octavioducos24@gmail.com'];
 
@@ -126,14 +129,41 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (isLoggedIn) fetchData();
+    if (isLoggedIn) {
+      fetchData();
+
+      const tChannel = supabase.channel('admin_torneos')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => fetchData())
+        .subscribe();
+      
+      const iChannel = supabase.channel('admin_inscripciones')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inscripciones_torneos' }, () => fetchData())
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(tChannel);
+        supabase.removeChannel(iChannel);
+      };
+    }
   }, [isLoggedIn, selectedDate]);
 
   const handleDelete = async (id: string) => {
     if (id === 'fijo') return toast.error('No se pueden borrar turnos fijos');
     if (!confirm('¿Borrar reserva?')) return;
-    await supabase.from('reservas').delete().eq('id', id);
-    fetchData();
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('reservas').delete().eq('id', id);
+      if (error) throw error;
+      
+      // Actualizar estado local instantáneamente
+      setReservas(prev => prev.filter(r => r.id !== id));
+      toast.success('Reserva eliminada');
+    } catch (e: any) {
+      toast.error('Error al borrar: ' + (e.message || 'Error desconocido'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sendSystemNotification = async () => {
@@ -170,7 +200,8 @@ export default function AdminPage() {
 
       const tourneyToSave = {
         ...newTourney,
-        fecha: fechaFormateada
+        fecha: fechaFormateada,
+        abierto: true
       };
 
       const { error } = await supabase.from('torneos').insert(tourneyToSave);
@@ -188,14 +219,132 @@ export default function AdminPage() {
 
   const deleteTournament = async (id: string) => {
     if (!confirm('¿Borrar torneo? Se borrarán todas las inscripciones.')) return;
-    await supabase.from('torneos').delete().eq('id', id);
-    fetchData();
+    setLoading(true);
+    try {
+      // Primero intentamos borrar las inscripciones asociadas
+      const { error: insError } = await supabase
+        .from('inscripciones_torneos')
+        .delete()
+        .eq('torneo_id', id);
+      
+      if (insError) {
+        console.warn('Error preliminar en inscripciones:', insError);
+      }
+
+      // Luego borramos el torneo con comprobación de filas afectadas
+      const { error, count } = await supabase
+        .from('torneos')
+        .delete({ count: 'exact' })
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      if (count === 0) {
+        throw new Error('La base de datos rechazó el borrado. Verifica tus permisos (RLS) en Supabase.');
+      }
+      
+      // Solo actualizamos el estado si realmente se borró en el servidor
+      setTorneos(prev => prev.filter(t => t.id !== id));
+      setInscripciones(prev => prev.filter(i => i.torneo_id !== id));
+      
+      toast.success('Torneo eliminado de la base de datos');
+    } catch (e: any) {
+      console.error('Error crítico en borrado:', e);
+      toast.error(e.message || 'Error al borrar torneo');
+      // Refrescamos por las dudas para asegurar sincronización
+      fetchData();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deleteInscription = async (id: string) => {
     if (!confirm('¿Borrar esta pareja del torneo?')) return;
-    await supabase.from('inscripciones_torneos').delete().eq('id', id);
-    fetchData();
+    setLoading(true);
+    try {
+      const { error, count } = await supabase
+        .from('inscripciones_torneos')
+        .delete({ count: 'exact' })
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      if (count === 0) {
+        throw new Error('No se pudo borrar la pareja. Verifica los permisos de la tabla.');
+      }
+      
+      // Actualizar estado local solo tras éxito real
+      setInscripciones(prev => prev.filter(i => i.id !== id));
+      
+      toast.success('Pareja eliminada correctamente');
+    } catch (e: any) {
+      console.error('Error:', e);
+      toast.error(e.message || 'Error al borrar pareja');
+      fetchData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleTournamentStatus = async (id: string, currentStatus: boolean) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('torneos')
+        .update({ abierto: !currentStatus })
+        .eq('id', id);
+      
+      if (error) throw error;
+      toast.success(currentStatus ? 'Inscripciones cerradas' : 'Inscripciones abiertas');
+      await fetchData();
+    } catch (e: any) {
+      toast.error('Error: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEditingZones = (t: any) => {
+    setEditingZonesTourney(t);
+    setTempZones(t.zonas || []);
+    // Scroll to editor
+    setTimeout(() => {
+      document.getElementById('zone-editor')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const addZone = () => {
+    setTempZones([...tempZones, { nombre: `Zona ${String.fromCharCode(65 + tempZones.length)}`, parejas: [], partidos: [] }]);
+  };
+
+  const removeZone = (idx: number) => {
+    setTempZones(tempZones.filter((_, i) => i !== idx));
+  };
+
+  const updateZone = (idx: number, data: any) => {
+    const newZones = [...tempZones];
+    newZones[idx] = { ...newZones[idx], ...data };
+    setTempZones(newZones);
+  };
+
+  const saveZones = async () => {
+    if (!editingZonesTourney) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('torneos')
+        .update({ zonas: tempZones })
+        .eq('id', editingZonesTourney.id);
+      
+      if (error) throw error;
+      toast.success('Cuadros actualizados');
+      setEditingZonesTourney(null);
+      await fetchData();
+    } catch (e: any) {
+      toast.error('Error al guardar: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isLoggedIn) {
@@ -493,12 +642,31 @@ export default function AdminPage() {
                     <h4 className="text-xl font-black uppercase tracking-tight italic">{t.nombre}</h4>
                     <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{t.fecha} · {t.categoria}</p>
                   </div>
-                  <button 
-                    onClick={() => deleteTournament(t.id)}
-                    className="p-3 bg-error/10 text-error rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-error/20"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <button 
+                      onClick={() => startEditingZones(t)}
+                      className="p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10"
+                      title="Gestionar Cuadros/Zonas"
+                    >
+                      <Layout size={18} />
+                    </button>
+                    <button 
+                      onClick={() => toggleTournamentStatus(t.id, t.abierto)}
+                      className={clsx(
+                        "p-3 rounded-xl border transition-all",
+                        t.abierto ? "bg-primary/10 text-primary border-primary/20" : "bg-white/5 text-white/40 border-white/10"
+                      )}
+                      title={t.abierto ? "Cerrar Inscripciones" : "Abrir Inscripciones"}
+                    >
+                      <Users size={18} />
+                    </button>
+                    <button 
+                      onClick={() => deleteTournament(t.id)}
+                      className="p-3 bg-error/10 text-error rounded-xl border border-error/20"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -534,6 +702,169 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          {/* Zone Editor Section */}
+          {editingZonesTourney && (
+            <motion.div 
+              id="zone-editor"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass p-10 rounded-[3rem] border-2 border-primary/20 space-y-8 mt-12 bg-primary/5"
+            >
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setEditingZonesTourney(null)} className="p-2 hover:bg-white/5 rounded-full">
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div>
+                    <h3 className="text-2xl font-black uppercase italic tracking-tighter">Gestionar Cuadros</h3>
+                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{editingZonesTourney.nombre}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  <button 
+                    onClick={addZone}
+                    className="flex-1 sm:flex-none bg-white/5 border border-white/10 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
+                  >
+                    <Plus size={14} /> Añadir Zona
+                  </button>
+                  <button 
+                    onClick={saveZones}
+                    disabled={loading}
+                    className="flex-1 sm:flex-none bg-primary text-black px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-lg"
+                  >
+                    <Save size={14} /> {loading ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {tempZones.map((zona, zIdx) => (
+                  <div key={zIdx} className="glass p-6 rounded-[2rem] border border-white/10 space-y-6 relative group">
+                    <button 
+                      onClick={() => removeZone(zIdx)}
+                      className="absolute top-4 right-4 p-2 text-error opacity-0 group-hover:opacity-100 transition-all hover:bg-error/10 rounded-xl"
+                    >
+                      <X size={16} />
+                    </button>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre de Zona</label>
+                      <input 
+                        type="text" 
+                        value={zona.nombre}
+                        onChange={(e) => updateZone(zIdx, { nombre: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm font-bold focus:border-primary transition-all outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Parejas UI */}
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center px-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-30">Parejas</label>
+                          <button 
+                            onClick={() => {
+                              const p = [...zona.parejas, { nombre: '' }];
+                              updateZone(zIdx, { parejas: p });
+                            }}
+                            className="text-[10px] font-black text-primary hover:underline"
+                          >+ Añadir</button>
+                        </div>
+                        <div className="space-y-2">
+                          {zona.parejas.map((p: any, pIdx: number) => (
+                            <div key={pIdx} className="flex gap-2">
+                              <input 
+                                type="text"
+                                value={p.nombre}
+                                onChange={(e) => {
+                                  const newP = [...zona.parejas];
+                                  newP[pIdx].nombre = e.target.value;
+                                  updateZone(zIdx, { parejas: newP });
+                                }}
+                                placeholder={`Pareja ${pIdx + 1}`}
+                                className="flex-1 bg-white/5 border border-white/5 rounded-lg py-2 px-3 text-xs outline-none focus:border-primary"
+                              />
+                              <button onClick={() => {
+                                const newP = zona.parejas.filter((_: any, i: number) => i !== pIdx);
+                                updateZone(zIdx, { parejas: newP });
+                              }} className="text-error/40 hover:text-error"><X size={14} /></button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Partidos UI */}
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center px-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-30">Partidos</label>
+                          <button 
+                             onClick={() => {
+                              const m = [...zona.partidos, { p1: '', p2: '', horario: '' }];
+                              updateZone(zIdx, { partidos: m });
+                            }}
+                            className="text-[10px] font-black text-primary hover:underline"
+                          >+ Añadir</button>
+                        </div>
+                        <div className="space-y-3">
+                          {zona.partidos.map((m: any, mIdx: number) => (
+                            <div key={mIdx} className="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2 relative group/item">
+                              <button onClick={() => {
+                                const newM = zona.partidos.filter((_: any, i: number) => i !== mIdx);
+                                updateZone(zIdx, { partidos: newM });
+                              }} className="absolute -top-2 -right-2 bg-error text-white rounded-full p-1 opacity-0 group-item-hover:opacity-100 transition-all"><X size={10} /></button>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="text" 
+                                  placeholder="P1" 
+                                  value={m.p1}
+                                  onChange={(e) => {
+                                    const newM = [...zona.partidos];
+                                    newM[mIdx].p1 = e.target.value;
+                                    updateZone(zIdx, { partidos: newM });
+                                  }}
+                                  className="flex-1 bg-transparent border-b border-white/10 text-[10px] outline-none focus:border-primary" 
+                                />
+                                <span className="opacity-20 text-[8px] mt-1">VS</span>
+                                <input 
+                                  type="text" 
+                                  placeholder="P2" 
+                                  value={m.p2}
+                                  onChange={(e) => {
+                                    const newM = [...zona.partidos];
+                                    newM[mIdx].p2 = e.target.value;
+                                    updateZone(zIdx, { partidos: newM });
+                                  }}
+                                  className="flex-1 bg-transparent border-b border-white/10 text-[10px] outline-none focus:border-primary text-right" 
+                                />
+                              </div>
+                              <input 
+                                type="text" 
+                                placeholder="Horario (ej: Sab 15hs)" 
+                                value={m.horario}
+                                onChange={(e) => {
+                                  const newM = [...zona.partidos];
+                                  newM[mIdx].horario = e.target.value;
+                                  updateZone(zIdx, { partidos: newM });
+                                }}
+                                className="w-full bg-transparent text-[8px] opacity-40 outline-none focus:opacity-100" 
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {tempZones.length === 0 && (
+                <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem] opacity-20 font-black uppercase tracking-widest text-xs">
+                  No hay zonas creadas aún
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
       )}
     </div>

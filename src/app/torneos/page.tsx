@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trophy, Calendar, Users, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Trophy, Calendar, Users, Send, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { toast } from 'react-hot-toast';
 import { PageWrapper } from '@/components/PageWrapper';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingPro } from '@/components/ui/LoadingPro';
+import { TournamentZones } from '@/components/TournamentZones';
 
 interface Torneo {
   id: string;
@@ -17,6 +18,7 @@ interface Torneo {
   descripcion: string;
   precio: number;
   abierto: boolean;
+  zonas?: any[]; // Datos de los cuadros/zonas
 }
 
 export default function TorneosPage() {
@@ -30,9 +32,21 @@ export default function TorneosPage() {
   const [telefono, setTelefono] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [myInscriptions, setMyInscriptions] = useState<string[]>([]);
+  const [expandedTorneo, setExpandedTorneo] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTorneos();
+
+    const channel = supabase
+      .channel('torneos_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => {
+        fetchTorneos();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -126,9 +140,9 @@ Tel: ${telefono}`);
         ) : (
           <div className="grid gap-6">
             {torneos.map((t) => (
-              <motion.div 
-                key={t.id}
-                initial={{ opacity: 0, y: 20 }}
+              <div key={t.id}>
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-8 hover:border-primary/20 transition-all group"
               >
@@ -174,6 +188,36 @@ Tel: ${telefono}`);
                   )}
                 </div>
               </motion.div>
+
+              {/* Tournament Zones / Brackets Section */}
+              <AnimatePresence>
+                {t.zonas && t.zonas.length > 0 && (
+                  <div className="mt-4">
+                    <button 
+                      onClick={() => setExpandedTorneo(expandedTorneo === t.id ? null : t.id)}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest opacity-60"
+                    >
+                      {expandedTorneo === t.id ? (
+                        <>Ocultar Cuadros <ChevronUp size={14} /></>
+                      ) : (
+                        <>Ver Cuadros y Zonas <ChevronDown size={14} /></>
+                      )}
+                    </button>
+                    
+                    {expandedTorneo === t.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <TournamentZones zonas={t.zonas} />
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
             ))}
           </div>
         )}
