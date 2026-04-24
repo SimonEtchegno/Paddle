@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --background: #14172e; /* Fondo un poco más oscuro que la superficie para dar profundidad */
+  --foreground: #ffffff; /* Texto blanco */
+  --primary: #8882dc; /* Color principal del logo (Púrpura/Índigo) */
+  --secondary: #b6b3e8; /* Variante más clara del primary para secundarios */
+  --surface: #232850; /* Color secundario del logo (Azul Marino Oscuro) */
+  --error: #ff5252;
+  --success: #4CAF50; /* Verde para confirmaciones */
+  --glass: rgba(136, 130, 220, 0.08); /* Reflejo del color principal */
+  --border: rgba(136, 130, 220, 0.25); /* Bordes brillantes del color principal */
+}
+
+
+
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-surface: var(--surface);
+  --color-error: var(--error);
+  --color-success: var(--success);
+  --color-glass: var(--glass);
+  --color-border: var(--border);
+  
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass);
+}
+
+
