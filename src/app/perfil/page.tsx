@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { toast } from 'react-hot-toast';
-import { Save, User, MapPin, Phone, Zap, Trophy } from 'lucide-react';
+import { Save, User, MapPin, Phone, Zap, Trophy, Share2 } from 'lucide-react';
 import { PageWrapper } from '@/components/PageWrapper';
 import { motion } from 'framer-motion';
 import { PlayerCard } from '@/components/PlayerCard';
@@ -108,11 +108,12 @@ export default function PerfilPage() {
           <p className="text-xs font-bold opacity-30 uppercase tracking-[0.3em] mt-2">Configurá tu identidad en la cancha</p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           
           {/* COLUMNA IZQUIERDA: VISTA PREVIA (Sticky) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-24 flex flex-col items-center gap-6">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-center opacity-30 italic">Previsualización de Ficha</h3>
+          <div className="lg:col-span-5 relative">
+            <div className="lg:sticky lg:top-24 flex flex-col items-center gap-6 pb-12">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-center opacity-30 italic">Previsualización de Ficha</h3>
             
             <div className="relative group">
               {/* Brillo Ambiental detrás de la carta */}
@@ -120,17 +121,36 @@ export default function PerfilPage() {
               <PlayerCard profile={formData as any} />
             </div>
 
-            <div className="text-center space-y-3 max-w-[320px]">
-              <div className="inline-block px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>
-                  {isDiamante ? "💎 Estatus Diamante" : isOro ? "👑 Élite de Oro" : isPlata ? "🥈 Maestro de Plata" : "🎾 Jugador Pro"}
-                </p>
+            <div className="w-full max-w-[320px] space-y-5 pt-2">
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
+                  <span>Rank Progress</span>
+                  <span style={{ color: accentColor }}>{Math.round(formData.nivel * 30)} / {Math.round(Math.min(7.0, formData.nivel + 0.5) * 30)} PTS</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <motion.div 
+                    animate={{ width: `${formData.nivel === 7.0 ? 100 : (formData.nivel % 1) * 100}%` }}
+                    transition={{ type: "spring", bounce: 0.4 }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: accentColor, boxShadow: `0 0 15px ${accentColor}` }}
+                  />
+                </div>
               </div>
-              <p className="text-[9px] font-bold uppercase opacity-30 leading-relaxed">
-                Tu nivel y categoría determinan automáticamente la rareza de tu carta.
-              </p>
+
+              {/* Share Button */}
+              <button 
+                type="button"
+                onClick={() => toast.success('¡Captura lista para Instagram!')}
+                className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:scale-105 active:scale-95 shadow-xl"
+                style={{ backgroundColor: `${accentColor}15`, color: accentColor, border: `1px solid ${accentColor}40` }}
+              >
+                <Share2 size={16} />
+                Compartir Ficha
+              </button>
             </div>
           </div>
+        </div>
 
           {/* COLUMNA DERECHA: FORMULARIO */}
           <div className="lg:col-span-7">

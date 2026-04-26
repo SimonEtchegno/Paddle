@@ -25,6 +25,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       accent: 'text-cyan-300',
       vfx: 'legendary',
       icon: '💎',
+      hex: '#22d3ee',
       stats: { pow: 99, ctrl: 98, spd: 97 }
     };
     // 2. ORO LEGENDARIO (5.5+ o 2da)
@@ -36,6 +37,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       accent: 'text-yellow-400',
       vfx: 'legendary',
       icon: '🔥',
+      hex: '#facc15',
       stats: { pow: 96, ctrl: 94, spd: 92 }
     };
     // 3. PLATA / PLATINO (4.5+ o 3ra)
@@ -47,6 +49,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       accent: 'text-slate-200',
       vfx: 'epic',
       icon: '⚡',
+      hex: '#e2e8f0',
       stats: { pow: 88, ctrl: 86, spd: 84 }
     };
     // 4. MASTER (3.5+ o 4ta)
@@ -58,6 +61,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       accent: 'text-purple-300',
       vfx: 'epic',
       icon: '🏆',
+      hex: '#c084fc',
       stats: { pow: 80, ctrl: 78, spd: 75 }
     };
     // 5. PRO (2.5+ o 5ta)
@@ -69,6 +73,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       accent: 'text-blue-400',
       vfx: 'none',
       icon: '⭐',
+      hex: '#60a5fa',
       stats: { pow: 70, ctrl: 68, spd: 65 }
     };
     // 6. AMATEUR (1.5+ o 6ta)
@@ -80,6 +85,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       accent: 'text-green-400',
       vfx: 'none',
       icon: '🎯',
+      hex: '#34d399',
       stats: { pow: 60, ctrl: 55, spd: 58 }
     };
     // 7. INICIADO
@@ -91,6 +97,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       accent: 'text-zinc-500',
       vfx: 'none',
       icon: '🌱',
+      hex: '#71717a',
       stats: { pow: 45, ctrl: 40, spd: 42 }
     };
   };
@@ -114,12 +121,15 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -10, rotateY: 5 }}
+      transition={{ 
+        opacity: { duration: 0.5 },
+        scale: { duration: 0.5, type: "spring", bounce: 0.4 }
+      }}
+      whileHover={{ y: -10, rotateY: 5, scale: 1.02 }}
       className={clsx(
         "relative rounded-[2.5rem] overflow-hidden bg-zinc-950 border transition-all duration-500 group",
         rank.border,
-        rank.glow,
-        compact ? "w-full max-w-[340px] aspect-[3/5]" : "w-full max-w-md aspect-[3/5]"
+        compact ? "w-full max-w-[360px] min-h-[580px]" : "w-full max-w-[480px] min-h-[680px]"
       )}
     >
       {/* 1. LAYER: DYNAMIC BACKGROUND */}
@@ -155,7 +165,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className={clsx("w-2 h-2 rounded-full animate-ping", rank.vfx === 'legendary' ? "bg-yellow-400" : "bg-primary")} />
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/50 italic">Elite Identity</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.6em] text-white/90 italic drop-shadow-md">Elite Identity</span>
           </div>
           <div className="flex items-baseline gap-1">
             <span className={clsx("text-5xl font-black italic tracking-tighter drop-shadow-2xl", rank.vfx === 'legendary' ? "text-yellow-400" : "text-white")}>
@@ -181,19 +191,18 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
 
       {/* AVATAR CENTER */}
       <div className="flex-1 flex flex-col items-center justify-center relative py-4 z-20">
-        <motion.div 
-          animate={rank.vfx === 'legendary' ? { scale: [1, 1.05, 1], rotateZ: [0, 1, -1, 0] } : {}}
-          transition={{ duration: 4, repeat: Infinity }}
-          className="relative"
-        >
+        <div className="relative">
           {/* Rank Glow */}
           <div className={clsx("absolute inset-[-20px] rounded-full blur-3xl opacity-30 animate-pulse", rank.color.replace('from-', 'bg-'))} />
           
           {/* Avatar Shield */}
-          <div className={clsx(
-            "w-36 h-36 rounded-full bg-zinc-900 flex items-center justify-center relative overflow-hidden shadow-2xl border-4",
-            rank.vfx === 'legendary' ? "border-yellow-400/50" : "border-white/10"
-          )}>
+          <div 
+            style={{ boxShadow: `0 0 30px ${rank.hex}40` }}
+            className={clsx(
+              "w-36 h-36 rounded-full bg-zinc-900 flex items-center justify-center relative overflow-hidden border-4",
+              rank.vfx === 'legendary' ? "border-yellow-400/50" : "border-white/10"
+            )}
+          >
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             <span className="text-8xl select-none filter drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
               {profile.avatar_emoji || '👤'}
@@ -204,9 +213,8 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
           <motion.div 
             className="absolute -bottom-2 -right-2 z-40 w-16 h-24"
             style={{ transformOrigin: 'bottom center' }}
-            animate={{ rotate: [15, 25, 15], y: [0, -2, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-            initial={{ rotate: 15 }}
+            animate={{ rotate: [15, 22, 15], y: [0, -4, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
           <svg viewBox="0 0 100 150" className="w-full h-full drop-shadow-2xl">
             <defs>
@@ -445,19 +453,31 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
             />
           </svg>
         </motion.div>
-        </motion.div>
+        </div>
       </div>
 
       {/* FOOTER STATS */}
       <div className="p-8 space-y-6 relative z-30">
-        <div className="text-center space-y-2">
-          <h4 className="text-4xl font-black uppercase italic tracking-tighter leading-none text-white group-hover:text-primary transition-colors">
+        <div className="text-center space-y-3">
+          <h4 className="text-4xl font-black uppercase italic tracking-tighter leading-none text-white group-hover:text-primary transition-colors drop-shadow-lg">
             {profile.nombre} <span className={rank.accent}>{profile.apellido}</span>
           </h4>
-          <div className="flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-40">
-             <span className="flex items-center gap-1"><MapPin size={12} /> {profile.localidad}</span>
-             <span className="w-1.5 h-1.5 bg-white/20 rounded-full" />
-             <span className="flex items-center gap-1"><Trophy size={12} /> {profile.categoria}</span>
+          <div className="flex items-center justify-center gap-3">
+             <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest opacity-50">
+               <MapPin size={12} /> {profile.localidad}
+             </span>
+             
+             {/* Category Prominent Badge */}
+             <div className={clsx(
+               "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border backdrop-blur-md flex items-center gap-1.5 shadow-xl transition-all",
+               rank.border,
+               rank.accent,
+               "bg-black/40",
+               rank.glow
+             )}>
+               <Trophy size={12} className={rank.accent} />
+               {profile.categoria}
+             </div>
           </div>
         </div>
 
@@ -485,11 +505,17 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
           ))}
         </div>
 
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <Zap size={14} className={rank.accent} />
-          <span className="text-[10px] font-black text-white/30 uppercase italic tracking-widest">
-            {profile.paleta || 'Official Equipment'}
-          </span>
+        <div className="pt-4 flex flex-col items-center gap-1.5">
+          <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white/40">Equipped Weapon</span>
+          <div className={clsx(
+            "px-5 py-2 rounded-xl bg-gradient-to-r from-transparent via-white/5 to-transparent border-y flex items-center gap-2 transition-all",
+            rank.border, "border-opacity-30"
+          )}>
+            <Zap size={14} className={clsx(rank.accent, "animate-pulse")} />
+            <span className="text-xs font-black uppercase tracking-widest text-white drop-shadow-lg">
+              {profile.paleta || 'Official Equipment'}
+            </span>
+          </div>
         </div>
       </div>
 
