@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Calendar, Users, History, User, Trophy, Bell, X, Check, Crown, ShoppingBag } from 'lucide-react';
+import { Calendar, Users, History, User, Trophy, Bell, X, Check, Crown, ShoppingBag, Menu } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -15,10 +16,26 @@ export function Navbar({ club }: { club?: any }) {
   const router = useRouter();
   const { profile } = useGuestProfile();
   const [showNotifs, setShowNotifs] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   
   // Activar notificaciones en tiempo real
   const { notifications, unreadCount, dismissNotification, clearAllNotifications } = useNotifications();
+
+  // Cerrar menú al cambiar de ruta
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  // Prevenir scroll cuando el menú está abierto
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isMenuOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -91,6 +108,14 @@ export function Navbar({ club }: { club?: any }) {
 
           {/* Profile & Notifications Section */}
           <div className="flex items-center gap-2 sm:gap-4">
+            
+            {/* Hamburger Menu (Mobile Only) */}
+            <button 
+              onClick={() => setIsMenuOpen(true)}
+              className="md:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white"
+            >
+              <Menu size={20} />
+            </button>
             
             {/* Notifications Bell */}
             {profile && (
@@ -224,9 +249,72 @@ export function Navbar({ club }: { club?: any }) {
         </div>
       </nav>
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Sidebar Menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-[100] flex justify-end">
+            {/* Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            {/* Menu Panel */}
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="relative w-72 h-full bg-[#0a0b0e] border-l border-white/10 shadow-2xl flex flex-col"
+            >
+              <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Menú</span>
+                <button 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={clsx(
+                        "flex items-center gap-4 p-4 rounded-2xl transition-all font-bold text-sm",
+                        active 
+                          ? "bg-primary/10 text-primary border border-primary/20" 
+                          : "text-white/60 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      <Icon size={20} className={active ? "text-primary" : "text-white/40"} />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="p-6 border-t border-white/5 bg-white/[0.01]">
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/20 text-center">
+                  Peñarol Pádel v2.0
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Bottom Nav (Simplified / Keeping for quick access) */}
       <div className="md:hidden fixed bottom-0 left-0 w-full glass border-t border-white/10 flex justify-around p-3 pb-safe z-50">
-        {navItems.map((item) => {
+        {navItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
           return (
@@ -243,6 +331,13 @@ export function Navbar({ club }: { club?: any }) {
             </Link>
           );
         })}
+        <button 
+          onClick={() => setIsMenuOpen(true)}
+          className="flex flex-col items-center gap-1 text-white/40"
+        >
+          <Menu size={22} />
+          <span className="text-[10px] font-bold uppercase">Más</span>
+        </button>
       </div>
     </>
   );
