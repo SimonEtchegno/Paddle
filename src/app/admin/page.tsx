@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -14,6 +14,7 @@ import { clsx } from 'clsx';
 import { Calendar } from '@/components/ui/Calendar';
 import dynamic from 'next/dynamic';
 import TutorialModal from '@/components/admin/TutorialModal';
+import { useTutorial } from '@/hooks/useTutorial';
 
 const TournamentManager = dynamic(
   () => import('@/components/admin/TournamentManager'),
@@ -114,6 +115,17 @@ export default function AdminPage() {
   const [editingZonesTourney, setEditingZonesTourney] = useState<any | null>(null);
   const [tempZones, setTempZones] = useState<any[]>([]);
   const [activeZoneIdx, setActiveZoneIdx] = useState<number>(0);
+  const { startAdminTour } = useTutorial();
+
+  useEffect(() => {
+    // Si venimos de la página de ayuda para hacer el tour
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tour') === 'true' && isLoggedIn) {
+      setTimeout(() => startAdminTour(), 1000);
+      // Limpiar la URL para que no se repita el tour al recargar
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [isLoggedIn]);
 
   const ALLOWED_ADMINS = ['setchegno@etman.com.ar', 'octavioducos24@gmail.com'];
 
@@ -477,52 +489,86 @@ export default function AdminPage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <form onSubmit={handleLogin} className="glass p-10 rounded-[2.5rem] w-full max-w-sm space-y-6 text-center border border-white/5">
-          <Crown className="mx-auto text-primary" size={48} />
-          <h2 className="text-2xl font-bold uppercase tracking-tight">Acceso <span className="text-primary">Admin</span></h2>
-          
-          <div className="space-y-4 text-left">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Email</label>
+      <PageWrapper>
+        <div className="min-h-[80vh] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-md glass p-10 rounded-[3rem] border border-white/5 space-y-8"
+          >
+            <div className="text-center space-y-2">
+              <div className="w-20 h-20 bg-primary/20 rounded-3xl flex items-center justify-center text-primary mx-auto mb-6">
+                <Crown size={40} />
+              </div>
+              <h1 className="text-3xl font-black uppercase tracking-tighter italic">Panel de <span className="text-primary">Control</span></h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Acceso exclusivo para dueños</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
               <input 
                 type="email" 
+                placeholder="Email" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-sm focus:outline-none focus:border-primary transition-all font-bold"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@ejemplo.com"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Contraseña</label>
               <input 
                 type="password" 
+                placeholder="Contraseña" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-sm focus:outline-none focus:border-primary transition-all font-bold"
                 value={pass}
                 onChange={(e) => setPass(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin(e)}
                 required
               />
-            </div>
-          </div>
-
-          <button 
-            disabled={loading}
-            className="w-full bg-primary text-black py-4 rounded-2xl font-black uppercase tracking-widest text-sm hover:scale-105 transition-all disabled:opacity-50"
-          >
-            {loading ? 'Cargando...' : 'Entrar'}
-          </button>
-        </form>
-      </div>
+              <button 
+                type="submit"
+                className="w-full bg-primary text-black py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_15px_30px_rgba(var(--primary-rgb),0.3)] hover:scale-[1.02] transition-all"
+              >
+                Ingresar al Sistema
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      </PageWrapper>
     );
   }
 
   return (
     <PageWrapper>
-      <div className="max-w-6xl mx-auto space-y-8 pb-20 pt-4">
+      <div className="max-w-7xl mx-auto space-y-8 pb-20">
+        
+        {/* Header Admin */}
+        <header id="tutorial-admin-tabs" className="flex flex-col lg:flex-row items-center justify-between gap-6 glass p-8 rounded-[3rem] border border-white/5">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-primary/20 rounded-3xl flex items-center justify-center text-primary border border-primary/30">
+              <Layout size={32} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black uppercase tracking-tighter italic">Panel de <span className="text-primary">Control</span></h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Gestión de Complejo</p>
+            </div>
+          </div>
+
+          <div id="tutorial-admin-actions" className="flex items-center gap-4">
+            <button 
+              onClick={startAdminTour}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-black transition-all text-xs font-black uppercase tracking-widest"
+            >
+              <Sparkles size={14} /> Guía del Panel
+            </button>
+            <button 
+              onClick={() => { supabase.auth.signOut(); setIsLoggedIn(false); }}
+              className="p-4 bg-white/5 border border-white/10 rounded-2xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
+              title="Cerrar Sesión"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
+        </header>
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div id="tutorial-admin-calendar" className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'TOTAL HOY', value: reservas.length, color: 'text-primary' },
             { label: 'CANCHA 1', value: reservas.filter(r => r.cancha === 1).length, color: 'text-white' },
@@ -548,6 +594,7 @@ export default function AdminPage() {
             Gestión de Turnos
           </button>
           <button 
+            id="tutorial-admin-tournaments"
             onClick={() => setActiveTab('torneos')}
             className={clsx(
               "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
@@ -688,12 +735,19 @@ export default function AdminPage() {
                   {editingTourneyId ? 'Editar Torneo' : 'Nuevo Torneo'}
                 </h3>
               </div>
-              <div className="flex items-center gap-4">
+              <div id="tutorial-admin-actions" className="flex items-center gap-4">
                 <button 
                   onClick={() => setShowTutorial(true)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-xs font-black uppercase tracking-widest"
                 >
                   <BookOpen size={14} /> Manual
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="p-4 bg-white/5 border border-white/10 rounded-2xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                  title="Cerrar Sesión"
+                >
+                  <LogOut size={20} />
                 </button>
                 {editingTourneyId && (
                   <button 
@@ -796,7 +850,10 @@ export default function AdminPage() {
                     </div>
                     <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{t.fecha} · {t.categoria}</p>
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                  <div 
+                    id={torneos.indexOf(t) === 0 ? "tutorial-admin-tourney-actions" : undefined}
+                    className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all"
+                  >
                     <button 
                       onClick={() => {
                         setEditingTourneyId(t.id);

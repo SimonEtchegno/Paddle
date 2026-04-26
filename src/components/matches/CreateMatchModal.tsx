@@ -28,20 +28,38 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
     
     setLoading(true);
     try {
-      // Eliminamos la restricción de WhatsApp Único para permitir múltiples publicaciones
       const hoy = format(new Date(), 'yyyy-MM-dd');
 
+      // Intentamos insertar con todos los campos nuevos
       const { error } = await supabase.from('partidos_abiertos').insert({
-        creador_id: profile.uid || profile.telefono, // Intentar con UID si existe, sino teléfono
+        creador_id: profile.uid || profile.telefono,
         nombre_creador: `${profile.nombre} ${profile.apellido}`,
         fecha,
         hora,
         nivel,
         jugadores_faltantes: faltan,
-        contacto_whatsapp: profile.telefono
+        contacto_whatsapp: profile.telefono,
+        avatar_emoji: profile.avatar_emoji || '👤',
+        paleta_emoji: profile.paleta_emoji || '⚡️',
+        paleta_modelo: profile.paleta_modelo || 'carbono'
       });
 
-      if (error) throw error;
+      // Si falla por columnas faltantes, intentamos el fallback (solo campos básicos)
+      if (error && error.message.includes('column')) {
+        console.warn('Columnas Pro no encontradas, usando fallback básico');
+        const { error: fallbackError } = await supabase.from('partidos_abiertos').insert({
+          creador_id: profile.uid || profile.telefono,
+          nombre_creador: `${profile.nombre} ${profile.apellido}`,
+          fecha,
+          hora,
+          nivel,
+          jugadores_faltantes: faltan,
+          contacto_whatsapp: profile.telefono
+        });
+        if (fallbackError) throw fallbackError;
+      } else if (error) {
+        throw error;
+      }
 
       toast.success('¡Partido publicado!');
       onSuccess();

@@ -30,7 +30,7 @@ export default function Home() {
     <PageWrapper>
       <div className="space-y-12 pb-20">
         {/* Header / Info */}
-        <section className="text-center space-y-4 pt-4">
+        <section id="tutorial-header" className="text-center space-y-4 pt-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -61,8 +61,8 @@ export default function Home() {
 
         {/* Date Selector & Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-12 items-start">
-          <aside className="space-y-6 lg:sticky lg:top-24">
-            <div className="px-4">
+          <aside id="tutorial-calendar" className="space-y-6 lg:sticky lg:top-24">
+            <div id="tutorial-date-picker" className="px-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-4 ml-1">Seleccionar Fecha</h3>
               <Calendar 
                 selectedDate={parseISO(selectedDate + 'T00:00:00')} 
@@ -80,7 +80,7 @@ export default function Home() {
             <WeatherWidget date={selectedDate} />
           </aside>
 
-          <main className="space-y-6">
+          <main id="tutorial-grid" className="space-y-6">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 ml-4 mb-2">Horarios Disponibles</h3>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-40 space-y-4">

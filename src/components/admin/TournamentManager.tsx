@@ -28,6 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { clsx } from 'clsx';
 import { toast } from 'react-hot-toast';
 import { toPng } from 'html-to-image';
+import { useTutorial } from '@/hooks/useTutorial';
 import { TournamentPhaseType, Pair, Zone, Match, BracketNode, TournamentConfig } from '@/types/tournament';
 
 interface TournamentManagerProps {
@@ -98,6 +99,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveName, setSaveName] = useState('');
+  const { startTournamentAdminTour } = useTutorial();
   const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isVisible, setIsVisible] = useState(tournament.visible !== false);
@@ -443,7 +445,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       className="space-y-8 bg-surface/30 p-4 md:p-10 rounded-[3rem] border border-white/5 min-h-[85vh] flex flex-col"
     >
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-white/5 pb-8">
+      <div id="tutorial-tourney-header" className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-white/5 pb-8">
         <div className="flex items-center gap-6">
           <button onClick={onClose} className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
             <ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
@@ -461,10 +463,18 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         {/* Stepper & Actions Container */}
         <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto justify-center lg:justify-end">
           <button 
+            id="tutorial-tourney-load"
             onClick={openLoadModal}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/40 hover:text-white"
           >
             <Clock size={14} /> Cargar
+          </button>
+
+          <button 
+            onClick={() => startTournamentAdminTour((s) => setStep(s as ManagementStep))}
+            className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all text-primary"
+          >
+            <Sparkles size={16} /> ¿Cómo organizar mi torneo?
           </button>
 
           <button 
@@ -479,6 +489,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
           </button>
 
           <button 
+            id="tutorial-tourney-save"
             onClick={() => handleSave()}
             disabled={isSyncing}
             className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-[0_0_20px_rgba(200,255,0,0.3)] disabled:opacity-50"
@@ -493,7 +504,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
           
           <div className="w-px h-8 bg-white/10 mx-2" />
           
-          <div className="flex items-center gap-4 bg-black/20 px-6 py-3 rounded-2xl border border-white/5 mr-4">
+          <div id="tutorial-tourney-visibility" className="flex items-center gap-4 bg-black/20 px-6 py-3 rounded-2xl border border-white/5 mr-4">
             <div className="flex flex-col items-end">
               <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Estado Público</span>
               <span className={clsx("text-[9px] font-black uppercase tracking-widest", isVisible ? "text-primary" : "text-white/20")}>
@@ -526,6 +537,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               return (
                 <div key={s.id} className="flex items-center">
                   <button
+                    id={`tutorial-tourney-step-${s.id}`}
                     disabled={isLocked}
                     onClick={() => setStep(s.id as ManagementStep)}
                     className={clsx(
@@ -593,6 +605,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         <AnimatePresence mode="wait">
           {step === 'config' && (
             <motion.div
+              id="tutorial-step-config"
               key="config"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -859,6 +872,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               }}
             >
               <motion.div
+                id="tutorial-step-assignment"
                 key="assignment"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -936,6 +950,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
           {step === 'groups' && (
             <motion.div
+              id="tutorial-step-groups"
               key="groups"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -948,6 +963,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   <p className="text-sm opacity-40 font-bold uppercase tracking-widest">Gestiona los partidos y mira las posiciones</p>
                 </div>
                 <button 
+                  id="tutorial-gen-fixtures"
                   onClick={() => {
                     const newZones = zones.map(z => {
                       if (z.matches.length > 0) return z;

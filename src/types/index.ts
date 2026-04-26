@@ -18,6 +18,8 @@ export interface PartidoAbierto {
   nivel: string;
   contacto_whatsapp: string;
   created_at: string;
+  avatar_emoji?: string;
+  paleta_modelo?: string;
 }
 
 export interface UnionPartido {
@@ -47,4 +49,11 @@ export interface UserProfile {
   apellido: string;
   telefono: string;
   localidad: string;
+  nivel?: number; // 1.0 to 7.0
+  posicion?: 'Drive' | 'Revés' | 'Ambos';
+  categoria?: string;
+  paleta?: string;
+  avatar_emoji?: string;
+  paleta_emoji?: string;
+  paleta_modelo?: string;
 }

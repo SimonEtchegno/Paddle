@@ -263,11 +263,12 @@ export default function PartidosPage() {
 
         {/* Lista de Partidos */}
         <section className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Partidos Disponibles</h3>
-              <button 
-                onClick={() => {
+            <div id="tutorial-partidos-list" className="space-y-4">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Partidos Disponibles</h3>
+                <button 
+                  id="tutorial-partidos-publish"
+                  onClick={() => {
                   if (!profile) {
                     return toast.error('Completá tu perfil primero');
                   }
@@ -313,75 +314,146 @@ export default function PartidosPage() {
               {partidos
                 .filter(p => filterLevel === 'Todos' || p.nivel === filterLevel)
                 .map((p) => {
-                const esMio = profile && p.contacto_whatsapp === profile.telefono;
-                const completo = p.jugadores_faltantes <= 0;
-                return (
-                  <motion.div 
-                    layout
-                    whileHover={{ scale: 1.01 }}
-                    key={p.id} 
-                    className={clsx(
-                      "glass p-6 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-all hover:border-white/20",
-                      completo && "opacity-60 border-primary/20 bg-primary/5"
-                    )}
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                          <User size={20} className="text-primary" />
+                  const esMio = profile && p.contacto_whatsapp === profile.telefono;
+                  const completo = p.jugadores_faltantes <= 0;
+                  
+                  const currentLevel = esMio ? profile?.nivel : p.nivel;
+                  const currentCat = esMio ? profile?.categoria : p.nivel;
+                  
+                  const isDiamante = currentLevel === 'Pro' || currentLevel === 7.0 || (typeof currentLevel === 'number' && currentLevel >= 6.5);
+                  const isOro = currentCat === '1ra' || (typeof currentLevel === 'number' && currentLevel >= 5.5);
+                  const isPlata = currentCat === '2da' || (typeof currentLevel === 'number' && currentLevel >= 4.5);
+                  const isMaster = currentCat === '3ra' || (typeof currentLevel === 'number' && currentLevel >= 3.5);
+                  const isPro = currentCat === '4ta' || (typeof currentLevel === 'number' && currentLevel >= 2.5);
+
+                  const auraColor = isDiamante ? "bg-cyan-400" : isOro ? "bg-yellow-400" : isPlata ? "bg-zinc-200" : isMaster ? "bg-purple-500" : isPro ? "bg-blue-500" : "bg-emerald-500";
+                  const ringBorder = isDiamante ? "border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.4)]" : isOro ? "border-yellow-400/50 shadow-[0_0_20px_rgba(250,204,21,0.4)]" : isMaster ? "border-purple-400/50" : "border-white/5";
+
+                  return (
+                    <motion.div 
+                      layout
+                      whileHover={{ scale: 1.01, y: -2 }}
+                      key={p.id} 
+                      className={clsx(
+                        "relative p-6 rounded-[2.5rem] flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-all border overflow-hidden",
+                        completo ? "opacity-60 border-white/5 bg-black/20" : 
+                        isDiamante ? "bg-gradient-to-br from-cyan-950/40 to-black/60 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]" :
+                        isOro ? "bg-gradient-to-br from-yellow-950/40 to-black/60 border-yellow-400/30 shadow-[0_0_30px_rgba(250,204,21,0.15)]" :
+                        isPlata ? "bg-gradient-to-br from-zinc-800/40 to-black/60 border-zinc-200/20" :
+                        isMaster ? "bg-gradient-to-br from-purple-950/40 to-black/60 border-purple-500/20" :
+                        isPro ? "bg-gradient-to-br from-blue-950/40 to-black/60 border-blue-500/20" :
+                        "bg-white/5 border-white/10"
+                      )}
+                    >
+                      {/* Status Badge Superior (Rareza) */}
+                      <div className="absolute top-0 right-0">
+                        <div className={clsx(
+                          "px-4 py-1 rounded-bl-2xl font-black text-[9px] uppercase tracking-[0.2em] italic",
+                          isDiamante ? "bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]" :
+                          isOro ? "bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]" :
+                          isPlata ? "bg-zinc-200 text-black" :
+                          isMaster ? "bg-purple-500 text-white" :
+                          "hidden"
+                        )}>
+                          {isDiamante ? "Legendary Diamond" : isOro ? "Gold Elite" : isPlata ? "Silver Master" : "Master"}
                         </div>
-                        <div>
-                          <p className="font-black text-lg uppercase tracking-tight italic flex items-center gap-2">
-                            {p.nombre_creador}
-                            {esMio && <span className="bg-primary text-black text-[8px] px-1.5 py-0.5 rounded font-black tracking-normal">TÚ</span>}
-                          </p>
-                          <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest opacity-50">
-                            <span className="flex items-center gap-1"><Calendar size={12} className="text-primary" /> {format(parseISO(p.fecha), 'd MMM', { locale: es })}</span>
-                            <span className="flex items-center gap-1"><Clock size={12} className="text-primary" /> {p.hora} hs</span>
-                            <span className="flex items-center gap-1"><Trophy size={12} className="text-primary" /> {p.nivel}</span>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          {/* Mini-Avatar Pro */}
+                          <div className="relative">
+                            {/* Aro de Neón Legendario */}
+                            <div className={clsx(
+                              "absolute inset-0 rounded-full blur-xl opacity-40 animate-pulse scale-150 transition-colors duration-700",
+                              auraColor
+                            )} />
+                            
+                            <div className={clsx(
+                              "w-16 h-16 bg-zinc-900 rounded-full border-2 backdrop-blur-xl flex items-center justify-center relative z-10 shadow-2xl transition-all duration-500",
+                              ringBorder
+                            )}>
+                              <span 
+                                className="text-4xl select-none leading-none mb-1 animate-float-slow"
+                                style={{ display: 'inline-block', filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.3))' }}
+                              >
+                                {(esMio ? profile?.avatar_emoji : p.avatar_emoji) || '👨‍🦱'}
+                              </span>
+                              
+                              {/* Mini Paleta Técnica (Estilo Sticker) */}
+                              <div className="absolute -bottom-1 -right-1 w-7 h-9 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] rotate-[15deg] z-20">
+                                <svg viewBox="0 0 40 50" className="w-full h-full drop-shadow-sm">
+                                  <rect x="18" y="32" width="4" height="15" rx="2" fill="#111" />
+                                  <path 
+                                    d="M5 18 Q5 0 20 0 Q35 0 35 18 Q35 32 20 32 Q5 32 5 18" 
+                                    fill={(esMio ? profile?.paleta_modelo : p.paleta_modelo) === 'oro' ? '#FFD700' : (esMio ? profile?.paleta_modelo : p.paleta_modelo) === 'fuego' ? '#FF4400' : (esMio ? profile?.paleta_modelo : p.paleta_modelo) === 'carbono' ? '#111' : '#444'}
+                                    stroke="white" 
+                                    strokeWidth="1.5"
+                                  />
+                                  <path d="M12 8 Q15 5 20 5" fill="none" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
+                                  <circle cx="20" cy="16" r="5" fill="white" opacity="0.05" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="font-black text-xl uppercase tracking-tighter italic flex items-center gap-2">
+                              {p.nombre_creador}
+                              {esMio && <span className="bg-primary text-black text-[8px] px-2 py-0.5 rounded-full font-black tracking-widest">TÚ</span>}
+                            </p>
+                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.1em] opacity-50">
+                              <span className="flex items-center gap-1.5"><Calendar size={12} className={isOro ? "text-yellow-400" : isDiamante ? "text-cyan-400" : "text-primary"} /> {format(parseISO(p.fecha), 'd MMM', { locale: es })}</span>
+                              <span className="flex items-center gap-1.5"><Clock size={12} className={isOro ? "text-yellow-400" : isDiamante ? "text-cyan-400" : "text-primary"} /> {p.hora} hs</span>
+                              <span className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-md border border-white/10"><Trophy size={10} className={isOro ? "text-yellow-400" : isDiamante ? "text-cyan-400" : "text-primary"} /> {p.nivel}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
-                      <div className="text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Cupos</p>
-                        <p className={clsx("text-sm font-black", completo ? "text-primary" : "text-white")}>
-                          {completo ? "¡COMPLETO!" : `Faltan ${p.jugadores_faltantes}`}
-                        </p>
-                      </div>
-
-                      {esMio && (
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => handleShare(p)}
-                            className="p-3 bg-white/5 text-white/40 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
-                            title="Compartir partido"
-                          >
-                            <Share2 size={20} />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteMatch(p.id)}
-                            className="p-3 bg-error/10 text-error rounded-2xl hover:bg-error hover:text-white transition-all border border-error/20"
-                          >
-                            <Trash2 size={20} />
-                          </button>
+                      <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
+                        <div className="text-right">
+                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Cupos</p>
+                          <p className={clsx("text-sm font-black", completo ? "text-primary" : "text-white")}>
+                            {completo ? "¡COMPLETO!" : `Faltan ${p.jugadores_faltantes}`}
+                          </p>
                         </div>
-                      )}
 
-                      {!esMio && !completo && (
-                        <button 
-                          onClick={() => handleJoin(p)}
-                          className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_20px_rgba(136,130,220,0.2)]"
-                        >
-                          Sumarme
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                )
-              })}
+                        {esMio && (
+                          <div className="flex gap-2 relative z-50">
+                            <button 
+                              onClick={() => handleShare(p)}
+                              className="p-3 bg-white/5 text-white/40 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
+                              title="Compartir partido"
+                            >
+                              <Share2 size={20} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteMatch(p.id)}
+                              className="p-3 bg-error/10 text-error rounded-2xl hover:bg-error hover:text-white transition-all border border-error/20"
+                            >
+                              <Trash2 size={20} />
+                            </button>
+                          </div>
+                        )}
+
+                        {!esMio && !completo && (
+                          <button 
+                            onClick={() => handleJoin(p)}
+                            className={clsx(
+                              "px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg",
+                              isDiamante ? "bg-cyan-400 text-black shadow-cyan-400/20" :
+                              isOro ? "bg-yellow-400 text-black shadow-yellow-400/20" :
+                              "bg-primary text-white"
+                            )}
+                          >
+                            Sumarme
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
             </div>
           )}
         </section>

@@ -90,6 +90,7 @@ export default function TorneosPage() {
         
         {/* Header */}
         <motion.header 
+          id="tutorial-torneos-header"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -116,7 +117,7 @@ export default function TorneosPage() {
 
           {/* Tabs */}
           {profile?.telefono && (
-            <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5 w-fit">
+            <div id="tutorial-torneos-tabs" className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5 w-fit">
               <button
                 onClick={() => setActiveTab('mis')}
                 className={clsx(

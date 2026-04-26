@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MessageCircle, X, Phone, MessageSquare } from 'lucide-react';
+import { MessageCircle, X, Phone, MessageSquare, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function SupportButton() {
@@ -35,10 +35,20 @@ export function SupportButton() {
             </div>
 
             <div className="space-y-3">
+              <button 
+                onClick={() => {
+                  setIsOpen(false);
+                  window.location.href = '/ayuda';
+                }}
+                className="w-full flex items-center gap-3 p-4 bg-white/10 border border-white/20 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all"
+              >
+                <HelpCircle size={18} className="text-primary" />
+                Guías y Ayuda
+              </button>
               <a 
                 href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
-                className="flex items-center gap-3 p-4 bg-primary text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-[0_10px_20px_rgba(200,255,0,0.2)]"
+                className="flex items-center gap-3 p-4 bg-primary text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-[0_10px_20px_rgba(var(--primary-rgb),0.2)]"
               >
                 <MessageCircle size={18} />
                 WhatsApp Directo
@@ -58,6 +68,7 @@ export function SupportButton() {
       </AnimatePresence>
 
       <motion.button
+        id="tutorial-support"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}

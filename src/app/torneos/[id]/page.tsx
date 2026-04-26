@@ -187,9 +187,22 @@ export default function TournamentDetailPage() {
     toast.success('¡Link del torneo copiado!');
   };
 
+  // Lógica de Prestigio para el Ambiente
+  const isDiamante = profile?.nivel && profile.nivel >= 6.5;
+  const isOro = profile?.nivel && profile.nivel >= 5.5;
+  const accentColor = isDiamante ? "#22d3ee" : isOro ? "#facc15" : "#8882dc";
+
   return (
     <PageWrapper>
-      <div className="max-w-7xl mx-auto space-y-8 pb-32">
+      {/* Ambiente Dinámico de Prestigio */}
+      <div 
+        className="fixed inset-0 pointer-events-none transition-colors duration-1000 z-0" 
+        style={{ 
+          background: `radial-gradient(circle at 80% 20%, ${isDiamante ? 'rgba(34,211,238,0.15)' : isOro ? 'rgba(250,204,21,0.15)' : 'rgba(136,130,220,0.1)'} 0%, transparent 70%)`
+        }} 
+      />
+
+      <div className="max-w-7xl mx-auto space-y-8 pb-32 relative z-10">
         {/* Navigation & Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-4">
@@ -201,7 +214,12 @@ export default function TournamentDetailPage() {
             </button>
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[8px] font-black uppercase tracking-widest">
+                <span className={clsx(
+                  "px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest",
+                  torneo.categoria.includes('1ra') || torneo.categoria.includes('Pro') 
+                    ? "bg-cyan-400/10 border-cyan-400/20 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+                    : "bg-primary/10 border-primary/20 text-primary"
+                )}>
                   {torneo.categoria}
                 </span>
                 <span className="text-[8px] font-black uppercase tracking-widest opacity-30 italic">
