@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trophy, Calendar, Users, Send, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Trophy, Calendar, Users, Send, CheckCircle2, Globe } from 'lucide-react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
-import { toast } from 'react-hot-toast';
 import { PageWrapper } from '@/components/PageWrapper';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingPro } from '@/components/ui/LoadingPro';
-import { TournamentZones } from '@/components/TournamentZones';
+import { clsx } from 'clsx';
 
 interface Torneo {
   id: string;
@@ -18,41 +18,32 @@ interface Torneo {
   descripcion: string;
   precio: number;
   abierto: boolean;
-  zonas?: any[]; // Datos de los cuadros/zonas
+  visible: boolean;
 }
 
 export default function TorneosPage() {
+  const router = useRouter();
   const { profile } = useGuestProfile();
   const [torneos, setTorneos] = useState<Torneo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTorneo, setSelectedTorneo] = useState<Torneo | null>(null);
-  
-  const [jugador1, setJugador1] = useState('');
-  const [jugador2, setJugador2] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [myInscriptions, setMyInscriptions] = useState<string[]>([]);
-  const [expandedTorneo, setExpandedTorneo] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'mis' | 'todos'>('todos');
 
   useEffect(() => {
     fetchTorneos();
 
     const channel = supabase
-      .channel('torneos_updates')
+      .channel('torneos_updates_final')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => {
         fetchTorneos();
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   useEffect(() => {
-    if (profile) {
-      setJugador1(`${profile.nombre} ${profile.apellido}`);
-      setTelefono(profile.telefono);
+    if (profile?.telefono) {
       fetchMyInscriptions(profile.telefono);
     }
   }, [profile]);
@@ -63,7 +54,10 @@ export default function TorneosPage() {
       .select('torneo_id')
       .eq('telefono_contacto', phone);
     if (data) {
-      setMyInscriptions(data.map(i => i.torneo_id));
+      const ids = data.map(i => i.torneo_id);
+      setMyInscriptions(ids);
+      // Si el usuario tiene inscripciones, mostrar "Mis Torneos" por defecto
+      if (ids.length > 0) setActiveTab('mis');
     }
   };
 
@@ -74,6 +68,7 @@ export default function TorneosPage() {
         .from('torneos')
         .select('*')
         .order('fecha', { ascending: true });
+      
       if (error) throw error;
       setTorneos(data || []);
     } catch (e) {
@@ -83,217 +78,150 @@ export default function TorneosPage() {
     }
   };
 
-  const handleInscribirse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!jugador1 || !jugador2 || !telefono) {
-      return toast.error('Completá todos los campos');
-    }
+  if (loading) return <LoadingPro />;
 
-    setSubmitting(true);
-    try {
-      const { error } = await supabase.from('inscripciones_torneos').insert({
-        torneo_id: selectedTorneo?.id,
-        jugador1,
-        jugador2,
-        telefono_contacto: telefono
-      });
-
-      if (error) throw error;
-
-      toast.success('¡Inscripción enviada!');
-      setSelectedTorneo(null);
-      setJugador2('');
-      if (selectedTorneo) {
-        setMyInscriptions([...myInscriptions, selectedTorneo.id]);
-      }
-      
-      // WhatsApp aviso al complejo
-      const msg = encodeURIComponent(`¡Hola! Quisiera inscribirme al torneo "${selectedTorneo?.nombre}".
-Pareja: ${jugador1} y ${jugador2}.
-Tel: ${telefono}`);
-      window.open(`https://wa.me/2923659885?text=${msg}`, '_blank');
-      
-    } catch (e) {
-      toast.error('Error al inscribirse');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const misTorneos = torneos.filter(t => myInscriptions.includes(t.id));
+  const todosLosVisible = torneos.filter(t => t.visible !== false);
+  const displayTorneos = activeTab === 'mis' ? misTorneos : todosLosVisible;
 
   return (
     <PageWrapper>
-      <div className="max-w-4xl mx-auto space-y-12 pb-20">
-        <header className="text-center space-y-4 pt-4">
-          <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter">
-            Torneos <span className="text-primary">CAP</span>
-          </h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Desafiá tu nivel y sumá puntos</p>
+      <div className="max-w-7xl mx-auto space-y-10 pb-20">
+        
+        {/* Header */}
+        <header className="space-y-6">
+          <h1 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none">
+            Torneos <span className="text-primary">Peñarol</span>
+          </h1>
+          <p className="text-xs md:text-sm opacity-40 font-bold uppercase tracking-widest max-w-2xl">
+            Explorá los próximos eventos y seguí tu progreso.
+          </p>
+
+          {/* Tabs */}
+          {profile?.telefono && (
+            <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5 w-fit">
+              <button
+                onClick={() => setActiveTab('mis')}
+                className={clsx(
+                  'flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all',
+                  activeTab === 'mis'
+                    ? 'bg-primary text-black'
+                    : 'opacity-40 hover:opacity-70'
+                )}
+              >
+                <Trophy size={13} />
+                Mis Torneos
+                {misTorneos.length > 0 && (
+                  <span className={clsx(
+                    'w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black',
+                    activeTab === 'mis' ? 'bg-black/20' : 'bg-primary/20 text-primary'
+                  )}>
+                    {misTorneos.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('todos')}
+                className={clsx(
+                  'flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all',
+                  activeTab === 'todos'
+                    ? 'bg-primary text-black'
+                    : 'opacity-40 hover:opacity-70'
+                )}
+              >
+                <Globe size={13} />
+                Todos
+              </button>
+            </div>
+          )}
         </header>
 
-        {loading ? (
-          <LoadingPro />
-        ) : torneos.length === 0 ? (
-          <div className="glass p-20 rounded-[3rem] text-center space-y-4">
-            <Trophy className="mx-auto opacity-10" size={64} />
-            <p className="text-sm font-bold opacity-30 uppercase tracking-widest">No hay torneos activos en este momento</p>
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            {torneos.map((t) => (
-              <div key={t.id}>
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-8 hover:border-primary/20 transition-all group"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
-                      <Trophy size={28} />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black uppercase tracking-tight italic">{t.nombre}</h3>
-                      <div className="flex flex-wrap gap-4 text-[10px] font-black uppercase tracking-widest opacity-50 mt-1">
-                        <span className="flex items-center gap-1.5"><Calendar size={14} className="text-primary" /> {t.fecha}</span>
-                        <span className="flex items-center gap-1.5"><Users size={14} className="text-primary" /> CAT: {t.categoria}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-white/60 leading-relaxed max-w-lg">
-                    {t.descripcion}
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-center md:items-end gap-4 min-w-[200px]">
-                  <div className="text-center md:text-right">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Costo de Inscripción</p>
-                    <p className="text-2xl font-black text-primary">${t.precio.toLocaleString()}</p>
-                  </div>
-                  
-                  {myInscriptions.includes(t.id) ? (
-                    <div className="flex items-center gap-2 text-primary text-[10px] font-black uppercase tracking-widest bg-primary/10 px-8 py-4 rounded-2xl border border-primary/20 shadow-[0_0_15px_rgba(200,255,0,0.1)]">
-                      <CheckCircle2 size={16} /> ¡Ya Inscripto!
-                    </div>
-                  ) : t.abierto ? (
-                    <button 
-                      onClick={() => setSelectedTorneo(t)}
-                      className="w-full md:w-auto bg-primary text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-[0_10px_20px_rgba(200,255,0,0.2)] active:scale-95"
-                    >
-                      Inscribirme Ahora
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2 text-error text-[10px] font-black uppercase tracking-widest bg-error/10 px-6 py-4 rounded-2xl border border-error/20">
-                      <AlertCircle size={14} /> Cupos Agotados
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Tournament Zones / Brackets Section */}
-              <AnimatePresence>
-                {t.zonas && t.zonas.length > 0 && (
-                  <div className="mt-4">
-                    <button 
-                      onClick={() => setExpandedTorneo(expandedTorneo === t.id ? null : t.id)}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest opacity-60"
-                    >
-                      {expandedTorneo === t.id ? (
-                        <>Ocultar Cuadros <ChevronUp size={14} /></>
-                      ) : (
-                        <>Ver Cuadros y Zonas <ChevronDown size={14} /></>
-                      )}
-                    </button>
-                    
-                    {expandedTorneo === t.id && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <TournamentZones zonas={t.zonas} />
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Modal de Inscripción */}
-      <AnimatePresence>
-        {selectedTorneo && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div 
+        {/* Content */}
+        <AnimatePresence mode="wait">
+          {displayTorneos.length === 0 ? (
+            <motion.div
+              key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedTorneo(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative glass w-full max-w-md rounded-[3rem] border border-white/10 overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.5)]"
+              className="flex flex-col items-center justify-center py-24 space-y-4 text-center"
             >
-              <div className="p-8 space-y-8">
-                <header className="text-center space-y-2">
-                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto text-primary border border-primary/30 mb-2">
-                    <CheckCircle2 size={32} />
-                  </div>
-                  <h3 className="text-2xl font-black uppercase tracking-tight italic">Inscripción</h3>
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{selectedTorneo.nombre}</p>
-                </header>
-
-                <form onSubmit={handleInscribirse} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre Pareja 1</label>
-                    <input 
-                      type="text" 
-                      value={jugador1}
-                      onChange={(e) => setJugador1(e.target.value)}
-                      placeholder="Ej: Juan Pérez"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre Pareja 2</label>
-                    <input 
-                      type="text" 
-                      value={jugador2}
-                      onChange={(e) => setJugador2(e.target.value)}
-                      placeholder="Ej: Pablo Gómez"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">WhatsApp de Contacto</label>
-                    <input 
-                      type="tel" 
-                      value={telefono}
-                      onChange={(e) => setTelefono(e.target.value)}
-                      placeholder="Ej: 2923..."
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-
-                  <button 
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full bg-primary text-black py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_15px_30px_rgba(200,255,0,0.2)] hover:scale-[1.02] transition-all disabled:opacity-50 mt-4"
-                  >
-                    {submitting ? 'Enviando...' : 'Confirmar Inscripción'}
-                  </button>
-                </form>
-              </div>
+              <Trophy size={60} className="opacity-10" />
+              <p className="text-xl font-black uppercase tracking-widest opacity-20">
+                {activeTab === 'mis' 
+                  ? 'No estás inscripto en ningún torneo'
+                  : 'No hay torneos disponibles'}
+              </p>
+              {activeTab === 'mis' && (
+                <button
+                  onClick={() => setActiveTab('todos')}
+                  className="text-primary text-[11px] font-black uppercase tracking-widest hover:underline"
+                >
+                  Ver todos los torneos →
+                </button>
+              )}
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          ) : (
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="grid gap-6"
+            >
+              {displayTorneos.map((t, idx) => {
+                const isInscribed = myInscriptions.includes(t.id);
+                return (
+                  <motion.div
+                    key={t.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    onClick={() => router.push(`/torneos/${t.id}`)}
+                    className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-8 hover:border-primary/20 transition-all group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={clsx(
+                        "w-14 h-14 rounded-2xl flex items-center justify-center border transition-transform group-hover:scale-105",
+                        isInscribed 
+                          ? "bg-primary/20 border-primary/30 text-primary"
+                          : "bg-primary/10 border-primary/20 text-primary"
+                      )}>
+                        <Trophy size={28} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="text-2xl font-black uppercase tracking-tight italic">{t.nombre}</h3>
+                          {isInscribed && (
+                            <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                              <CheckCircle2 size={10} /> Ya Inscripto
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-[10px] font-black uppercase tracking-widest opacity-50 mt-1">
+                          <span className="flex items-center gap-1.5"><Calendar size={14} className="text-primary" /> {t.fecha}</span>
+                          <span className="flex items-center gap-1.5"><Users size={14} className="text-primary" /> CAT: {t.categoria}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center md:items-end gap-4 min-w-[200px]">
+                      <div className="text-center md:text-right">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Inscripción</p>
+                        <p className="text-2xl font-black text-primary">${t.precio?.toLocaleString()}</p>
+                      </div>
+                      <div className="px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest group-hover:bg-primary group-hover:text-black transition-all flex items-center gap-2">
+                        Ver Detalles <Send size={14} />
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </PageWrapper>
   );
 }

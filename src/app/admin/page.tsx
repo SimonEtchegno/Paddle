@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,6 +12,84 @@ import { PageWrapper } from '@/components/PageWrapper';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { Calendar } from '@/components/ui/Calendar';
+import dynamic from 'next/dynamic';
+
+const TournamentManager = dynamic(
+  () => import('@/components/admin/TournamentManager'),
+  { 
+    loading: () => (
+      <div className="flex items-center justify-center h-96 opacity-30">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+);
+
+function InscriptionGroup({ torneoNombre, inscriptos, deleteInscription }: any) {
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(inscriptos.length / itemsPerPage);
+  
+  const currentItems = inscriptos.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-[10px] font-black text-primary uppercase tracking-widest px-4 py-2 bg-primary/10 rounded-xl inline-block border border-primary/20">
+          {torneoNombre}
+        </h4>
+        <span className="text-[10px] font-black opacity-40">{inscriptos.length} parejas</span>
+      </div>
+      <div className="grid gap-3 pl-2 border-l-2 border-white/5">
+        {currentItems.map((i: any) => (
+          <div key={i.id} className="glass p-5 rounded-3xl border border-white/5 flex justify-between items-center group/insc">
+            <div>
+              <p className="text-sm font-black uppercase italic leading-tight">{i.jugador1}</p>
+              <p className="text-sm font-black uppercase italic leading-tight text-white/60">{i.jugador2}</p>
+            </div>
+            <div className="flex gap-2 opacity-40 group-hover/insc:opacity-100 transition-all">
+              <a 
+                href={`https://wa.me/${i.telefono_contacto}`}
+                target="_blank"
+                rel="noreferrer"
+                className="p-3 bg-primary/10 text-primary rounded-xl border border-primary/20 hover:bg-primary/20 transition-all"
+              >
+                <Phone size={16} />
+              </a>
+              <button 
+                onClick={() => deleteInscription(i.id)}
+                className="p-3 bg-error/10 text-error rounded-xl border border-error/20 hover:bg-error/20 transition-all"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 pt-2">
+          <button 
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+          >
+            Ant
+          </button>
+          <span className="text-[10px] font-black opacity-40 tracking-widest px-2">
+            {page} / {totalPages}
+          </span>
+          <button 
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+          >
+            Sig
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -29,9 +107,11 @@ export default function AdminPage() {
   const [inscripciones, setInscripciones] = useState<any[]>([]);
   const [newTourney, setNewTourney] = useState({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
   const [tourneyDates, setTourneyDates] = useState({ inicio: '', fin: '' });
+  const [editingTourneyId, setEditingTourneyId] = useState<string | null>(null);
   
   const [editingZonesTourney, setEditingZonesTourney] = useState<any | null>(null);
   const [tempZones, setTempZones] = useState<any[]>([]);
+  const [activeZoneIdx, setActiveZoneIdx] = useState<number>(0);
 
   const ALLOWED_ADMINS = ['setchegno@etman.com.ar', 'octavioducos24@gmail.com'];
 
@@ -183,32 +263,44 @@ export default function AdminPage() {
     }
   };
 
-  const createTournament = async () => {
-    if (!newTourney.nombre || !tourneyDates.inicio || !tourneyDates.fin) return toast.error('Completá nombre y fechas');
+  const saveTournamentHeader = async () => {
+    if (!newTourney.nombre) return toast.error('Completá el nombre del torneo');
+    if (!editingTourneyId && (!tourneyDates.inicio || !tourneyDates.fin)) return toast.error('Completá las fechas');
     
     setLoading(true);
     try {
-      const start = parseISO(tourneyDates.inicio);
-      const end = parseISO(tourneyDates.fin);
-      
-      let fechaFormateada = '';
-      if (tourneyDates.inicio === tourneyDates.fin) {
-        fechaFormateada = format(start, "eeee d 'de' MMMM", { locale: es });
-      } else {
-        fechaFormateada = `${format(start, "d 'de' MMM")} al ${format(end, "d 'de' MMM")}`;
-      }
-
-      const tourneyToSave = {
-        ...newTourney,
-        fecha: fechaFormateada,
-        abierto: true
+      let updateData: any = {
+        nombre: newTourney.nombre,
+        categoria: newTourney.categoria,
+        precio: newTourney.precio,
+        descripcion: newTourney.descripcion
       };
 
-      const { error } = await supabase.from('torneos').insert(tourneyToSave);
-      if (error) throw error;
-      toast.success('Torneo creado');
+      if (tourneyDates.inicio && tourneyDates.fin) {
+        const start = parseISO(tourneyDates.inicio);
+        const end = parseISO(tourneyDates.fin);
+        let fechaFormateada = '';
+        if (tourneyDates.inicio === tourneyDates.fin) {
+          fechaFormateada = format(start, "eeee d 'de' MMMM", { locale: es });
+        } else {
+          fechaFormateada = `${format(start, "d 'de' MMM")} al ${format(end, "d 'de' MMM")}`;
+        }
+        updateData.fecha = fechaFormateada;
+      }
+
+      if (editingTourneyId) {
+        const { error } = await supabase.from('torneos').update(updateData).eq('id', editingTourneyId);
+        if (error) throw error;
+        toast.success('Torneo actualizado');
+      } else {
+        const { error } = await supabase.from('torneos').insert({ ...updateData, abierto: true });
+        if (error) throw error;
+        toast.success('Torneo creado');
+      }
+
       setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
       setTourneyDates({ inicio: '', fin: '' });
+      setEditingTourneyId(null);
       fetchData();
     } catch (e: any) {
       toast.error('Error: ' + e.message);
@@ -289,28 +381,33 @@ export default function AdminPage() {
   const toggleTournamentStatus = async (id: string, currentStatus: boolean) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('torneos')
-        .update({ abierto: !currentStatus })
-        .eq('id', id);
-      
+      const { error } = await supabase.from('torneos').update({ abierto: !currentStatus }).eq('id', id);
       if (error) throw error;
-      toast.success(currentStatus ? 'Inscripciones cerradas' : 'Inscripciones abiertas');
-      await fetchData();
+      toast.success('Estado de inscripción actualizado');
+      fetchData();
     } catch (e: any) {
-      toast.error('Error: ' + e.message);
+      toast.error('Error al cambiar el estado: ' + e.message);
     } finally {
       setLoading(false);
     }
   };
 
   const startEditingZones = (t: any) => {
-    setEditingZonesTourney(t);
-    setTempZones(t.zonas || []);
-    // Scroll to editor
+    setEditingZonesTourney(null);
     setTimeout(() => {
-      document.getElementById('zone-editor')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+      setEditingZonesTourney(t);
+      // Restauramos las variables que el sistema necesita internamente
+      setTempZones(t.zonas || []);
+      setActiveZoneIdx(0);
+      
+      setTimeout(() => {
+        const el = document.getElementById('zone-editor');
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.pageYOffset - 100;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 50);
+    }, 10);
   };
 
   const addZone = () => {
@@ -327,21 +424,48 @@ export default function AdminPage() {
     setTempZones(newZones);
   };
 
-  const saveZones = async () => {
+  const saveTournamentData = async (data: any) => {
     if (!editingZonesTourney) return;
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('torneos')
-        .update({ zonas: tempZones })
-        .eq('id', editingZonesTourney.id);
+      const tourneyId = editingZonesTourney.id;
+      const searchId = isNaN(Number(tourneyId)) ? tourneyId : Number(tourneyId);
       
-      if (error) throw error;
-      toast.success('Cuadros actualizados');
-      setEditingZonesTourney(null);
-      await fetchData();
+      const payload = {
+        id: searchId,
+        nombre: editingZonesTourney.nombre,
+        fecha: editingZonesTourney.fecha,
+        categoria: editingZonesTourney.categoria,
+        descripcion: editingZonesTourney.descripcion,
+        precio: editingZonesTourney.precio,
+        abierto: editingZonesTourney.abierto,
+        config: data.config,
+        parejas_data: data.parejas_data,
+        zonas_data: data.zonas_data,
+        cuadro_data: data.cuadro_data,
+        visible: data.visible
+      };
+
+      // Intento 1: Upsert normal
+      const { error: upsertError, data: upsertedData } = await supabase
+        .from('torneos')
+        .upsert(payload, { onConflict: 'id' })
+        .select();
+
+      if (upsertError || !upsertedData || upsertedData.length === 0) {
+        // Intento 2: Re-Creación silenciosa si el update falla
+        await supabase.from('torneos').delete().eq('id', searchId);
+        const { error: insertError } = await supabase.from('torneos').insert(payload);
+        
+        if (insertError) throw insertError;
+      }
+      
+      toast.success('¡Torneo actualizado correctamente!');
+      fetchData();
     } catch (e: any) {
-      toast.error('Error al guardar: ' + e.message);
+      console.error('Error al guardar:', e);
+      toast.error(e.message || 'Error al guardar los cambios');
+      throw e;
     } finally {
       setLoading(false);
     }
@@ -553,9 +677,25 @@ export default function AdminPage() {
         <div className="space-y-12">
           {/* Create Tournament Form */}
           <div className="glass p-10 rounded-[3rem] border border-white/5 space-y-8">
-            <div className="flex items-center gap-3">
-              <Trophy className="text-primary" size={24} />
-              <h3 className="text-xl font-black uppercase tracking-tighter italic">Nuevo Torneo</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Trophy className="text-primary" size={24} />
+                <h3 className="text-xl font-black uppercase tracking-tighter italic">
+                  {editingTourneyId ? 'Editar Torneo' : 'Nuevo Torneo'}
+                </h3>
+              </div>
+              {editingTourneyId && (
+                <button 
+                  onClick={() => {
+                    setEditingTourneyId(null);
+                    setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
+                    setTourneyDates({ inicio: '', fin: '' });
+                  }}
+                  className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white"
+                >
+                  Cancelar Edición
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
@@ -624,11 +764,11 @@ export default function AdminPage() {
               </div>
             </div>
             <button 
-              onClick={createTournament}
+              onClick={saveTournamentHeader}
               disabled={loading}
               className="w-full bg-primary text-black py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_15px_30px_rgba(200,255,0,0.2)] hover:scale-[1.01] transition-all"
             >
-              Publicar Torneo
+              {editingTourneyId ? 'Guardar Cambios' : 'Publicar Torneo'}
             </button>
           </div>
 
@@ -639,10 +779,30 @@ export default function AdminPage() {
               {torneos.map((t) => (
                 <div key={t.id} className="glass p-6 rounded-3xl border border-white/5 flex items-center justify-between group">
                   <div>
-                    <h4 className="text-xl font-black uppercase tracking-tight italic">{t.nombre}</h4>
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-xl font-black uppercase tracking-tight italic">{t.nombre}</h4>
+                    </div>
                     <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{t.fecha} · {t.categoria}</p>
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <button 
+                      onClick={() => {
+                        setEditingTourneyId(t.id);
+                        setNewTourney({
+                          nombre: t.nombre,
+                          categoria: t.categoria,
+                          precio: t.precio,
+                          descripcion: t.descripcion || '',
+                          fecha: t.fecha
+                        });
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        toast('Edita los datos arriba', { icon: '✍️' });
+                      }}
+                      className="p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10"
+                      title="Editar Info"
+                    >
+                      <Edit2 size={18} />
+                    </button>
                     <button 
                       onClick={() => startEditingZones(t)}
                       className="p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10"
@@ -673,197 +833,42 @@ export default function AdminPage() {
 
             <div className="space-y-6">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 ml-4">Parejas Inscriptas</h3>
-              <div className="space-y-4">
-                {inscripciones.map((i) => (
-                  <div key={i.id} className="glass p-6 rounded-3xl border border-white/5 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{i.torneos?.nombre}</p>
-                        <h4 className="text-lg font-black uppercase italic leading-none">{i.jugador1}</h4>
-                        <h4 className="text-lg font-black uppercase italic leading-none mt-1">{i.jugador2}</h4>
-                      </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => deleteInscription(i.id)}
-                          className="p-3 bg-error/10 text-error rounded-xl border border-error/20"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                        <a 
-                          href={`https://wa.me/${i.telefono_contacto}`}
-                          className="p-3 bg-primary/20 text-primary rounded-xl border border-primary/30"
-                        >
-                          <Phone size={18} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
+              <div className="space-y-8">
+                {Object.entries(
+                  inscripciones.reduce((acc, i) => {
+                    const tName = i.torneos?.nombre || 'Sin Torneo';
+                    if (!acc[tName]) acc[tName] = [];
+                    acc[tName].push(i);
+                    return acc;
+                  }, {} as Record<string, any[]>)
+                ).map(([torneoNombre, inscriptos]) => (
+                  <InscriptionGroup 
+                    key={torneoNombre} 
+                    torneoNombre={torneoNombre} 
+                    inscriptos={inscriptos} 
+                    deleteInscription={deleteInscription} 
+                  />
                 ))}
+                
+                {inscripciones.length === 0 && (
+                  <div className="text-center py-10 opacity-30 font-black uppercase tracking-widest text-[10px]">
+                    No hay inscriptos
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Zone Editor Section */}
           {editingZonesTourney && (
-            <motion.div 
-              id="zone-editor"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass p-10 rounded-[3rem] border-2 border-primary/20 space-y-8 mt-12 bg-primary/5"
-            >
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-4">
-                  <button onClick={() => setEditingZonesTourney(null)} className="p-2 hover:bg-white/5 rounded-full">
-                    <ChevronLeft size={24} />
-                  </button>
-                  <div>
-                    <h3 className="text-2xl font-black uppercase italic tracking-tighter">Gestionar Cuadros</h3>
-                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{editingZonesTourney.nombre}</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 w-full sm:w-auto">
-                  <button 
-                    onClick={addZone}
-                    className="flex-1 sm:flex-none bg-white/5 border border-white/10 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
-                  >
-                    <Plus size={14} /> Añadir Zona
-                  </button>
-                  <button 
-                    onClick={saveZones}
-                    disabled={loading}
-                    className="flex-1 sm:flex-none bg-primary text-black px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-lg"
-                  >
-                    <Save size={14} /> {loading ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {tempZones.map((zona, zIdx) => (
-                  <div key={zIdx} className="glass p-6 rounded-[2rem] border border-white/10 space-y-6 relative group">
-                    <button 
-                      onClick={() => removeZone(zIdx)}
-                      className="absolute top-4 right-4 p-2 text-error opacity-0 group-hover:opacity-100 transition-all hover:bg-error/10 rounded-xl"
-                    >
-                      <X size={16} />
-                    </button>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre de Zona</label>
-                      <input 
-                        type="text" 
-                        value={zona.nombre}
-                        onChange={(e) => updateZone(zIdx, { nombre: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm font-bold focus:border-primary transition-all outline-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Parejas UI */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center px-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest opacity-30">Parejas</label>
-                          <button 
-                            onClick={() => {
-                              const p = [...zona.parejas, { nombre: '' }];
-                              updateZone(zIdx, { parejas: p });
-                            }}
-                            className="text-[10px] font-black text-primary hover:underline"
-                          >+ Añadir</button>
-                        </div>
-                        <div className="space-y-2">
-                          {zona.parejas.map((p: any, pIdx: number) => (
-                            <div key={pIdx} className="flex gap-2">
-                              <input 
-                                type="text"
-                                value={p.nombre}
-                                onChange={(e) => {
-                                  const newP = [...zona.parejas];
-                                  newP[pIdx].nombre = e.target.value;
-                                  updateZone(zIdx, { parejas: newP });
-                                }}
-                                placeholder={`Pareja ${pIdx + 1}`}
-                                className="flex-1 bg-white/5 border border-white/5 rounded-lg py-2 px-3 text-xs outline-none focus:border-primary"
-                              />
-                              <button onClick={() => {
-                                const newP = zona.parejas.filter((_: any, i: number) => i !== pIdx);
-                                updateZone(zIdx, { parejas: newP });
-                              }} className="text-error/40 hover:text-error"><X size={14} /></button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Partidos UI */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center px-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest opacity-30">Partidos</label>
-                          <button 
-                             onClick={() => {
-                              const m = [...zona.partidos, { p1: '', p2: '', horario: '' }];
-                              updateZone(zIdx, { partidos: m });
-                            }}
-                            className="text-[10px] font-black text-primary hover:underline"
-                          >+ Añadir</button>
-                        </div>
-                        <div className="space-y-3">
-                          {zona.partidos.map((m: any, mIdx: number) => (
-                            <div key={mIdx} className="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2 relative group/item">
-                              <button onClick={() => {
-                                const newM = zona.partidos.filter((_: any, i: number) => i !== mIdx);
-                                updateZone(zIdx, { partidos: newM });
-                              }} className="absolute -top-2 -right-2 bg-error text-white rounded-full p-1 opacity-0 group-item-hover:opacity-100 transition-all"><X size={10} /></button>
-                              <div className="flex gap-2">
-                                <input 
-                                  type="text" 
-                                  placeholder="P1" 
-                                  value={m.p1}
-                                  onChange={(e) => {
-                                    const newM = [...zona.partidos];
-                                    newM[mIdx].p1 = e.target.value;
-                                    updateZone(zIdx, { partidos: newM });
-                                  }}
-                                  className="flex-1 bg-transparent border-b border-white/10 text-[10px] outline-none focus:border-primary" 
-                                />
-                                <span className="opacity-20 text-[8px] mt-1">VS</span>
-                                <input 
-                                  type="text" 
-                                  placeholder="P2" 
-                                  value={m.p2}
-                                  onChange={(e) => {
-                                    const newM = [...zona.partidos];
-                                    newM[mIdx].p2 = e.target.value;
-                                    updateZone(zIdx, { partidos: newM });
-                                  }}
-                                  className="flex-1 bg-transparent border-b border-white/10 text-[10px] outline-none focus:border-primary text-right" 
-                                />
-                              </div>
-                              <input 
-                                type="text" 
-                                placeholder="Horario (ej: Sab 15hs)" 
-                                value={m.horario}
-                                onChange={(e) => {
-                                  const newM = [...zona.partidos];
-                                  newM[mIdx].horario = e.target.value;
-                                  updateZone(zIdx, { partidos: newM });
-                                }}
-                                className="w-full bg-transparent text-[8px] opacity-40 outline-none focus:opacity-100" 
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {tempZones.length === 0 && (
-                <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem] opacity-20 font-black uppercase tracking-widest text-xs">
-                  No hay zonas creadas aún
-                </div>
-              )}
-            </motion.div>
+            <div id="zone-editor" className="pt-10">
+              <TournamentManager 
+                tournament={editingZonesTourney}
+                inscripciones={inscripciones}
+                onSave={saveTournamentData}
+                onClose={() => setEditingZonesTourney(null)}
+              />
+            </div>
           )}
         </div>
       )}
