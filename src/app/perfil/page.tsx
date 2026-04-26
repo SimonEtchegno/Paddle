@@ -77,11 +77,26 @@ export default function PerfilPage() {
 
   const accentColor = isDiamante ? "#22d3ee" : isOro ? "#facc15" : isMaster ? "#a855f7" : "#8882dc";
 
+  const getNivelLabel = (n: number) =>
+    n <= 2.5 ? 'Iniciado' : n <= 4.0 ? 'Intermedio' : n <= 5.5 ? 'Avanzado' : n <= 6.5 ? 'Élite' : 'Leyenda Suprema';
+
+  const getCategoriaFromNivel = (val: number) => {
+    if (val >= 6.0) return '1ra';
+    if (val >= 5.0) return '2da';
+    if (val >= 4.0) return '3ra';
+    if (val >= 3.0) return '4ta';
+    if (val >= 2.0) return '5ma';
+    if (val >= 1.5) return '6ta';
+    return '7ma';
+  };
+
+  const isPhoneValid = formData.telefono.length >= 8;
+
   return (
     <PageWrapper>
-      {/* Ambiente Dinámico de Prestigio */}
+      {/* Ambiente Dinámico de Prestigio - relative al layout, no fixed */}
       <div 
-        className="fixed inset-0 pointer-events-none transition-colors duration-1000 z-0" 
+        className="pointer-events-none absolute inset-0 transition-colors duration-1000 z-0 overflow-hidden" 
         style={{ 
           background: `radial-gradient(circle at 20% 30%, ${themeColor} 0%, transparent 70%)`
         }} 
@@ -144,6 +159,27 @@ export default function PerfilPage() {
                   onChange={(e) => setFormData({...formData, localidad: e.target.value})}
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-sm focus:border-primary outline-none font-bold"
                 />
+                <div className="relative">
+                  <input 
+                    type="tel" placeholder="WhatsApp (ej: 2923123456)"
+                    value={formData.telefono}
+                    onChange={(e) => setFormData({...formData, telefono: e.target.value.replace(/\D/g,'')})}
+                    className={`w-full bg-white/5 border rounded-xl py-4 px-5 pr-12 text-sm outline-none font-bold transition-all ${
+                      formData.telefono.length === 0 ? 'border-white/10 focus:border-primary' :
+                      isPhoneValid ? 'border-emerald-500/50 focus:border-emerald-400' :
+                      'border-red-500/50 focus:border-red-400'
+                    }`}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    {formData.telefono.length > 0 && (
+                      <span className={`text-xs font-black ${
+                        isPhoneValid ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        {isPhoneValid ? '✓' : '✗'}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Sección 2: Perfil Técnico */}
@@ -154,20 +190,26 @@ export default function PerfilPage() {
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase opacity-40">Nivel de Juego</label>
                       <div className="text-xl font-black text-primary italic uppercase tracking-tighter">
-                        {formData.nivel <= 2.5 ? 'Iniciado' :
-                         formData.nivel <= 4.0 ? 'Intermedio' :
-                         formData.nivel <= 5.5 ? 'Avanzado' :
-                         formData.nivel <= 6.5 ? 'Élite' : 'Leyenda Suprema'}
+                        {getNivelLabel(formData.nivel)}
                       </div>
                     </div>
-                    <span className="text-4xl font-black italic text-white opacity-20">L{formData.nivel.toFixed(1)}</span>
+                    <div className="text-right space-y-0.5">
+                      <span className="text-4xl font-black italic text-white opacity-20">L{formData.nivel.toFixed(1)}</span>
+                      <p className="text-[9px] font-black uppercase tracking-widest opacity-40">{formData.categoria} Categoría</p>
+                    </div>
                   </div>
                   <input 
-                    type="range" min="1.0" max="7.0" step="0.5"
+                    type="range" min="1.0" max="7.0" step="0.1"
                     value={formData.nivel}
-                    onChange={(e) => setFormData({...formData, nivel: parseFloat(e.target.value)})}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setFormData({...formData, nivel: val, categoria: getCategoriaFromNivel(val)});
+                    }}
                     className="w-full h-2 bg-white/10 rounded-full appearance-none accent-primary cursor-pointer"
                   />
+                  <div className="flex justify-between text-[8px] font-black uppercase tracking-widest opacity-30 px-0.5">
+                    <span>Iniciado</span><span>Intermedio</span><span>Avanzado</span><span>Élite</span><span>Leyenda</span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <select 
@@ -220,30 +262,6 @@ export default function PerfilPage() {
                         )}
                       >
                         {a}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase opacity-40">Evolución de Paleta Pro</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { id: 'carbono', name: 'Carbon', col: 'bg-zinc-900' },
-                      { id: 'oro', name: 'Oro', col: 'bg-yellow-500' },
-                      { id: 'fuego', name: 'Fuego', col: 'bg-orange-600' },
-                      { id: 'pro', name: 'Pro', col: 'bg-zinc-400' }
-                    ].map(m => (
-                      <button
-                        key={m.id} type="button"
-                        onClick={() => setFormData({...formData, paleta_modelo: m.id})}
-                        className={clsx(
-                          "p-3 rounded-xl flex flex-col items-center gap-2 border transition-all",
-                          formData.paleta_modelo === m.id ? "border-primary bg-primary/10 shadow-lg" : "bg-white/5 border-white/10"
-                        )}
-                      >
-                        <div className={clsx("w-5 h-5 rounded-full", m.col)} />
-                        <span className="text-[7px] font-black uppercase">{m.name}</span>
                       </button>
                     ))}
                   </div>

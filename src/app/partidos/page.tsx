@@ -380,18 +380,47 @@ export default function PartidosPage() {
                                 {(esMio ? profile?.avatar_emoji : p.avatar_emoji) || '👨‍🦱'}
                               </span>
                               
-                              {/* Mini Paleta Técnica (Estilo Sticker) */}
+                              {/* Mini Paleta Técnica (Sincronizada con el Rango) */}
                               <div className="absolute -bottom-1 -right-1 w-7 h-9 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] rotate-[15deg] z-20">
-                                <svg viewBox="0 0 40 50" className="w-full h-full drop-shadow-sm">
-                                  <rect x="18" y="32" width="4" height="15" rx="2" fill="#111" />
-                                  <path 
-                                    d="M5 18 Q5 0 20 0 Q35 0 35 18 Q35 32 20 32 Q5 32 5 18" 
-                                    fill={(esMio ? profile?.paleta_modelo : p.paleta_modelo) === 'oro' ? '#FFD700' : (esMio ? profile?.paleta_modelo : p.paleta_modelo) === 'fuego' ? '#FF4400' : (esMio ? profile?.paleta_modelo : p.paleta_modelo) === 'carbono' ? '#111' : '#444'}
-                                    stroke="white" 
-                                    strokeWidth="1.5"
+                                <svg viewBox="0 0 100 150" className="w-full h-full">
+                                  {/* Head */}
+                                  <circle cx="50" cy="44" r="40"
+                                    fill={
+                                      isDiamante ? '#AA00FF' :
+                                      isOro ? '#FF4400' :
+                                      isPlata ? '#55DDFF' :
+                                      isMaster ? '#FFB800' :
+                                      isPro ? '#A8A8A8' :
+                                      '#CD7F32' // Amateur/Iniciado
+                                    }
+                                    stroke={
+                                      isDiamante ? '#00FFFF' :
+                                      isOro ? '#FFCC00' :
+                                      isPlata ? '#FFFFFF' :
+                                      isMaster ? '#FFFFFF' :
+                                      isPro ? '#FFFFFF' :
+                                      '#111'
+                                    }
+                                    strokeWidth="6"
                                   />
-                                  <path d="M12 8 Q15 5 20 5" fill="none" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
-                                  <circle cx="20" cy="16" r="5" fill="white" opacity="0.05" />
+                                  {/* Throat */}
+                                  <path d="M28 80 Q50 100 72 80 L68 84 Q50 104 32 84 Z" 
+                                    fill={
+                                      isDiamante ? '#AA00FF' :
+                                      isOro ? '#FF4400' :
+                                      isPlata ? '#55DDFF' :
+                                      isMaster ? '#FFB800' :
+                                      isPro ? '#A8A8A8' :
+                                      '#CD7F32'
+                                    } 
+                                  />
+                                  {/* Handle */}
+                                  <rect x="43" y="97" width="14" height="46" rx="6" fill="#111" />
+                                  <rect x="43" y="100" width="14" height="5" fill="#333" />
+                                  <rect x="43" y="110" width="14" height="5" fill="#333" />
+                                  <rect x="43" y="120" width="14" height="5" fill="#333" />
+                                  <rect x="43" y="130" width="14" height="5" fill="#333" />
+                                  <ellipse cx="50" cy="143" rx="9" ry="4" fill="#252525" />
                                 </svg>
                               </div>
                             </div>

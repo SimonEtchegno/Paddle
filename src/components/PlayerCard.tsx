@@ -6,13 +6,14 @@ import { Trophy, Star, Shield, Zap, MapPin, Activity, Crown } from 'lucide-react
 import { clsx } from 'clsx';
 
 interface PlayerCardProps {
-  profile: UserProfile;
+  profile: UserProfile & { paleta_modelo?: string };
   compact?: boolean;
 }
 
 export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
   const level = profile.nivel || 1;
   const categoria = profile.categoria || '7ma';
+
   
   const getRankInfo = (l: number, cat: string) => {
     // 1. DIAMANTE SUPREMO (7.0 + 1ra)
@@ -89,6 +90,19 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
 
   const rank = getRankInfo(level, categoria);
 
+  // Rank-based racket material (levels up as you progress)
+  const RACKET_SKINS: Record<string, { fill: string; stroke: string; holes: string }> = {
+    'DIAMANTE': { fill: 'url(#neonGrad)',     stroke: '#FF00FF', holes: 'rgba(255,100,255,0.35)' },
+    'ORO':      { fill: 'url(#fireGrad)',     stroke: '#FF5500', holes: 'rgba(255,255,200,0.75)' },
+    'PLATA':    { fill: 'url(#diamondGrad)', stroke: '#22EEFF', holes: 'rgba(150,245,255,0.45)' },
+    'MASTER':   { fill: 'url(#goldGrad)',    stroke: '#FFD700', holes: 'rgba(255,255,180,0.70)' },
+    'PRO':      { fill: 'url(#silverGrad)',  stroke: '#BBBBBB', holes: 'rgba(255,255,255,0.85)' },
+    'AMATEUR':  { fill: 'url(#bronzeGrad)', stroke: '#CD7F32', holes: 'rgba(255,255,255,0.75)' },
+    'INICIADO': { fill: 'url(#woodGrad)',   stroke: '#8B6040', holes: 'rgba(255,255,255,0.60)' },
+  };
+  const rs = RACKET_SKINS[rank.label] ?? RACKET_SKINS['INICIADO'];
+
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
@@ -98,7 +112,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
         "relative rounded-[2.5rem] overflow-hidden bg-zinc-950 border transition-all duration-500 group",
         rank.border,
         rank.glow,
-        compact ? "w-full max-w-[320px] aspect-[3/4.6]" : "w-full max-w-sm aspect-[3/4.6]"
+        compact ? "w-full max-w-[340px] aspect-[3/5]" : "w-full max-w-md aspect-[3/5]"
       )}
     >
       {/* 1. LAYER: DYNAMIC BACKGROUND */}
@@ -175,87 +189,251 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
             </span>
           </div>
 
-          {/* THE EVOLVING RACKET (Automatic based on Level) */}
+          {/* THE PADEL RACKET SVG — round head, real holes */}
           <motion.div 
-            animate={{ rotate: [10, -10, 10], x: [0, 5, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute -bottom-2 -right-10 z-40 w-28 h-28"
+            className="absolute -bottom-2 -right-2 z-40 w-16 h-24"
+            style={{ transformOrigin: 'bottom center' }}
+            animate={{ rotate: [15, 25, 15], y: [0, -2, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            initial={{ rotate: 15 }}
           >
-            <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-2xl">
-              <defs>
-                {/* Texture: Wood (Level < 3) */}
-                <pattern id="woodPattern" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <rect width="20" height="20" fill="#8B4513" />
-                  <path d="M0 10 Q10 5 20 10" stroke="#5D2906" strokeWidth="1" fill="none" />
-                </pattern>
-                {/* Skin: Inferno (Level >= 6) */}
-                <linearGradient id="infernoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#FF0000" />
-                  <stop offset="50%" stopColor="#FF8800" />
-                  <stop offset="100%" stopColor="#FFFF00" />
-                </linearGradient>
-              </defs>
+          <svg viewBox="0 0 100 150" className="w-full h-full drop-shadow-2xl">
+            <defs>
+              {/* INICIADO – Madera */}
+              <linearGradient id="woodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#C4873A" />
+                <stop offset="100%" stopColor="#7B4A1E" />
+              </linearGradient>
+              {/* AMATEUR – Bronce */}
+              <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#E8A060" />
+                <stop offset="50%" stopColor="#CD7F32" />
+                <stop offset="100%" stopColor="#7B4A10" />
+              </linearGradient>
+              {/* PRO – Plata */}
+              <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ECECEC" />
+                <stop offset="50%" stopColor="#A8A8A8" />
+                <stop offset="100%" stopColor="#555" />
+              </linearGradient>
+              {/* MASTER – Oro */}
+              <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FFE566" />
+                <stop offset="50%" stopColor="#FFB800" />
+                <stop offset="100%" stopColor="#9A6B00" />
+              </linearGradient>
+              {/* PLATA – Diamante */}
+              <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#CCFFFF" />
+                <stop offset="40%" stopColor="#55DDFF" />
+                <stop offset="100%" stopColor="#0066AA" />
+              </linearGradient>
+              {/* ORO – Fuego */}
+              <linearGradient id="fireGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#CC0000" />
+                <stop offset="50%" stopColor="#FF6600" />
+                <stop offset="100%" stopColor="#FFEE00" />
+              </linearGradient>
+              {/* DIAMANTE – Neón */}
+              <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FF00CC" />
+                <stop offset="50%" stopColor="#AA00FF" />
+                <stop offset="100%" stopColor="#00FFFF" />
+              </linearGradient>
+              <filter id="neonGlow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              {/* Clip holes to head circle */}
+              <clipPath id="headHoleClip">
+                <circle cx="50" cy="44" r="34" />
+              </clipPath>
+            </defs>
 
-              {/* Racket Handle */}
-              <rect x="46" y="80" width="8" height="35" rx="4" fill={level < 3 ? "#5D2906" : "#111"} />
-              
-              {/* Racket Head */}
-              <path 
-                d="M15 45 Q15 5 50 5 Q85 5 85 45 Q85 85 50 85 Q15 85 15 45" 
-                fill={
-                  level >= 6.5 ? "url(#infernoGrad)" :
-                  level >= 5 ? "#444" :
-                  level >= 3 ? "#222" : "url(#woodPattern)"
-                }
-                stroke={level >= 6.5 ? "#FFD700" : level >= 5 ? "#00FFFF" : "#fff"} 
-                strokeWidth={level >= 5 ? "3" : "2"}
-              />
+            {/* HEAD outer ring */}
+            <circle cx="50" cy="44" r="40"
+              fill={rs.fill}
+              stroke={rs.stroke}
+              strokeWidth="5"
+              filter={rank.label === 'DIAMANTE' ? 'url(#neonGlow)' : undefined}
+            />
 
-              {/* VFX: SIDE FLAMES (Level >= 6.5) */}
-              {level >= 6.5 && (
-                <g>
-                  {[...Array(4)].map((_, i) => (
-                    <motion.path
-                      key={i}
-                      animate={{ d: [
-                        `M${15 - i*2} 40 Q${5 - i*5} 30 ${15 - i*2} 20`,
-                        `M${15 - i*2} 40 Q${0 - i*5} 25 ${15 - i*2} 20`,
-                        `M${15 - i*2} 40 Q${5 - i*5} 30 ${15 - i*2} 20`
-                      ] }}
-                      transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
-                      d={`M15 40 Q5 30 15 20`}
-                      fill="none" stroke="#FF4400" strokeWidth="2" strokeLinecap="round"
-                    />
-                  ))}
-                  {[...Array(4)].map((_, i) => (
-                    <motion.path
-                      key={i+4}
-                      animate={{ d: [
-                        `M${85 + i*2} 40 Q${95 + i*5} 30 ${85 + i*2} 20`,
-                        `M${85 + i*2} 40 Q${100 + i*5} 25 ${85 + i*2} 20`,
-                        `M${85 + i*2} 40 Q${95 + i*5} 30 ${85 + i*2} 20`
-                      ] }}
-                      transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
-                      d={`M85 40 Q95 30 85 20`}
-                      fill="none" stroke="#FFCC00" strokeWidth="2" strokeLinecap="round"
+            {/* HOLES clipped to head */}
+            <g clipPath="url(#headHoleClip)">
+              {([
+                [50,12],
+                [35,21],[50,21],[65,21],
+                [24,31],[38,31],[52,31],[66,31],
+                [20,42],[34,42],[48,42],[62,42],[76,42],
+                [26,53],[40,53],[54,53],[68,53],[80,53],
+                [34,63],[48,63],[62,63],[76,63],
+                [42,73],[56,73],[70,73],
+              ] as [number,number][]).map(([cx, cy], i) => (
+                <circle key={i} cx={cx} cy={cy} r="5"
+                  fill={rs.holes}
+                  stroke="rgba(0,0,0,0.2)"
+                  strokeWidth="0.5"
+                />
+              ))}
+            </g>
+
+            {/* VFX: INICIADO (Hojas / Polvo de Madera) */}
+            {rank.label === 'INICIADO' && (
+              <g>
+                {[...Array(5)].map((_, i) => (
+                  <motion.path key={`leaf-${i}`}
+                    d="M0,0 Q3,3 0,6 Q-3,3 0,0" fill="#6B8E23"
+                    initial={{ opacity: 0, x: 20 + i*15, y: 10 }}
+                    animate={{ 
+                      y: [10, 50], x: [20 + i*15, 20 + i*15 + (i%2===0?10:-10)],
+                      rotate: [0, 180], opacity: [0, 0.8, 0] 
+                    }}
+                    transition={{ duration: 3 + i, repeat: Infinity, delay: i * 0.5 }}
+                  />
+                ))}
+              </g>
+            )}
+
+            {/* VFX: AMATEUR (Chispas de Bronce) */}
+            {rank.label === 'AMATEUR' && (
+              <g>
+                {[...Array(6)].map((_, i) => (
+                  <motion.circle key={`spark-${i}`} r="1.5" fill="#FFAA00"
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                      y: [80, 20], x: [30 + i*8, 30 + i*8 + (i%2===0?15:-15)],
+                      opacity: [0, 1, 0], scale: [0, 1, 0]
+                    }}
+                    transition={{ duration: 1.5 + i*0.2, repeat: Infinity, delay: i * 0.3 }}
+                  />
+                ))}
+              </g>
+            )}
+
+            {/* VFX: PRO (Destello de Plata / Viento) */}
+            {rank.label === 'PRO' && (
+              <g clipPath="url(#headHoleClip)">
+                <motion.line x1="-20" y1="-20" x2="120" y2="120" stroke="rgba(255,255,255,0.8)" strokeWidth="6"
+                  animate={{ x1: [-100, 150], x2: [0, 250], y1: [-100, 150], y2: [0, 250] }}
+                  transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }}
+                />
+              </g>
+            )}
+
+            {/* VFX: MASTER (Destellos de Oro / Estrellas) */}
+            {rank.label === 'MASTER' && (
+              <g>
+                {[...Array(6)].map((_, i) => (
+                  <motion.path key={`star-${i}`}
+                    d="M0,-3 L1,-1 L3,0 L1,1 L0,3 L-1,1 L-3,0 L-1,-1 Z" fill="#FFD700"
+                    initial={{ opacity: 0, x: 20 + i*10, y: 80 }}
+                    animate={{ 
+                      y: [80, 10], x: [20 + i*10, 20 + i*10 + (i%2===0?5:-5)],
+                      rotate: [0, 180], opacity: [0, 1, 0], scale: [0, 1.5, 0]
+                    }}
+                    transition={{ duration: 2 + i*0.2, repeat: Infinity, delay: i * 0.4 }}
+                  />
+                ))}
+              </g>
+            )}
+
+            {/* VFX: PLATA (Rayos de Diamante) */}
+            {rank.label === 'PLATA' && (
+              <g>
+                <filter id="lightningGlow">
+                  <feGaussianBlur stdDeviation="1.5" result="blur" />
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <g filter="url(#lightningGlow)">
+                  {[...Array(3)].map((_, i) => (
+                    <motion.path key={`bolt-${i}`}
+                      d={`M${20+i*20},10 L${30+i*20},35 L${20+i*20},45 L${35+i*20},80`}
+                      fill="none" stroke="#22EEFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      animate={{ opacity: [0, 1, 0, 0, 1, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.7, times: [0, 0.05, 0.1, 0.8, 0.85, 0.9] }}
                     />
                   ))}
                 </g>
-              )}
+              </g>
+            )}
 
-              {/* VFX: ELECTRICITY (Level >= 5) */}
-              {level >= 5 && level < 6.5 && (
-                <motion.path 
-                  animate={{ opacity: [0, 1, 0], x: [-2, 2, -2] }}
-                  transition={{ duration: 0.2, repeat: Infinity }}
-                  d="M10 45 Q0 25 10 5 M90 45 Q100 25 90 5" 
-                  fill="none" stroke="#00FFFF" strokeWidth="2"
+            {/* VFX: ORO (Fuego) */}
+            {rank.label === 'ORO' && (
+              <g>
+                <filter id="fireGlow">
+                  <feGaussianBlur stdDeviation="2" result="blur" />
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <g filter="url(#fireGlow)">
+                  {[
+                    { x: 30, delay: 0.1, dur: 0.8, size: 1.5, col: '#FF4400' },
+                    { x: 40, delay: 0.4, dur: 0.7, size: 1.2, col: '#FFCC00' },
+                    { x: 50, delay: 0.0, dur: 0.9, size: 1.8, col: '#FF2200' },
+                    { x: 60, delay: 0.3, dur: 0.7, size: 1.4, col: '#FFEE00' },
+                    { x: 70, delay: 0.5, dur: 0.8, size: 1.5, col: '#FF4400' },
+                    { x: 35, delay: 0.6, dur: 0.9, size: 1.1, col: '#FFCC00' },
+                    { x: 45, delay: 0.2, dur: 0.8, size: 1.6, col: '#FF4400' },
+                    { x: 55, delay: 0.7, dur: 0.7, size: 1.3, col: '#FFCC00' },
+                    { x: 65, delay: 0.1, dur: 0.9, size: 1.7, col: '#FF2200' },
+                  ].map((f, i) => (
+                    <motion.path
+                      key={`fire-${i}`}
+                      d="M0,0 Q-4,6 0,12 Q4,6 0,0"
+                      fill={f.col}
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        y: [6, -10, -25],
+                        x: [f.x, f.x + (i % 2 === 0 ? -4 : 4), f.x],
+                        scale: [f.size * 0.4, f.size, f.size * 0.1],
+                        opacity: [0, 0.9, 0]
+                      }}
+                      transition={{ duration: f.dur, repeat: Infinity, delay: f.delay, ease: "easeIn" }}
+                    />
+                  ))}
+                </g>
+              </g>
+            )}
+
+            {/* VFX: DIAMANTE (Anillos de Neón y Pulso Cyberpunk) */}
+            {rank.label === 'DIAMANTE' && (
+              <g>
+                <motion.circle cx="50" cy="44" r="45" fill="none" stroke="#FF00FF" strokeWidth="1" strokeDasharray="10 20"
+                  animate={{ rotate: [0, 360], scale: [1, 1.05, 1] }}
+                  style={{ transformOrigin: '50px 44px' }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                 />
-              )}
+                <motion.circle cx="50" cy="44" r="48" fill="none" stroke="#00FFFF" strokeWidth="1" strokeDasharray="30 15 5 15"
+                  animate={{ rotate: [360, 0], scale: [1.05, 1, 1.05] }}
+                  style={{ transformOrigin: '50px 44px' }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                />
+                <motion.circle cx="50" cy="44" r="40" fill="none" stroke="#AA00FF" strokeWidth="3"
+                  animate={{ opacity: [0, 1, 0], scale: [1, 1.15] }}
+                  style={{ transformOrigin: '50px 44px' }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+                />
+              </g>
+            )}
 
-              {/* Logo / Badge removed as requested */}
-            </svg>
-          </motion.div>
+            {/* THROAT */}
+            <path d="M28 80 Q50 100 72 80 L68 84 Q50 104 32 84 Z"
+              fill={rs.fill} stroke={rs.stroke} strokeWidth="1"
+            />
+
+            {/* HANDLE shaft */}
+            <rect x="43" y="97" width="14" height="46" rx="6" fill="#111" />
+            {/* Grip tape stripes */}
+            {[...Array(8)].map((_, i) => (
+              <rect key={i} x="43" y={99 + i * 5.5} width="14" height="2.5" rx="1.2"
+                fill="#2e2e2e" opacity="0.95"
+              />
+            ))}
+            {/* Butt cap */}
+            <ellipse cx="50" cy="143" rx="9" ry="4"
+              fill="#252525" stroke="#444" strokeWidth="1"
+            />
+          </svg>
+        </motion.div>
         </motion.div>
       </div>
 
