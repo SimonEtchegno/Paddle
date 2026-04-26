@@ -89,13 +89,30 @@ export default function TorneosPage() {
       <div className="max-w-7xl mx-auto space-y-10 pb-20">
         
         {/* Header */}
-        <header className="space-y-6">
-          <h1 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none">
-            Torneos <span className="text-primary">Peñarol</span>
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="space-y-6"
+        >
+          <h1 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none relative">
+            Torneos <span className="text-primary relative inline-block">
+              Peñarol
+              <motion.div 
+                className="absolute -inset-2 bg-primary/20 blur-xl rounded-full -z-10"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+            </span>
           </h1>
-          <p className="text-xs md:text-sm opacity-40 font-bold uppercase tracking-widest max-w-2xl">
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            transition={{ delay: 0.4, duration: 1 }}
+            className="text-xs md:text-sm font-bold uppercase tracking-widest max-w-2xl"
+          >
             Explorá los próximos eventos y seguí tu progreso.
-          </p>
+          </motion.p>
 
           {/* Tabs */}
           {profile?.telefono && (
@@ -134,7 +151,7 @@ export default function TorneosPage() {
               </button>
             </div>
           )}
-        </header>
+        </motion.header>
 
         {/* Content */}
         <AnimatePresence mode="wait">
@@ -164,10 +181,14 @@ export default function TorneosPage() {
           ) : (
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              variants={{
+                hidden: { opacity: 0 },
+                show: { opacity: 1, transition: { staggerChildren: 0.1 } },
+                exit: { opacity: 0 }
+              }}
+              initial="hidden"
+              animate="show"
+              exit="exit"
               className="grid gap-6"
             >
               {displayTorneos.map((t, idx) => {
@@ -175,45 +196,77 @@ export default function TorneosPage() {
                 return (
                   <motion.div
                     key={t.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
+                    variants={{
+                      hidden: { opacity: 0, y: 30, scale: 0.95 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 400, damping: 25 } }
+                    }}
+                    whileHover={{ 
+                      scale: 1.02, 
+                      y: -5,
+                      boxShadow: "0 20px 40px -15px rgba(136,130,220,0.15)",
+                      borderColor: "rgba(136,130,220,0.4)"
+                    }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => router.push(`/torneos/${t.id}`)}
-                    className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-8 hover:border-primary/20 transition-all group cursor-pointer"
+                    className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-8 group cursor-pointer relative overflow-hidden"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={clsx(
-                        "w-14 h-14 rounded-2xl flex items-center justify-center border transition-transform group-hover:scale-105",
+                    {/* Glow de fondo en hover */}
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+                      style={{ transform: "skewX(-20deg) translateX(-150%)" }}
+                      whileHover={{ transform: "skewX(-20deg) translateX(150%)", transition: { duration: 1.5, repeat: Infinity, ease: "linear" } }}
+                    />
+
+                    <div className="flex items-center gap-6 relative z-10">
+                      <motion.div 
+                        whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
+                        transition={{ duration: 0.5 }}
+                        className={clsx(
+                        "w-16 h-16 rounded-3xl flex items-center justify-center border",
                         isInscribed 
-                          ? "bg-primary/20 border-primary/30 text-primary"
-                          : "bg-primary/10 border-primary/20 text-primary"
+                          ? "bg-primary/20 border-primary/40 text-primary shadow-[0_0_20px_rgba(136,130,220,0.3)]"
+                          : "bg-white/5 border-white/10 text-white/60 group-hover:bg-primary/10 group-hover:border-primary/30 group-hover:text-primary transition-all duration-300"
                       )}>
-                        <Trophy size={28} />
-                      </div>
+                        <Trophy size={32} />
+                      </motion.div>
                       <div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="text-2xl font-black uppercase tracking-tight italic">{t.nombre}</h3>
+                        <div className="flex items-center gap-3 flex-wrap mb-2">
+                          <h3 className="text-3xl font-black uppercase tracking-tighter italic group-hover:text-primary transition-colors">{t.nombre}</h3>
                           {isInscribed && (
-                            <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                            <motion.span 
+                              initial={{ scale: 0 }} animate={{ scale: 1 }}
+                              className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-[0_0_10px_rgba(136,130,220,0.2)]"
+                            >
                               <CheckCircle2 size={10} /> Ya Inscripto
-                            </span>
+                            </motion.span>
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-4 text-[10px] font-black uppercase tracking-widest opacity-50 mt-1">
+                        <div className="flex flex-wrap gap-4 text-xs font-black uppercase tracking-widest opacity-50">
                           <span className="flex items-center gap-1.5"><Calendar size={14} className="text-primary" /> {t.fecha}</span>
                           <span className="flex items-center gap-1.5"><Users size={14} className="text-primary" /> CAT: {t.categoria}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center md:items-end gap-4 min-w-[200px]">
+                    <div className="flex flex-col items-center md:items-end gap-3 min-w-[200px] relative z-10">
                       <div className="text-center md:text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Inscripción</p>
-                        <p className="text-2xl font-black text-primary">${t.precio?.toLocaleString()}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Valor Inscripción</p>
+                        <motion.p className="text-3xl font-black text-white group-hover:text-primary transition-colors">
+                          ${t.precio?.toLocaleString()}
+                        </motion.p>
                       </div>
-                      <div className="px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest group-hover:bg-primary group-hover:text-black transition-all flex items-center gap-2">
-                        Ver Detalles <Send size={14} />
-                      </div>
+                      <motion.div 
+                        whileHover={{ paddingRight: '2rem' }}
+                        className="px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest group-hover:bg-primary group-hover:text-black transition-all flex items-center gap-2 relative overflow-hidden"
+                      >
+                        Ver Detalles 
+                        <motion.span
+                          initial={{ x: 0 }}
+                          whileHover={{ x: 5 }}
+                        >
+                          <Send size={14} />
+                        </motion.span>
+                      </motion.div>
                     </div>
                   </motion.div>
                 );

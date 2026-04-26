@@ -6,11 +6,11 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Calendar, Users, History, User, Trophy, Bell, X, Check, Crown } from 'lucide-react';
+import { Calendar, Users, History, User, Trophy, Bell, X, Check, Crown, ShoppingBag } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-export function Navbar() {
+export function Navbar({ club }: { club?: any }) {
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useGuestProfile();
@@ -41,6 +41,7 @@ export function Navbar() {
     { name: 'Partidos', href: '/partidos', icon: Users },
     { name: 'Torneos', href: '/torneos', icon: Trophy },
     { name: 'Ranking', href: '/ranking', icon: Crown },
+    { name: 'Tienda', href: '/tienda', icon: ShoppingBag },
     { name: 'Mis Turnos', href: '/mis-turnos', icon: History },
     { name: 'Perfil', href: '/perfil', icon: User },
   ];
@@ -52,15 +53,15 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/logo.jpg"
-              alt="Peñarol Pádel"
+              src={club?.logo_url || "/logo.jpg"}
+              alt={club?.nombre || "Peñarol Pádel"}
               width={40}
               height={40}
-              className="rounded-full object-cover border border-primary/30 shadow-[0_0_15px_rgba(136,130,220,0.3)]"
+              className="rounded-full object-cover border border-primary/30 shadow-[0_0_15px_rgba(var(--primary-rgb), 0.3)]"
             />
             <div className="flex flex-col justify-center">
               <span className="text-sm sm:text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-white to-primary bg-clip-text text-transparent leading-none drop-shadow-sm truncate max-w-[200px] sm:max-w-none">
-                Complejo Pádel Peñarol
+                {club?.nombre || "Complejo Pádel Peñarol"}
               </span>
               <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-primary/70 mt-0.5 sm:mt-1 font-bold">
                 Reserva de Turnos

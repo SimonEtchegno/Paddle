@@ -11,6 +11,7 @@ import { PageWrapper } from '@/components/PageWrapper';
 import { Calendar } from '@/components/ui/Calendar';
 import { parseISO } from 'date-fns';
 import { WeatherWidget } from '@/components/WeatherWidget';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -30,9 +31,22 @@ export default function Home() {
       <div className="space-y-12 pb-20">
         {/* Header / Info */}
         <section className="text-center space-y-4 pt-4">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight uppercase leading-tight">
-            Reservá tu <span className="text-primary">Turno</span>
-          </h2>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-tight italic">
+              Reservá tu <span className="text-primary relative inline-block">
+                Turno
+                <motion.div 
+                  className="absolute -inset-x-2 -bottom-1 h-2 bg-primary/20 blur-lg rounded-full"
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+              </span>
+            </h2>
+          </motion.div>
           <div className="flex flex-wrap justify-center gap-6 text-[10px] font-black uppercase tracking-[0.3em]">
             <div className="flex items-center gap-3 bg-primary text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(136,130,220,0.3)] transform hover:scale-105 transition-all cursor-default">
               <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
