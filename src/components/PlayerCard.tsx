@@ -16,64 +16,70 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
 
   
   const getRankInfo = (l: number, cat: string) => {
-    // 1. DIAMANTE SUPREMO (7.0 + 1ra)
-    if (l >= 7 && cat === '1ra') return { 
+    // 1. DIAMANTE SUPREMO (6.5+ o 1ra)
+    if (l >= 6.5 || cat === '1ra') return { 
       label: 'DIAMANTE', 
-      color: 'from-white via-cyan-100 to-blue-200', 
-      glow: 'shadow-[0_0_70px_rgba(255,255,255,0.7)]',
-      border: 'border-white',
-      accent: 'text-cyan-400',
+      color: 'from-cyan-400 via-blue-500 to-purple-600', 
+      glow: 'shadow-[0_0_50px_rgba(34,211,238,0.5)]',
+      border: 'border-cyan-300/50',
+      accent: 'text-cyan-300',
       vfx: 'legendary',
-      stats: { pow: 99, ctrl: 99, spd: 99 }
+      icon: '💎',
+      stats: { pow: 99, ctrl: 98, spd: 97 }
     };
-    // 2. ORO LEGENDARIO (6.5+ o 2da)
-    if (l >= 6.5 || cat === '2da' || cat === '1ra') return { 
+    // 2. ORO LEGENDARIO (5.5+ o 2da)
+    if (l >= 5.5 || cat === '2da') return { 
       label: 'ORO', 
       color: 'from-yellow-300 via-yellow-500 to-amber-600', 
       glow: 'shadow-[0_0_50px_rgba(255,215,0,0.5)]',
       border: 'border-yellow-400/60',
       accent: 'text-yellow-400',
       vfx: 'legendary',
+      icon: '🔥',
       stats: { pow: 96, ctrl: 94, spd: 92 }
     };
-    // 3. PLATA / PLATINO (5.5+ o 3ra)
-    if (l >= 5.5 || cat === '3ra') return { 
+    // 3. PLATA / PLATINO (4.5+ o 3ra)
+    if (l >= 4.5 || cat === '3ra') return { 
       label: 'PLATA', 
       color: 'from-slate-200 via-slate-400 to-zinc-500', 
       glow: 'shadow-[0_0_40px_rgba(255,255,255,0.2)]',
       border: 'border-slate-300/40',
       accent: 'text-slate-200',
       vfx: 'epic',
+      icon: '⚡',
       stats: { pow: 88, ctrl: 86, spd: 84 }
     };
-    // 4. MASTER (4.5+)
-    if (l >= 4.5 || cat === '4ta') return { 
+    // 4. MASTER (3.5+ o 4ta)
+    if (l >= 3.5 || cat === '4ta') return { 
       label: 'MASTER', 
       color: 'from-purple-600 to-indigo-800', 
       glow: 'shadow-[0_0_30px_rgba(139,92,246,0.3)]',
-      border: 'border-purple-600/20',
+      border: 'border-purple-600/30',
       accent: 'text-purple-300',
       vfx: 'epic',
+      icon: '🏆',
       stats: { pow: 80, ctrl: 78, spd: 75 }
     };
-    // 5. PRO (3.5+)
-    if (l >= 3.5 || cat === '5ta') return { 
+    // 5. PRO (2.5+ o 5ta)
+    if (l >= 2.5 || cat === '5ta') return { 
       label: 'PRO', 
       color: 'from-blue-500 to-cyan-600', 
-      glow: 'shadow-[0_0_20px_rgba(59,130,246,0.2)]',
-      border: 'border-blue-500/10',
+      glow: 'shadow-[0_0_15px_rgba(59,130,246,0.3)]',
+      border: 'border-blue-500/30',
       accent: 'text-blue-400',
       vfx: 'none',
+      icon: '⭐',
       stats: { pow: 70, ctrl: 68, spd: 65 }
     };
-    // 6. AMATEUR (2.5+)
-    if (l >= 2.5 || cat === '6ta') return { 
+    // 6. AMATEUR (1.5+ o 6ta)
+    if (l >= 1.5 || cat === '6ta') return { 
       label: 'AMATEUR', 
       color: 'from-green-500 to-emerald-800', 
-      glow: '',
-      border: 'border-green-500/10',
+      glow: 'shadow-[0_0_15px_rgba(16,185,129,0.3)]',
+      border: 'border-green-500/30',
       accent: 'text-green-400',
       vfx: 'none',
+      icon: '🎯',
       stats: { pow: 60, ctrl: 55, spd: 58 }
     };
     // 7. INICIADO
@@ -84,6 +90,7 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
       border: 'border-white/5',
       accent: 'text-zinc-500',
       vfx: 'none',
+      icon: '🌱',
       stats: { pow: 45, ctrl: 40, spd: 42 }
     };
   };
@@ -157,15 +164,19 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
           </div>
         </div>
         
-        <div className={clsx(
-          "px-5 py-2 rounded-2xl border backdrop-blur-2xl flex items-center gap-2 shadow-xl",
-          rank.vfx === 'legendary' ? "bg-yellow-400/20 border-yellow-400/30" : "bg-black/60 border-white/10"
-        )}>
-          {rank.vfx === 'legendary' && <Crown size={14} className="text-yellow-400" />}
-          <span className={clsx("text-[10px] font-black uppercase tracking-[0.2em] italic", rank.accent)}>
+        <motion.div 
+          whileHover={{ scale: 1.05 }}
+          className={clsx(
+            "px-4 py-2 rounded-2xl border backdrop-blur-2xl flex items-center gap-2",
+            "bg-black/60",
+            rank.border,
+            rank.glow
+          )}>
+          <span className="text-base drop-shadow-md animate-pulse">{rank.icon}</span>
+          <span className={clsx("text-[11px] font-black uppercase tracking-[0.2em] italic", rank.accent)}>
             {rank.label}
           </span>
-        </div>
+        </motion.div>
       </div>
 
       {/* AVATAR CENTER */}
@@ -456,17 +467,18 @@ export function PlayerCard({ profile, compact = false }: PlayerCardProps) {
             { label: 'POWER', val: rank.stats.pow, col: 'bg-primary' },
             { label: 'CONTROL', val: rank.stats.ctrl, col: 'bg-white' },
             { label: 'SPEED', val: rank.stats.spd, col: 'bg-blue-500' }
-          ].map(s => (
+          ].map((s, idx) => (
             <div key={s.label} className="space-y-1.5">
-              <div className="flex justify-between text-[8px] font-black tracking-[0.2em] opacity-40">
+              <div className="flex justify-between text-[10px] font-black tracking-[0.2em] opacity-80">
                 <span>{s.label}</span>
-                <span>{s.val}%</span>
+                <span className={rank.accent}>{s.val}%</span>
               </div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-2 bg-white/5 rounded-full overflow-hidden relative">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${s.val}%` }}
-                  className={clsx("h-full shadow-[0_0_10px_rgba(255,255,255,0.2)]", s.col)}
+                  transition={{ duration: 1.5, delay: 0.2 + idx * 0.2, type: "spring", bounce: 0.4 }}
+                  className={clsx("absolute top-0 left-0 h-full shadow-[0_0_10px_rgba(255,255,255,0.4)] rounded-full", s.col)}
                 />
               </div>
             </div>

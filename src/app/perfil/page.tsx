@@ -194,7 +194,7 @@ export default function PerfilPage() {
                       </div>
                     </div>
                     <div className="text-right space-y-0.5">
-                      <span className="text-4xl font-black italic text-white opacity-20">L{formData.nivel.toFixed(1)}</span>
+                      <span className="text-4xl font-black italic text-white opacity-20">L{formData.nivel.toFixed(1)} <span className="text-xl">({Math.round(formData.nivel * 30)} PTS)</span></span>
                       <p className="text-[9px] font-black uppercase tracking-widest opacity-40">{formData.categoria} Categoría</p>
                     </div>
                   </div>
@@ -203,9 +203,16 @@ export default function PerfilPage() {
                     value={formData.nivel}
                     onChange={(e) => {
                       const val = parseFloat(e.target.value);
-                      setFormData({...formData, nivel: val, categoria: getCategoriaFromNivel(val)});
+                      setFormData({...formData, nivel: val});
                     }}
-                    className="w-full h-2 bg-white/10 rounded-full appearance-none accent-primary cursor-pointer"
+                    className={`w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer transition-colors duration-500 ${
+                      isDiamante ? "accent-cyan-400" :
+                      isOro ? "accent-yellow-400" :
+                      isPlata ? "accent-slate-300" :
+                      isMaster ? "accent-purple-500" :
+                      isPro ? "accent-blue-500" :
+                      "accent-green-500"
+                    }`}
                   />
                   <div className="flex justify-between text-[8px] font-black uppercase tracking-widest opacity-30 px-0.5">
                     <span>Iniciado</span><span>Intermedio</span><span>Avanzado</span><span>Élite</span><span>Leyenda</span>
