@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2 } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { Calendar } from '@/components/ui/Calendar';
 import dynamic from 'next/dynamic';
+import TutorialModal from '@/components/admin/TutorialModal';
 
 const TournamentManager = dynamic(
   () => import('@/components/admin/TournamentManager'),
@@ -102,6 +103,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [systemMsg, setSystemMsg] = useState('');
   const [activeTab, setActiveTab] = useState<'turnos' | 'torneos'>('turnos');
+  const [showTutorial, setShowTutorial] = useState(false);
   
   const [torneos, setTorneos] = useState<any[]>([]);
   const [inscripciones, setInscripciones] = useState<any[]>([]);
@@ -293,7 +295,7 @@ export default function AdminPage() {
         if (error) throw error;
         toast.success('Torneo actualizado');
       } else {
-        const { error } = await supabase.from('torneos').insert({ ...updateData, abierto: true });
+        const { error } = await supabase.from('torneos').insert({ ...updateData, abierto: true, visible: true });
         if (error) throw error;
         toast.success('Torneo creado');
       }
@@ -378,10 +380,11 @@ export default function AdminPage() {
     }
   };
 
-  const toggleTournamentStatus = async (id: string, currentStatus: boolean) => {
+  const toggleTournamentStatus = async (t: any) => {
     setLoading(true);
     try {
-      const { error } = await supabase.from('torneos').update({ abierto: !currentStatus }).eq('id', id);
+      const payload = { ...t, abierto: !t.abierto };
+      const { error } = await supabase.from('torneos').upsert(payload, { onConflict: 'id' });
       if (error) throw error;
       toast.success('Estado de inscripción actualizado');
       fetchData();
@@ -438,29 +441,30 @@ export default function AdminPage() {
         categoria: editingZonesTourney.categoria,
         descripcion: editingZonesTourney.descripcion,
         precio: editingZonesTourney.precio,
-        abierto: editingZonesTourney.abierto,
+        abierto: Boolean(editingZonesTourney.abierto ?? true),
         config: data.config,
         parejas_data: data.parejas_data,
         zonas_data: data.zonas_data,
         cuadro_data: data.cuadro_data,
-        visible: data.visible
+        visible: data.visible !== false // Default a true si no es explícitamente false
       };
 
-      // Intento 1: Upsert normal
-      const { error: upsertError, data: upsertedData } = await supabase
+      const { error: upsertError } = await supabase
         .from('torneos')
-        .upsert(payload, { onConflict: 'id' })
-        .select();
+        .upsert(payload, { onConflict: 'id' });
 
-      if (upsertError || !upsertedData || upsertedData.length === 0) {
-        // Intento 2: Re-Creación silenciosa si el update falla
-        await supabase.from('torneos').delete().eq('id', searchId);
-        const { error: insertError } = await supabase.from('torneos').insert(payload);
+      if (upsertError) {
+        // Si el upsert falla, intentamos un update directo como refuerzo
+        const { error: updateError } = await supabase
+          .from('torneos')
+          .update(payload)
+          .eq('id', searchId);
         
-        if (insertError) throw insertError;
+        if (updateError) throw updateError;
       }
       
       toast.success('¡Torneo actualizado correctamente!');
+      setEditingZonesTourney((prev: any) => prev ? { ...prev, ...payload } : null);
       fetchData();
     } catch (e: any) {
       console.error('Error al guardar:', e);
@@ -684,18 +688,26 @@ export default function AdminPage() {
                   {editingTourneyId ? 'Editar Torneo' : 'Nuevo Torneo'}
                 </h3>
               </div>
-              {editingTourneyId && (
+              <div className="flex items-center gap-4">
                 <button 
-                  onClick={() => {
-                    setEditingTourneyId(null);
-                    setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
-                    setTourneyDates({ inicio: '', fin: '' });
-                  }}
-                  className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white"
+                  onClick={() => setShowTutorial(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-xs font-black uppercase tracking-widest"
                 >
-                  Cancelar Edición
+                  <BookOpen size={14} /> Manual
                 </button>
-              )}
+                {editingTourneyId && (
+                  <button 
+                    onClick={() => {
+                      setEditingTourneyId(null);
+                      setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
+                      setTourneyDates({ inicio: '', fin: '' });
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white"
+                  >
+                    Cancelar Edición
+                  </button>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
@@ -811,14 +823,32 @@ export default function AdminPage() {
                       <Layout size={18} />
                     </button>
                     <button 
-                      onClick={() => toggleTournamentStatus(t.id, t.abierto)}
+                      onClick={() => toggleTournamentStatus(t)}
                       className={clsx(
                         "p-3 rounded-xl border transition-all",
-                        t.abierto ? "bg-primary/10 text-primary border-primary/20" : "bg-white/5 text-white/40 border-white/10"
+                        t.abierto ? "bg-green-500/20 text-green-400 border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.2)] animate-pulse" : "bg-white/5 text-white/40 border-white/10"
                       )}
                       title={t.abierto ? "Cerrar Inscripciones" : "Abrir Inscripciones"}
                     >
                       <Users size={18} />
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        const newVisible = t.visible === false;
+                        const payload = { ...t, visible: newVisible };
+                        const { error } = await supabase.from('torneos').upsert(payload, { onConflict: 'id' });
+                        if (!error) {
+                          toast.success(newVisible ? 'Torneo Publicado' : 'Torneo Privado');
+                          fetchData();
+                        }
+                      }}
+                      className={clsx(
+                        "p-3 rounded-xl border transition-all",
+                        t.visible !== false ? "bg-green-500/20 text-green-400 border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.2)] animate-pulse" : "bg-white/5 text-white/40 border-white/10"
+                      )}
+                      title={t.visible !== false ? "Hacer Privado" : "Publicar Torneo"}
+                    >
+                      <Globe size={18} />
                     </button>
                     <button 
                       onClick={() => deleteTournament(t.id)}
@@ -873,6 +903,7 @@ export default function AdminPage() {
         </div>
       )}
     </div>
+    <TutorialModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
   </PageWrapper>
   );
 }

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Users, Layout, Plus, X, Save, ChevronLeft, 
   CheckCircle2, Search, Trash2, Calendar, Clock, 
-  ChevronRight, Camera, Settings2, GripVertical, Sparkles, Share2
+  ChevronRight, Camera, Settings2, GripVertical, Sparkles, Share2, Globe
 } from 'lucide-react';
 import { 
   DndContext as DndKitContext, 
@@ -114,6 +114,10 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     isDanger?: boolean;
     onConfirm: (val?: string) => void;
   } | null>(null);
+
+  useEffect(() => {
+    setIsVisible(tournament.visible !== false);
+  }, [tournament.id, tournament.visible]);
 
   const resetTournament = () => {
     setConfirmDialog({
@@ -567,9 +571,20 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
             })}
           </div>
 
-          <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-white border border-white/5 ml-2">
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-4">
+            {!isVisible && (
+              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-error/20 border border-error/30 rounded-xl animate-pulse">
+                <Globe size={14} className="text-error" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-error">Torneo Oculto (Privado)</span>
+              </div>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-3 rounded-2xl hover:bg-white/5 transition-all text-white/40 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
       </div>
 

@@ -57,7 +57,7 @@ export default function TorneosPage() {
       const ids = data.map(i => i.torneo_id);
       setMyInscriptions(ids);
       // Si el usuario tiene inscripciones, mostrar "Mis Torneos" por defecto
-      if (ids.length > 0) setActiveTab('mis');
+      // if (ids.length > 0) setActiveTab('mis');
     }
   };
 
@@ -67,7 +67,7 @@ export default function TorneosPage() {
       const { data, error } = await supabase
         .from('torneos')
         .select('*')
-        .order('fecha', { ascending: true });
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       setTorneos(data || []);
