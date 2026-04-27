@@ -1,5 +1,6 @@
 export interface Reserva {
   id: string;
+  club_id: string;
   fecha: string;
   hora: string;
   cancha: number;

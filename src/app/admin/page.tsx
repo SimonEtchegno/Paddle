@@ -583,7 +583,7 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs Selector */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <button 
             onClick={() => setActiveTab('turnos')}
             className={clsx(
@@ -728,23 +728,23 @@ export default function AdminPage() {
         <div className="space-y-12">
           {/* Create Tournament Form */}
           <div className="glass p-10 rounded-[3rem] border border-white/5 space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex items-center gap-3">
                 <Trophy className="text-primary" size={24} />
                 <h3 className="text-xl font-black uppercase tracking-tighter italic">
                   {editingTourneyId ? 'Editar Torneo' : 'Nuevo Torneo'}
                 </h3>
               </div>
-              <div id="tutorial-admin-actions" className="flex items-center gap-4">
+              <div id="tutorial-admin-actions" className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                 <button 
                   onClick={() => setShowTutorial(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-xs font-black uppercase tracking-widest"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-xs font-black uppercase tracking-widest"
                 >
                   <BookOpen size={14} /> Manual
                 </button>
                 <button 
                   onClick={handleLogout}
-                  className="p-4 bg-white/5 border border-white/10 rounded-2xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                  className="flex-1 sm:flex-none flex items-center justify-center p-3.5 bg-white/5 border border-white/10 rounded-2xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
                   title="Cerrar Sesión"
                 >
                   <LogOut size={20} />
@@ -756,7 +756,7 @@ export default function AdminPage() {
                       setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
                       setTourneyDates({ inicio: '', fin: '' });
                     }}
-                    className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white"
+                    className="w-full sm:w-auto text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white py-2"
                   >
                     Cancelar Edición
                   </button>
@@ -843,7 +843,7 @@ export default function AdminPage() {
             <div className="space-y-6">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 ml-4">Torneos Activos</h3>
               {torneos.map((t) => (
-                <div key={t.id} className="glass p-6 rounded-3xl border border-white/5 flex items-center justify-between group">
+                <div key={t.id} className="glass p-6 rounded-3xl border border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 group">
                   <div>
                     <div className="flex items-center gap-3">
                       <h4 className="text-xl font-black uppercase tracking-tight italic">{t.nombre}</h4>
@@ -852,7 +852,7 @@ export default function AdminPage() {
                   </div>
                   <div 
                     id={torneos.indexOf(t) === 0 ? "tutorial-admin-tourney-actions" : undefined}
-                    className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all"
+                    className="flex flex-wrap gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all w-full sm:w-auto"
                   >
                     <button 
                       onClick={() => {
@@ -867,14 +867,14 @@ export default function AdminPage() {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                         toast('Edita los datos arriba', { icon: '✍️' });
                       }}
-                      className="p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10"
+                      className="flex-1 sm:flex-none flex items-center justify-center p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10"
                       title="Editar Info"
                     >
                       <Edit2 size={18} />
                     </button>
                     <button 
                       onClick={() => startEditingZones(t)}
-                      className="p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10"
+                      className="flex-1 sm:flex-none flex items-center justify-center p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10"
                       title="Gestionar Cuadros/Zonas"
                     >
                       <Layout size={18} />
@@ -882,7 +882,7 @@ export default function AdminPage() {
                     <button 
                       onClick={() => toggleTournamentStatus(t)}
                       className={clsx(
-                        "p-3 rounded-xl border transition-all",
+                        "flex-1 sm:flex-none flex items-center justify-center p-3 rounded-xl border transition-all",
                         t.abierto ? "bg-green-500/20 text-green-400 border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.2)] animate-pulse" : "bg-white/5 text-white/40 border-white/10"
                       )}
                       title={t.abierto ? "Cerrar Inscripciones" : "Abrir Inscripciones"}
@@ -900,7 +900,7 @@ export default function AdminPage() {
                         }
                       }}
                       className={clsx(
-                        "p-3 rounded-xl border transition-all",
+                        "flex-1 sm:flex-none flex items-center justify-center p-3 rounded-xl border transition-all",
                         t.visible !== false ? "bg-green-500/20 text-green-400 border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.2)] animate-pulse" : "bg-white/5 text-white/40 border-white/10"
                       )}
                       title={t.visible !== false ? "Hacer Privado" : "Publicar Torneo"}
@@ -909,7 +909,7 @@ export default function AdminPage() {
                     </button>
                     <button 
                       onClick={() => deleteTournament(t.id)}
-                      className="p-3 bg-error/10 text-error rounded-xl border border-error/20"
+                      className="flex-1 sm:flex-none flex items-center justify-center p-3 bg-error/10 text-error rounded-xl border border-error/20"
                     >
                       <Trash2 size={18} />
                     </button>

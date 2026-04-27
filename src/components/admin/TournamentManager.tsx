@@ -444,24 +444,29 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 bg-surface/30 p-4 md:p-10 rounded-[3rem] border border-white/5 min-h-[85vh] flex flex-col"
     >
-      {/* Header */}
       <div id="tutorial-tourney-header" className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-white/5 pb-8">
-        <div className="flex items-center gap-6">
-          <button onClick={onClose} className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
-            <ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
+        <div className="flex items-center gap-4 md:gap-6 w-full lg:w-auto">
+          <button onClick={onClose} className="p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
+            <ChevronLeft size={20} className="md:size-[24px] group-hover:-translate-x-1 transition-transform" />
           </button>
-          <div>
-            <h2 className="text-4xl font-black uppercase italic tracking-tighter leading-none">
+          <div className="flex-1">
+            <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">
               Gestión <span className="text-primary">Pro</span>
             </h2>
-            <p className="text-[10px] font-black opacity-40 uppercase tracking-[0.3em] mt-2">
+            <p className="text-[9px] md:text-[10px] font-black opacity-40 uppercase tracking-[0.3em] mt-1 md:mt-2 truncate max-w-[200px] md:max-w-none">
               {tournament.nombre}
             </p>
           </div>
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-3 rounded-2xl hover:bg-white/5 transition-all text-white/40 hover:text-white"
+          >
+            <X size={24} />
+          </button>
         </div>
         
         {/* Stepper & Actions Container */}
-        <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto justify-center lg:justify-end">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-center lg:justify-end">
           <button 
             id="tutorial-tourney-load"
             onClick={openLoadModal}
@@ -708,12 +713,12 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               exit={{ opacity: 0, x: -20 }}
               className="space-y-10 h-full flex flex-col"
             >
-              <div className="flex justify-between items-end">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                 <div className="space-y-2">
-                  <h3 className="text-5xl font-black uppercase italic tracking-tighter">Gestión de Parejas</h3>
-                  <p className="text-sm opacity-40 font-bold uppercase tracking-widest">Carga y edita los participantes</p>
+                  <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">Gestión de Parejas</h3>
+                  <p className="text-xs md:text-sm opacity-40 font-bold uppercase tracking-widest">Carga y edita los participantes</p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                   <button 
                     onClick={() => {
                       const testData = [
@@ -735,18 +740,18 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       setPairs(prev => [...prev, ...newPairs]);
                       toast.success('Parejas de prueba cargadas');
                     }}
-                    className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-3 text-primary/60 hover:text-primary"
+                    className="flex-1 sm:flex-none bg-white/5 border border-white/10 px-6 py-3.5 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-primary/60 hover:text-primary"
                   >
-                    <Sparkles size={18} /> Parejas de Prueba
+                    <Sparkles size={16} /> Demo
                   </button>
                   <button 
                     onClick={() => {
                       const newPair: Pair = { id: generateId(), name: '', player1: '', player2: '' };
                       setPairs([...pairs, newPair]);
                     }}
-                    className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-3 text-primary"
+                    className="flex-1 sm:flex-none bg-white/5 border border-white/10 px-6 py-3.5 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-primary"
                   >
-                    <Plus size={18} /> Añadir Pareja
+                    <Plus size={16} /> Añadir
                   </button>
                 </div>
               </div>
@@ -957,10 +962,10 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               exit={{ opacity: 0, x: -20 }}
               className="space-y-10 flex-1 flex flex-col h-full"
             >
-              <div className="flex justify-between items-end">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div className="space-y-2">
-                  <h3 className="text-5xl font-black uppercase italic tracking-tighter">Fase de Grupos</h3>
-                  <p className="text-sm opacity-40 font-bold uppercase tracking-widest">Gestiona los partidos y mira las posiciones</p>
+                  <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">Fase de Grupos</h3>
+                  <p className="text-xs md:text-sm opacity-40 font-bold uppercase tracking-widest">Gestiona los partidos y mira las posiciones</p>
                 </div>
                 <button 
                   id="tutorial-gen-fixtures"
@@ -984,7 +989,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     setZones(newZones);
                     toast.success('Fixtures generados');
                   }}
-                  className="bg-primary/10 text-primary border border-primary/30 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all flex items-center gap-3"
+                  className="w-full md:w-auto bg-primary/10 text-primary border border-primary/30 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-3"
                 >
                   ⚡ Generar Fixtures
                 </button>
@@ -995,8 +1000,8 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   const standings = calculateStandings(z, pairs);
                   return (
                     <div key={z.id} className="space-y-8">
-                      <div className="glass p-10 rounded-[3rem] border border-white/5 space-y-8 h-full flex flex-col">
-                        <h4 className="text-3xl font-black uppercase italic tracking-tighter text-primary">{z.name}</h4>
+                      <div className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-white/5 space-y-6 md:space-y-8 h-full flex flex-col">
+                        <h4 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter text-primary">{z.name}</h4>
                         
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-[11px]">
@@ -1011,13 +1016,13 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                             </thead>
                             <tbody className="font-bold">
                               {standings.map((s, idx) => (
-                                <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                                  <td className="py-5 flex items-center gap-3 italic uppercase min-w-[200px]">
-                                    <span className={clsx("w-5 h-5 flex items-center justify-center rounded-full text-[8px]", idx < config.qualifiersPerZone ? "bg-primary text-black" : "bg-white/5 opacity-30")}>{idx + 1}</span>
+                                <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors text-[10px] md:text-[11px]">
+                                  <td className="py-4 md:py-5 flex items-center gap-2 md:gap-3 italic uppercase min-w-[150px] md:min-w-[200px]">
+                                    <span className={clsx("w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-full text-[7px] md:text-[8px]", idx < config.qualifiersPerZone ? "bg-primary text-black" : "bg-white/5 opacity-30")}>{idx + 1}</span>
                                     <span className="truncate">{s.name}</span>
                                   </td>
-                                  <td className="py-5 text-center opacity-40">{s.pj}</td>
-                                  <td className="py-5 text-center text-primary text-sm">{s.pts}</td>
+                                  <td className="py-4 md:py-5 text-center opacity-40">{s.pj}</td>
+                                  <td className="py-4 md:py-5 text-center text-primary font-black">{s.pts}</td>
                                   <td className="py-5 text-center">{s.sf - s.sc > 0 ? '+' : ''}{s.sf - s.sc}</td>
                                   <td className="py-5 text-center opacity-40">{s.gf - s.gc > 0 ? '+' : ''}{s.gf - s.gc}</td>
                                 </tr>
@@ -1139,7 +1144,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               </div>
 
               <div className="flex-1 overflow-x-auto custom-scrollbar pb-20">
-                <div className="flex gap-32 min-w-max px-20 h-full items-center justify-center">
+                <div className="flex gap-12 md:gap-32 min-w-max px-6 md:px-20 h-full items-center justify-center">
                   {(config.bracketSize === 'eighth' 
                     ? ['Octavos', 'Cuartos', 'Semifinal', 'Final'] 
                     : config.bracketSize === 'quarter' 
@@ -1163,7 +1168,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                               <motion.div 
                                 whileHover={{ scale: 1.02, y: -5 }}
                                 className={clsx(
-                                  "w-[320px] glass border rounded-[2.5rem] overflow-hidden transition-all duration-500 shadow-2xl relative z-10",
+                                  "w-[280px] md:w-[320px] glass border rounded-[2rem] md:rounded-[2.5rem] overflow-hidden transition-all duration-500 shadow-2xl relative z-10",
                                   winner !== 0 ? "border-primary/40" : "border-white/10",
                                   isFinal && winner !== 0 && "ring-4 ring-primary/20 shadow-[0_0_50px_rgba(136,130,220,0.4)]"
                                 )}

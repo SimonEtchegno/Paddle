@@ -18,20 +18,25 @@ export function useReservas(selectedDate: string) {
       const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'penarol';
 
       // 2. Obtener el ID del club correspondiente
-      const { data: clubData } = await supabase
+      const { data: clubData, error: clubError } = await supabase
         .from('clubes')
         .select('id')
         .eq('slug', activeSlug)
         .single();
 
-      if (!clubData) throw new Error('Club no encontrado');
+      if (clubError || !clubData) {
+        console.warn(`⚠️ Multi-tenant: No se encontró el club con slug "${activeSlug}". Asegúrate de que existe en la tabla 'clubes'.`);
+        setReservas([]);
+        setLoading(false);
+        return;
+      }
 
       // 3. Filtrar las reservas de ESE club específico
       const { data, error } = await supabase
         .from('reservas')
         .select('*')
         .eq('fecha', selectedDate)
-        .eq('club_id', clubData.id) // AISLAMIENTO DE DATOS
+        .eq('club_id', clubData.id)
         .order('hora', { ascending: true });
 
       if (error) throw error;
