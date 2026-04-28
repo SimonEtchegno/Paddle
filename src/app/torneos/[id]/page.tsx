@@ -512,7 +512,7 @@ export default function TournamentDetailPage() {
 
                   <form onSubmit={handleInscribirse} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre Pareja 1</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Tu Nombre (Jugador 1)</label>
                       <input 
                         type="text" 
                         value={jugador1}
@@ -522,7 +522,7 @@ export default function TournamentDetailPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre Pareja 2</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre de tu Compañero (Jugador 2)</label>
                       <input 
                         type="text" 
                         value={jugador2}

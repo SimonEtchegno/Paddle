@@ -10,9 +10,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface CalendarProps {
   selectedDate: Date;
   onChange: (date: Date) => void;
+  isAdmin?: boolean;
 }
 
-export function Calendar({ selectedDate, onChange }: CalendarProps) {
+export function Calendar({ selectedDate, onChange, isAdmin = false }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate));
 
   const renderHeader = () => {
@@ -71,15 +72,17 @@ export function Calendar({ selectedDate, onChange }: CalendarProps) {
         const isToday = isSameDay(day, new Date());
         const isPast = isBefore(day, startOfDay(new Date()));
         const isCurrentMonth = isSameMonth(day, monthStart);
+        const isDisabled = isPast && !isAdmin;
 
         days.push(
           <button
             key={day.toString()}
-            disabled={isPast}
+            disabled={isDisabled}
             className={clsx(
               "relative h-12 flex items-center justify-center text-sm font-bold transition-all rounded-xl",
               !isCurrentMonth && "opacity-10",
-              isPast && "cursor-not-allowed opacity-10",
+              isDisabled && "cursor-not-allowed opacity-10",
+              !isDisabled && isPast && "opacity-60", // Visual hint for past days when enabled
               isSelected ? "bg-primary text-white shadow-[0_0_20px_rgba(136,130,220,0.6)] scale-110 z-10" : "hover:bg-white/5",
               isToday && !isSelected && "text-primary border border-primary/30"
             )}

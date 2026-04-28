@@ -226,6 +226,57 @@ export function useNotifications() {
           localStorage.setItem('tracked_torneo_inscs', JSON.stringify(currentInsc));
         }
 
+        // 7. Chequear reservas propias (Confirmación de turno)
+        const { data: myRes } = await supabase
+          .from('reservas')
+          .select('id, fecha, hora, cancha, created_at')
+          .eq('telefono', profile.telefono)
+          .gte('fecha', hoyStr)
+          .order('created_at', { ascending: false });
+
+        if (myRes) {
+          myRes.forEach((r: any) => {
+            const notifId = `myres_${r.id}`;
+            newNotifs.push({
+              id: notifId,
+              type: 'confirmacion',
+              message: `Turno reservado: ${r.fecha} a las ${r.hora} hs (Cancha ${r.cancha})`,
+              time: r.created_at,
+              isRead: false
+            });
+            // Marcamos como notificado para no tirar Toast si ya existe (o si lo acaba de hacer)
+            if (!notifiedIds.current.has(notifId)) {
+              notifiedIds.current.add(notifId);
+              hasNewToasts = true;
+              // Opcional: toast.success(...) pero ya lo hace el modal
+            }
+          });
+        }
+
+        // 8. Chequear inscripciones a torneos propias
+        const { data: myInsc } = await supabase
+          .from('inscripciones_torneos')
+          .select('id, created_at, torneos(nombre)')
+          .eq('telefono_contacto', profile.telefono)
+          .order('created_at', { ascending: false });
+
+        if (myInsc) {
+          myInsc.forEach((i: any) => {
+            const notifId = `myinsc_${i.id}`;
+            newNotifs.push({
+              id: notifId,
+              type: 'confirmacion',
+              message: `Inscripto correctamente al torneo: ${i.torneos?.nombre}`,
+              time: i.created_at,
+              isRead: false
+            });
+            if (!notifiedIds.current.has(notifId)) {
+              notifiedIds.current.add(notifId);
+              hasNewToasts = true;
+            }
+          });
+        }
+
         if (hasNewToasts) {
           localStorage.setItem('notified_toast_ids', JSON.stringify(Array.from(notifiedIds.current)));
         }

@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PageWrapper } from '@/components/PageWrapper';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { Calendar } from '@/components/ui/Calendar';
 import dynamic from 'next/dynamic';
@@ -103,7 +103,13 @@ export default function AdminPage() {
   const [espera, setEspera] = useState<ListaEspera[]>([]);
   const [loading, setLoading] = useState(false);
   const [systemMsg, setSystemMsg] = useState('');
-  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos'>('turnos');
+  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial'>('turnos');
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'reserva' | 'torneo' | 'partido'>('all');
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showTutorial, setShowTutorial] = useState(false);
   
   const [torneos, setTorneos] = useState<any[]>([]);
@@ -169,6 +175,110 @@ export default function AdminPage() {
     setIsLoggedIn(false);
   };
 
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const { data: resData } = await supabase
+        .from('reservas')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(150);
+      
+      const { data: inscData } = await supabase
+        .from('inscripciones_torneos')
+        .select('*, torneos(nombre)')
+        .order('created_at', { ascending: false })
+        .limit(150);
+
+      const { data: joinData } = await supabase
+        .from('uniones_partidos')
+        .select('*, partidos_abiertos(fecha, hora)')
+        .order('created_at', { ascending: false })
+        .limit(150);
+      
+      const { data: matchData } = await supabase
+        .from('partidos_abiertos')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      const combined = [
+        ...(resData || []).map(r => ({ ...r, category: 'reserva' })),
+        ...(inscData || []).map(i => ({ ...i, category: 'torneo' })),
+        ...(joinData || []).map(j => ({ ...j, category: 'partido', nombre: j.nombre_interesado, telefono: j.whatsapp_interesado, fecha: j.partidos_abiertos?.fecha, hora: j.partidos_abiertos?.hora })),
+        ...(matchData || []).map(m => ({ ...m, category: 'partido', nombre: m.nombre_creador, telefono: m.contacto_whatsapp, isCreation: true, fecha: m.fecha, hora: m.hora }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setHistory(combined);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const deleteHistoryItem = async (item: any) => {
+    if (!confirm('¿Estás seguro de eliminar este registro permanentemente? Se enviará una notificación de cancelación al sistema.')) return;
+    
+    let table = '';
+    let msg = '';
+    
+    if (item.category === 'reserva') {
+      table = 'reservas';
+      msg = `Tu reserva para el día ${item.fecha} a las ${item.hora}hs ha sido cancelada por el administrador.`;
+    }
+    if (item.category === 'torneo') {
+      table = 'inscripciones_torneos';
+      msg = `Tu inscripción al torneo "${item.torneos?.nombre || 'de Padel'}" ha sido cancelada por el administrador.`;
+    }
+    if (item.category === 'partido') {
+      table = 'uniones_partidos';
+      msg = `Tu unión al partido del ${item.partidos_abiertos?.fecha} ha sido cancelada por el administrador.`;
+    }
+
+    try {
+      if (msg) {
+        await supabase.from('notificaciones_sistema').insert({ mensaje: msg });
+      }
+
+      const { error } = await supabase.from(table).delete().eq('id', item.id);
+      if (error) throw error;
+      toast.success('Registro eliminado');
+      fetchHistory();
+    } catch (e) {
+      toast.error('Error al eliminar');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+    if (!confirm(`¿Estás seguro de eliminar ${selectedItems.length} registros permanentemente?`)) return;
+
+    setHistoryLoading(true);
+    try {
+      const itemsToDelete = history.filter(item => selectedItems.includes(`${item.category}-${item.id}`));
+      
+      for (const item of itemsToDelete) {
+        let table = '';
+        if (item.category === 'reserva') table = 'reservas';
+        if (item.category === 'torneo') table = 'inscripciones_torneos';
+        if (item.category === 'partido') table = 'uniones_partidos';
+        
+        if (table) {
+          await supabase.from(table).delete().eq('id', item.id);
+        }
+      }
+
+      toast.success(`${selectedItems.length} registros eliminados`);
+      setSelectedItems([]);
+      fetchHistory();
+    } catch (e) {
+      toast.error('Error en el borrado masivo');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   const handleDateChange = (date: Date) => {
     setSelectedDate(format(date, 'yyyy-MM-dd'));
   };
@@ -224,14 +334,18 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchData();
+      if (activeTab === 'historial') {
+        fetchHistory();
+      } else {
+        fetchData();
+      }
 
       const tChannel = supabase.channel('admin_torneos')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => fetchData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
         .subscribe();
       
       const iChannel = supabase.channel('admin_inscripciones')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'inscripciones_torneos' }, () => fetchData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inscripciones_torneos' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
         .subscribe();
 
       return () => {
@@ -239,7 +353,7 @@ export default function AdminPage() {
         supabase.removeChannel(iChannel);
       };
     }
-  }, [isLoggedIn, selectedDate]);
+  }, [isLoggedIn, selectedDate, activeTab]);
 
   const handleDelete = async (id: string) => {
     if (id === 'fijo') return toast.error('No se pueden borrar turnos fijos');
@@ -365,9 +479,16 @@ export default function AdminPage() {
   };
 
   const deleteInscription = async (id: string) => {
-    if (!confirm('¿Borrar esta pareja del torneo?')) return;
+    const insc = inscripciones.find(i => i.id === id);
+    if (!confirm(`¿Borrar a ${insc?.jugador1} & ${insc?.jugador2}? Se les enviará una notificación.`)) return;
+    
     setLoading(true);
     try {
+      // Notificar cancelación
+      await supabase.from('notificaciones_sistema').insert({
+        mensaje: `Tu inscripción al torneo "${insc?.torneos?.nombre || 'Padel'}" ha sido cancelada por el administrador.`
+      });
+
       const { error, count } = await supabase
         .from('inscripciones_torneos')
         .delete({ count: 'exact' })
@@ -379,10 +500,8 @@ export default function AdminPage() {
         throw new Error('No se pudo borrar la pareja. Verifica los permisos de la tabla.');
       }
       
-      // Actualizar estado local solo tras éxito real
       setInscripciones(prev => prev.filter(i => i.id !== id));
-      
-      toast.success('Pareja eliminada correctamente');
+      toast.success('Pareja eliminada y notificada');
     } catch (e: any) {
       console.error('Error:', e);
       toast.error(e.message || 'Error al borrar pareja');
@@ -603,6 +722,15 @@ export default function AdminPage() {
           >
             Gestión de Torneos
           </button>
+          <button 
+            onClick={() => setActiveTab('historial')}
+            className={clsx(
+              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              activeTab === 'historial' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
+            )}
+          >
+            Historial Global
+          </button>
         </div>
 
         {activeTab === 'turnos' ? (
@@ -646,6 +774,7 @@ export default function AdminPage() {
             <Calendar 
               selectedDate={parseISO(selectedDate + 'T00:00:00')} 
               onChange={handleDateChange} 
+              isAdmin={true}
             />
           </div>
 
@@ -724,7 +853,7 @@ export default function AdminPage() {
           )}
         </div>
         </>
-      ) : (
+      ) : activeTab === 'torneos' ? (
         <div className="space-y-12">
           {/* Create Tournament Form */}
           <div className="glass p-10 rounded-[3rem] border border-white/5 space-y-8">
@@ -958,10 +1087,305 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+      ) : (
+        /* TAB HISTORIAL */
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
+          <div className="glass p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row gap-6 items-center">
+              <div className="flex-1 relative w-full">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20" size={20} />
+                <input 
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por nombre, teléfono o torneo..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+              <div className="flex gap-4 w-full md:w-auto">
+                <button 
+                  onClick={fetchHistory}
+                  className="flex-1 md:flex-none px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                >
+                  Actualizar
+                </button>
+              </div>
+            </div>
+
+            {/* Categorías de Filtro */}
+            <div className="flex flex-col md:flex-row justify-between gap-4 pt-2">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'all', label: 'Todos', color: 'bg-white/10' },
+                  { id: 'reserva', label: 'Reservas', color: 'bg-primary/20 text-primary' },
+                  { id: 'torneo', label: 'Torneos', color: 'bg-purple-500/20 text-purple-400' },
+                  { id: 'partido', label: 'Partidos', color: 'bg-blue-500/20 text-blue-400' },
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilterType(f.id as any)}
+                    className={clsx(
+                      "px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border",
+                      filterType === f.id ? f.color + " border-transparent" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => {
+                    const filteredItems = history.filter(item => {
+                      const s = searchTerm.toLowerCase();
+                      const matchesSearch = (
+                        (item.nombre?.toLowerCase().includes(s)) ||
+                        (item.telefono?.toLowerCase().includes(s)) ||
+                        (item.jugador1?.toLowerCase().includes(s)) ||
+                        (item.jugador2?.toLowerCase().includes(s)) ||
+                        (item.torneos?.nombre?.toLowerCase().includes(s))
+                      );
+                      const matchesFilter = filterType === 'all' || item.category === filterType;
+                      return matchesSearch && matchesFilter;
+                    });
+                    
+                    const filteredKeys = filteredItems.map(item => `${item.category}-${item.id}`);
+                    const allSelected = filteredKeys.every(key => selectedItems.includes(key));
+                    
+                    if (allSelected) {
+                      setSelectedItems(prev => prev.filter(key => !filteredKeys.includes(key)));
+                    } else {
+                      setSelectedItems(prev => Array.from(new Set([...prev, ...filteredKeys])));
+                    }
+                  }}
+                  className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                >
+                  {(() => {
+                    const filteredItems = history.filter(item => {
+                      const s = searchTerm.toLowerCase();
+                      const matchesSearch = (
+                        (item.nombre?.toLowerCase().includes(s)) ||
+                        (item.telefono?.toLowerCase().includes(s)) ||
+                        (item.jugador1?.toLowerCase().includes(s)) ||
+                        (item.jugador2?.toLowerCase().includes(s)) ||
+                        (item.torneos?.nombre?.toLowerCase().includes(s))
+                      );
+                      const matchesFilter = filterType === 'all' || item.category === filterType;
+                      return matchesSearch && matchesFilter;
+                    });
+                    const filteredKeys = filteredItems.map(item => `${item.category}-${item.id}`);
+                    return filteredKeys.length > 0 && filteredKeys.every(key => selectedItems.includes(key)) 
+                      ? 'Desmarcar Todo' 
+                      : 'Seleccionar Todo';
+                  })()}
+                </button>
+
+                <AnimatePresence>
+                  {selectedItems.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      className="flex items-center gap-4"
+                    >
+                      <span className="text-[10px] font-black uppercase opacity-40">{selectedItems.length} seleccionados</span>
+                      <button 
+                        onClick={handleBulkDelete}
+                        className="px-6 py-2.5 bg-error text-white rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-error/80 transition-all shadow-lg"
+                      >
+                        Eliminar Selección
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {historyLoading ? (
+               <div className="p-20 text-center opacity-30 font-black uppercase tracking-widest text-[10px]">
+                 Cargando historial...
+               </div>
+            ) : (
+              history
+                .filter(item => {
+                  const s = searchTerm.toLowerCase();
+                  const matchesSearch = (
+                    (item.nombre?.toLowerCase().includes(s)) ||
+                    (item.telefono?.toLowerCase().includes(s)) ||
+                    (item.jugador1?.toLowerCase().includes(s)) ||
+                    (item.jugador2?.toLowerCase().includes(s)) ||
+                    (item.torneos?.nombre?.toLowerCase().includes(s))
+                  );
+                  const matchesFilter = filterType === 'all' || item.category === filterType;
+                  return matchesSearch && matchesFilter;
+                })
+                .map((item, idx) => {
+                  const isExpanded = selectedHistoryItem?.id === item.id && selectedHistoryItem?.category === item.category;
+                  
+                  return (
+                    <div key={idx} className="flex flex-col gap-2 relative group">
+                      <div className={clsx(
+                        "glass p-6 rounded-3xl border border-white/5 flex items-center justify-between gap-6 hover:bg-white/[0.02] transition-all cursor-pointer",
+                        isExpanded && "border-primary/30 bg-primary/5",
+                        selectedItems.includes(`${item.category}-${item.id}`) && "border-primary/50 bg-primary/10"
+                      )}
+                      onClick={() => setSelectedHistoryItem(isExpanded ? null : item)}
+                      >
+                        <div className="flex items-center gap-5">
+                          {/* Checkbox for selection */}
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const key = `${item.category}-${item.id}`;
+                              setSelectedItems(prev => 
+                                prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+                              );
+                            }}
+                            className={clsx(
+                              "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
+                              selectedItems.includes(`${item.category}-${item.id}`) 
+                                ? "bg-primary border-primary text-black" 
+                                : "border-white/10 bg-white/5 opacity-0 group-hover:opacity-100"
+                            )}
+                          >
+                            {selectedItems.includes(`${item.category}-${item.id}`) && <CheckCircle2 size={14} />}
+                          </div>
+
+                          <div className={clsx(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center text-xl",
+                            item.category === 'reserva' ? "bg-primary/10 text-primary" : 
+                            item.category === 'torneo' ? "bg-purple-500/10 text-purple-400" : 
+                            "bg-blue-500/10 text-blue-400"
+                          )}>
+                            {item.category === 'reserva' ? <CalendarIcon size={20} /> : 
+                             item.category === 'torneo' ? <Trophy size={20} /> : 
+                             <Users size={20} />}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <h4 className="text-sm font-black uppercase italic">
+                                {item.category === 'torneo' ? `${item.jugador1} & ${item.jugador2}` : item.nombre}
+                              </h4>
+                              <span className={clsx(
+                                "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
+                                item.category === 'reserva' ? "bg-primary/20 text-primary" : 
+                                item.category === 'torneo' ? "bg-purple-500/20 text-purple-400" : 
+                                "bg-blue-500/20 text-blue-400"
+                              )}>
+                                {item.category}
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">
+                              {item.category === 'reserva' 
+                                ? `${item.fecha} · ${item.hora} hs` 
+                                : item.category === 'torneo'
+                                ? `Torneo: ${item.torneos?.nombre}`
+                                : `Partido: ${item.fecha || item.partidos_abiertos?.fecha} ${item.hora || item.partidos_abiertos?.hora} hs`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right hidden sm:block">
+                            <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Registro</p>
+                            <p className="text-[10px] font-bold">
+                              {item.created_at ? format(new Date(item.created_at), "d MMM, HH:mm", { locale: es }) : 'N/A'}
+                            </p>
+                          </div>
+                          <ChevronLeft size={16} className={clsx("opacity-20 transition-transform", isExpanded ? "-rotate-90" : "")} />
+                        </div>
+                      </div>
+
+                      {/* Detail Section */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="glass mx-4 p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                  <h5 className="text-[10px] font-black uppercase tracking-widest text-primary">Información del Usuario</h5>
+                                  <div className="space-y-2">
+                                    <p className="text-xs font-bold flex justify-between">
+                                      <span className="opacity-40">Tipo:</span> 
+                                      <span className="capitalize">{item.category === 'partido' ? (item.isCreation ? 'Creó un partido' : 'Se unió a un partido') : item.category}</span>
+                                    </p>
+                                    <p className="text-xs font-bold flex justify-between">
+                                      <span className="opacity-40">Nombre:</span> 
+                                      <span>{item.category === 'torneo' ? `${item.jugador1} / ${item.jugador2}` : item.nombre}</span>
+                                    </p>
+                                    <p className="text-xs font-bold flex justify-between">
+                                      <span className="opacity-40">Teléfono:</span> 
+                                      <span className="text-primary">{item.telefono}</span>
+                                    </p>
+                                    {item.category === 'reserva' && (
+                                      <p className="text-xs font-bold flex justify-between">
+                                        <span className="opacity-40">Cancha:</span> 
+                                        <span>Cancha {item.cancha}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="space-y-4">
+                                  <h5 className="text-[10px] font-black uppercase tracking-widest text-primary">Detalles del Evento</h5>
+                                  <div className="space-y-2">
+                                    <p className="text-xs font-bold flex justify-between">
+                                      <span className="opacity-40">Fecha:</span> 
+                                      <span>{item.fecha || item.partidos_abiertos?.fecha}</span>
+                                    </p>
+                                    <p className="text-xs font-bold flex justify-between">
+                                      <span className="opacity-40">Hora:</span> 
+                                      <span>{item.hora || item.partidos_abiertos?.hora} hs</span>
+                                    </p>
+                                    {item.category === 'torneo' && (
+                                      <p className="text-xs font-bold flex justify-between">
+                                        <span className="opacity-40">Torneo:</span> 
+                                        <span className="text-purple-400">{item.torneos?.nombre}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-4 pt-4 border-t border-white/5">
+                                <a 
+                                  href={`https://wa.me/${item.telefono?.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  className="flex-1 py-3 bg-green-500/20 text-green-400 border border-green-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-green-500/30 transition-all"
+                                >
+                                  Contactar WhatsApp
+                                </a>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); deleteHistoryItem(item); }}
+                                  className="px-6 py-3 bg-error/10 text-error border border-error/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-error/20 transition-all"
+                                >
+                                  Eliminar Registro
+                                </button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })
+            )}
+            {!historyLoading && history.length === 0 && (
+              <div className="p-20 text-center opacity-30 font-black uppercase tracking-widest text-[10px]">
+                No hay registros encontrados
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
     <TutorialModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
   </PageWrapper>
   );
 }
-
