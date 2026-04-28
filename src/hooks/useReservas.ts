@@ -31,12 +31,12 @@ export function useReservas(selectedDate: string) {
         return;
       }
 
-      // 3. Filtrar las reservas de ESE club específico
+      // 3. Filtrar las reservas de ESE club específico (y las antiguas sin club_id)
       const { data, error } = await supabase
         .from('reservas')
         .select('*')
         .eq('fecha', selectedDate)
-        .eq('club_id', clubData.id)
+        .or(`club_id.eq.${clubData.id},club_id.is.null`)
         .order('hora', { ascending: true });
 
       if (error) throw error;

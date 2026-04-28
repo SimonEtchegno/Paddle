@@ -37,6 +37,17 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
 
     setSubmitting(true);
     try {
+      // 1. Obtener el club activo (Multi-Tenant)
+      const cookies = document.cookie.split('; ');
+      const slugCookie = cookies.find(row => row.startsWith('active_club_slug='));
+      const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'penarol';
+
+      const { data: clubData } = await supabase
+        .from('clubes')
+        .select('id')
+        .eq('slug', activeSlug)
+        .single();
+
       // 3-per-day limit check
       const { data: existing } = await supabase
         .from('reservas')
@@ -53,10 +64,16 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
         hora,
         cancha,
         nombre: `${nombre} (Next)`,
-        telefono
+        telefono,
+        ...(clubData ? { club_id: clubData.id } : {})
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505' || error.message?.includes('reservas_fecha_hora_cancha_key')) {
+          throw new Error('Este turno ya fue reservado por otra persona. ¡Elegí otro horario!');
+        }
+        throw error;
+      }
 
       // Auto-save profile if new
       if (!profile) {
