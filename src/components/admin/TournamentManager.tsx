@@ -2,24 +2,24 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Trophy, Users, Layout, Plus, X, Save, ChevronLeft, 
-  CheckCircle2, Search, Trash2, Calendar, Clock, 
+import {
+  Trophy, Users, Layout, Plus, X, Save, ChevronLeft,
+  CheckCircle2, Search, Trash2, Calendar, Clock,
   ChevronRight, Camera, Settings2, GripVertical, Sparkles, Share2, Globe
 } from 'lucide-react';
-import { 
-  DndContext as DndKitContext, 
-  DragEndEvent, 
-  DragStartEvent, 
-  PointerSensor as DndPointerSensor, 
-  useSensor as useDndSensor, 
+import {
+  DndContext as DndKitContext,
+  DragEndEvent,
+  DragStartEvent,
+  PointerSensor as DndPointerSensor,
+  useSensor as useDndSensor,
   useSensors as useDndSensors,
   rectIntersection,
   useDroppable,
   DragOverlay as DndDragOverlay
 } from '@dnd-kit/core';
-import { 
-  SortableContext as DndSortableContext, 
+import {
+  SortableContext as DndSortableContext,
   verticalListSortingStrategy as dndVerticalListSortingStrategy,
   arrayMove as dndArrayMove,
   useSortable
@@ -48,12 +48,12 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     if (tournament.parejas_data && tournament.parejas_data.length > 0) return 'pairs';
     return 'config';
   });
-  
+
   const [unlockedSteps, setUnlockedSteps] = useState<string[]>(() => {
     const all = ['config', 'pairs', 'assignment', 'groups', 'bracket'];
     const isExisting = tournament.id && tournament.id !== 'new';
     if (isExisting) return all;
-    
+
     const unlocked = ['config'];
     if (tournament.parejas_data && tournament.parejas_data.length > 0) unlocked.push('pairs');
     if (tournament.zonas_data && tournament.zonas_data.length > 0) unlocked.push('assignment', 'groups');
@@ -66,7 +66,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
   };
 
   const [loading, setLoading] = useState(false);
-  
+
   const [config, setConfig] = useState<TournamentConfig>(() => {
     const defaultCfg: TournamentConfig = {
       phaseType: 'both',
@@ -169,7 +169,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       }
     }
   }, []);
-  
+
   // Sincronizar número de zonas con el estado zones
   useEffect(() => {
     if (config.numZones > 0 && config.phaseType !== 'elimination') {
@@ -205,11 +205,11 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     const newBracket = [...bracket];
     const curr = newBracket.find(n => n.id === nodeId)!;
     curr.score = newScore;
-    
+
     if (curr.winnerTo) {
       const s = parseScore(newScore);
       const nextNode = newBracket.find(n => n.id === curr.winnerTo);
-      
+
       if (nextNode) {
         if (s && (s.p1Sets !== s.p2Sets)) {
           const winningPair = s.p1Sets > s.p2Sets ? curr.p1 : curr.p2;
@@ -293,12 +293,12 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         if (!name) return;
         const backupData = {
           timestamp: new Date().toISOString(),
-      config,
-      pairs,
-      zones,
-      bracket
-    };
-    
+          config,
+          pairs,
+          zones,
+          bracket
+        };
+
         const backups = JSON.parse(localStorage.getItem('tournament_backups') || '{}');
         backups[name] = backupData;
         localStorage.setItem('tournament_backups', JSON.stringify(backups));
@@ -315,30 +315,30 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         toast.error('No se encontró la base de datos de backups');
         return;
       }
-      
+
       const backups = JSON.parse(backupsRaw);
       const data = backups[name];
       if (!data) {
         toast.error('El backup seleccionado ya no existe');
         return;
       }
-      
+
       console.log("Data found for backup:", name, data);
-      
+
       // Restaurar estados con validación
       if (data.config) setConfig(data.config);
       if (data.pairs) setPairs(Array.isArray(data.pairs) ? data.pairs : []);
       if (data.zones) setZones(Array.isArray(data.zones) ? data.zones : []);
       if (data.bracket) setBracket(Array.isArray(data.bracket) ? data.bracket : []);
-      
+
       setUnlockedSteps(['config', 'pairs', 'assignment', 'groups', 'bracket']);
       setCurrentVersionName(name);
       setSaveName(name);
-      
+
       if (data.bracket && data.bracket.length > 0) setStep('bracket');
       else if (data.zones && data.zones.length > 0) setStep('groups');
       else if (data.pairs && data.pairs.length > 0) setStep('pairs');
-      
+
       setShowLoadModal(false);
       toast.success('¡Backup restaurado con éxito!');
     } catch (e: any) {
@@ -361,7 +361,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     }
     else if (step === 'pairs') {
       if (pairs.length < 2) return toast.error('Carga al menos 2 parejas para continuar');
-      
+
       // Auto-generate zones if they don't exist or adjust count without wiping existing ones
       if (zones.length < config.numZones) {
         const newZones = [...zones];
@@ -385,7 +385,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       if (totalAssigned < 2) {
         return toast.error('Debes asignar al menos 2 parejas entre todas las zonas');
       }
-      
+
       const unassignedCount = pairs.filter(p => !zones.some(z => z.pairs.includes(p.id))).length;
       if (unassignedCount > 0) {
         toast(`Continuando con ${unassignedCount} parejas sin asignar`, { icon: 'ℹ️' });
@@ -419,7 +419,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     const newZones = [...zones];
     unassigned.forEach((pair, idx) => {
       // Find the zone with fewest pairs
-      const targetZone = newZones.reduce((prev, curr) => 
+      const targetZone = newZones.reduce((prev, curr) =>
         prev.pairs.length <= curr.pairs.length ? prev : curr
       );
       targetZone.pairs.push(pair.id);
@@ -439,7 +439,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
   ];
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 bg-surface/30 p-4 md:p-10 rounded-[3rem] border border-white/5 min-h-[85vh] flex flex-col"
@@ -457,17 +457,17 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               {tournament.nombre}
             </p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="lg:hidden p-3 rounded-2xl hover:bg-white/5 transition-all text-white/40 hover:text-white"
           >
             <X size={24} />
           </button>
         </div>
-        
+
         {/* Stepper & Actions Container */}
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-center lg:justify-end">
-          <button 
+          <button
             id="tutorial-tourney-load"
             onClick={openLoadModal}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/40 hover:text-white"
@@ -475,14 +475,14 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
             <Clock size={14} /> Cargar
           </button>
 
-          <button 
+          <button
             onClick={() => startTournamentAdminTour((s) => setStep(s as ManagementStep))}
             className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all text-primary"
           >
             <Sparkles size={16} /> ¿Cómo organizar mi torneo?
           </button>
 
-          <button 
+          <button
             onClick={() => {
               const url = `${window.location.origin}/torneos/${tournament.id}`;
               navigator.clipboard.writeText(url);
@@ -493,7 +493,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
             <Share2 size={16} /> Compartir
           </button>
 
-          <button 
+          <button
             id="tutorial-tourney-save"
             onClick={() => handleSave()}
             disabled={isSyncing}
@@ -506,9 +506,9 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
             )}
             {isSyncing ? 'Guardando...' : 'Guardar Cambios'}
           </button>
-          
+
           <div className="w-px h-8 bg-white/10 mx-2" />
-          
+
           <div id="tutorial-tourney-visibility" className="flex items-center gap-4 bg-black/20 px-6 py-3 rounded-2xl border border-white/5 mr-4">
             <div className="flex flex-col items-end">
               <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Estado Público</span>
@@ -516,29 +516,29 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 {isVisible ? 'Visible para todos' : 'Privado (Solo Admin)'}
               </span>
             </div>
-            <button 
+            <button
               onClick={() => setIsVisible(!isVisible)}
               className={clsx(
                 "w-12 h-6 rounded-full transition-all relative p-1",
                 isVisible ? "bg-primary" : "bg-white/10"
               )}
             >
-              <motion.div 
+              <motion.div
                 animate={{ x: isVisible ? 24 : 0 }}
                 className="w-4 h-4 bg-white rounded-full shadow-lg"
               />
             </button>
           </div>
-          
+
           <div className="w-px h-8 bg-white/10 mx-2" />
-          
+
           <div className="flex items-center gap-1 bg-black/40 backdrop-blur-2xl p-1 rounded-[1.8rem] border border-white/5 shadow-2xl relative">
             {steps.map((s, idx) => {
               const Icon = s.icon;
               const isActive = step === s.id;
               const isCompleted = unlockedSteps.includes(s.id);
               const isLocked = !isCompleted && !isActive;
-              
+
               return (
                 <div key={s.id} className="flex items-center">
                   <button
@@ -557,7 +557,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                         transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                       />
                     )}
-                    
+
                     <div className="relative z-10 flex items-center gap-2">
                       <div className={clsx(
                         "p-1.5 rounded-lg transition-all",
@@ -579,7 +579,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     <div className="px-1">
                       <div className={clsx(
                         "w-4 h-[1px] rounded-full transition-all duration-500",
-                        unlockedSteps.includes(steps[idx+1].id) ? "bg-primary/40" : "bg-white/5"
+                        unlockedSteps.includes(steps[idx + 1].id) ? "bg-primary/40" : "bg-white/5"
                       )} />
                     </div>
                   )}
@@ -595,7 +595,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 <span className="text-[9px] font-black uppercase tracking-widest text-error">Torneo Oculto (Privado)</span>
               </div>
             )}
-            <button 
+            <button
               onClick={onClose}
               className="p-3 rounded-2xl hover:bg-white/5 transition-all text-white/40 hover:text-white"
             >
@@ -657,9 +657,9 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                           <p className="text-[10px] opacity-40 font-bold uppercase mt-1">¿Cuántos grupos habrá?</p>
                         </div>
                         <div className="flex items-center gap-4 bg-black/40 p-2 rounded-2xl border border-white/5">
-                          <button onClick={() => setConfig({...config, numZones: Math.max(1, config.numZones - 1)})} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">-</button>
+                          <button onClick={() => setConfig({ ...config, numZones: Math.max(1, config.numZones - 1) })} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">-</button>
                           <span className="text-xl font-black w-8 text-center">{config.numZones}</span>
-                          <button onClick={() => setConfig({...config, numZones: config.numZones + 1})} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">+</button>
+                          <button onClick={() => setConfig({ ...config, numZones: config.numZones + 1 })} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">+</button>
                         </div>
                       </div>
 
@@ -669,9 +669,9 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                           <p className="text-[10px] opacity-40 font-bold uppercase mt-1">A la fase final</p>
                         </div>
                         <div className="flex items-center gap-4 bg-black/40 p-2 rounded-2xl border border-white/5">
-                          <button onClick={() => setConfig({...config, qualifiersPerZone: Math.max(1, config.qualifiersPerZone - 1)})} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">-</button>
+                          <button onClick={() => setConfig({ ...config, qualifiersPerZone: Math.max(1, config.qualifiersPerZone - 1) })} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">-</button>
                           <span className="text-xl font-black w-8 text-center">{config.qualifiersPerZone}</span>
-                          <button onClick={() => setConfig({...config, qualifiersPerZone: config.qualifiersPerZone + 1})} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">+</button>
+                          <button onClick={() => setConfig({ ...config, qualifiersPerZone: config.qualifiersPerZone + 1 })} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary hover:text-black transition-all font-black">+</button>
                         </div>
                       </div>
                     </div>
@@ -680,9 +680,9 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   {config.phaseType !== 'zones' && (
                     <div className="space-y-6">
                       <label className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">Tamaño del Cuadro</label>
-                      <select 
+                      <select
                         value={config.bracketSize}
-                        onChange={(e) => setConfig({...config, bracketSize: e.target.value as any})}
+                        onChange={(e) => setConfig({ ...config, bracketSize: e.target.value as any })}
                         className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-xs font-black uppercase tracking-widest outline-none focus:border-primary transition-all"
                       >
                         <option value="semi">Semifinales (4)</option>
@@ -695,7 +695,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               </div>
 
               <div className="flex justify-center pt-8">
-                <button 
+                <button
                   onClick={nextStep}
                   className="bg-primary text-black px-16 py-6 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-[0_20px_40px_rgba(136,130,220,0.3)] flex items-center gap-4 group"
                 >
@@ -706,7 +706,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
           )}
 
           {step === 'pairs' && (
-             <motion.div
+            <motion.div
               key="pairs"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -719,7 +719,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   <p className="text-xs md:text-sm opacity-40 font-bold uppercase tracking-widest">Carga y edita los participantes</p>
                 </div>
                 <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-                  <button 
+                  <button
                     onClick={() => {
                       const testData = [
                         ['Los Galácticos', 'Juan Pérez', 'Diego Gómez'],
@@ -744,7 +744,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   >
                     <Sparkles size={16} /> Demo
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       const newPair: Pair = { id: generateId(), name: '', player1: '', player2: '' };
                       setPairs([...pairs, newPair]);
@@ -758,21 +758,21 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pr-2 flex-1 custom-scrollbar pb-10">
                 {pairs.map((p, idx) => (
-                  <motion.div 
+                  <motion.div
                     layout
                     key={p.id}
                     className="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6 relative group"
                   >
-                    <button 
+                    <button
                       onClick={() => setPairs(pairs.filter(x => x.id !== p.id))}
                       className="absolute top-6 right-6 p-2 text-error/20 hover:text-error hover:bg-error/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 size={16} />
                     </button>
-                    
+
                     <div className="space-y-1">
                       <label className="text-[9px] font-black uppercase tracking-widest opacity-30 ml-1">Nombre Pareja</label>
-                      <input 
+                      <input
                         className="w-full bg-transparent text-xl font-black uppercase italic outline-none focus:text-primary transition-all tracking-tighter"
                         placeholder="EJ: LOS NINJAS"
                         value={p.name}
@@ -787,7 +787,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     <div className="space-y-4 pt-2">
                       <div className="space-y-1">
                         <label className="text-[8px] font-black uppercase tracking-widest opacity-20 ml-1">Jugador 1</label>
-                        <input 
+                        <input
                           className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-primary/40 transition-all"
                           placeholder="Nombre..."
                           value={p.player1}
@@ -800,7 +800,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       </div>
                       <div className="space-y-1">
                         <label className="text-[8px] font-black uppercase tracking-widest opacity-20 ml-1">Jugador 2</label>
-                        <input 
+                        <input
                           className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-primary/40 transition-all"
                           placeholder="Nombre..."
                           value={p.player2}
@@ -823,7 +823,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     <p className="font-black uppercase italic">Importar Inscriptos</p>
                     <p className="text-[9px] font-bold uppercase mt-1">Cargar parejas desde inscripciones</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       const newFromInsc = inscripciones
                         .filter(i => i.torneo_id === tournament.id)
@@ -855,7 +855,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
           )}
 
           {step === 'assignment' && (
-            <DndKitContext 
+            <DndKitContext
               sensors={sensors}
               collisionDetection={rectIntersection}
               onDragStart={(e) => setActiveDragId(e.active.id as string)}
@@ -888,7 +888,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   <div className="flex items-center justify-between px-2">
                     <div className="space-y-1">
                       <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Sin Asignar ({pairs.filter(p => !zones.some(z => z.pairs.includes(p.id))).length})</h3>
-                      <button 
+                      <button
                         onClick={autoAssignPairs}
                         className="text-[9px] font-black uppercase text-primary hover:underline flex items-center gap-1 transition-all"
                       >
@@ -905,12 +905,12 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 </div>
 
                 <div className="lg:col-span-9 space-y-8 overflow-y-auto pr-2 custom-scrollbar pb-10">
-                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {zones.map((z) => (
-                      <ZoneDroppable 
-                        key={z.id} 
-                        zone={z} 
-                        allPairs={pairs} 
+                      <ZoneDroppable
+                        key={z.id}
+                        zone={z}
+                        allPairs={pairs}
                         onRemovePair={(pairId) => {
                           setZones(prev => prev.map(zone => zone.id === z.id ? { ...zone, pairs: zone.pairs.filter(id => id !== pairId) } : zone));
                         }}
@@ -967,7 +967,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">Fase de Grupos</h3>
                   <p className="text-xs md:text-sm opacity-40 font-bold uppercase tracking-widest">Gestiona los partidos y mira las posiciones</p>
                 </div>
-                <button 
+                <button
                   id="tutorial-gen-fixtures"
                   onClick={() => {
                     const newZones = zones.map(z => {
@@ -1002,7 +1002,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     <div key={z.id} className="space-y-8">
                       <div className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-white/5 space-y-6 md:space-y-8 h-full flex flex-col">
                         <h4 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter text-primary">{z.name}</h4>
-                        
+
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-[11px]">
                             <thead>
@@ -1037,16 +1037,16 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                             {z.matches.map((m, mIdx) => (
                               <div key={m.id} className="space-y-2">
                                 <p className="text-[8px] font-black uppercase opacity-20 ml-2 italic tracking-widest">Partido {mIdx + 1}</p>
-                                <MatchRow 
-                                  match={m} 
-                                  pairs={pairs} 
+                                <MatchRow
+                                  match={m}
+                                  pairs={pairs}
                                   onUpdate={(data) => {
                                     const newZones = [...zones];
                                     const zone = newZones.find(x => x.id === z.id)!;
                                     const match = zone.matches.find(x => x.id === m.id)!;
                                     Object.assign(match, data);
                                     setZones(newZones);
-                                  }} 
+                                  }}
                                 />
                               </div>
                             ))}
@@ -1084,42 +1084,42 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> Camino a la Gloria
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     const classified: string[] = [];
                     zones.forEach((z, idx) => {
                       const top = calculateStandings(z, pairs).slice(0, config.qualifiersPerZone);
                       top.forEach(p => classified.push(p.name));
                     });
-                    
+
                     const newBracket: BracketNode[] = [];
-                    
+
                     if (config.bracketSize === 'eighth') {
                       // 8 Octavos -> 4 Cuartos -> 2 Semis -> 1 Final
                       for (let i = 1; i <= 8; i++) {
-                        newBracket.push({ 
-                          id: `eighth-${i}`, stage: 'Octavos', 
-                          p1: classified[(i-1)*2] || `Pareja ${(i-1)*2 + 1}`, 
-                          p2: classified[(i-1)*2 + 1] || `Pareja ${(i-1)*2 + 2}`, 
-                          score: '', winnerTo: `quarter-${Math.ceil(i/2)}`, slot: (i % 2 === 1 ? 1 : 2) 
+                        newBracket.push({
+                          id: `eighth-${i}`, stage: 'Octavos',
+                          p1: classified[(i - 1) * 2] || `Pareja ${(i - 1) * 2 + 1}`,
+                          p2: classified[(i - 1) * 2 + 1] || `Pareja ${(i - 1) * 2 + 2}`,
+                          score: '', winnerTo: `quarter-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2)
                         });
                       }
                       for (let i = 1; i <= 4; i++) {
-                        newBracket.push({ id: `quarter-${i}`, stage: 'Cuartos', p1: '?', p2: '?', score: '', winnerTo: `semi-${Math.ceil(i/2)}`, slot: (i % 2 === 1 ? 1 : 2) });
+                        newBracket.push({ id: `quarter-${i}`, stage: 'Cuartos', p1: '?', p2: '?', score: '', winnerTo: `semi-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2) });
                       }
                       for (let i = 1; i <= 2; i++) {
                         newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
                       }
                       newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '' });
-                    } 
+                    }
                     else if (config.bracketSize === 'quarter') {
                       // 4 Cuartos -> 2 Semis -> 1 Final
                       for (let i = 1; i <= 4; i++) {
-                        newBracket.push({ 
-                          id: `quarter-${i}`, stage: 'Cuartos', 
-                          p1: classified[(i-1)*2] || `Pareja ${(i-1)*2 + 1}`, 
-                          p2: classified[(i-1)*2 + 1] || `Pareja ${(i-1)*2 + 2}`, 
-                          score: '', winnerTo: `semi-${Math.ceil(i/2)}`, slot: (i % 2 === 1 ? 1 : 2) 
+                        newBracket.push({
+                          id: `quarter-${i}`, stage: 'Cuartos',
+                          p1: classified[(i - 1) * 2] || `Pareja ${(i - 1) * 2 + 1}`,
+                          p2: classified[(i - 1) * 2 + 1] || `Pareja ${(i - 1) * 2 + 2}`,
+                          score: '', winnerTo: `semi-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2)
                         });
                       }
                       for (let i = 1; i <= 2; i++) {
@@ -1133,7 +1133,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       newBracket.push({ id: 'semi-2', stage: 'Semifinal', p1: classified[2] || '1° Zona B', p2: classified[1] || '2° Zona A', score: '', winnerTo: 'final', slot: 2 });
                       newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '' });
                     }
-                    
+
                     setBracket(newBracket);
                     toast.success(`Cuadro de ${config.bracketSize === 'semi' ? '4' : config.bracketSize === 'quarter' ? '8' : '16'} parejas generado`);
                   }}
@@ -1145,17 +1145,17 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
               <div className="flex-1 overflow-x-auto custom-scrollbar pb-20">
                 <div className="flex gap-12 md:gap-32 min-w-max px-6 md:px-20 h-full items-center justify-center">
-                  {(config.bracketSize === 'eighth' 
-                    ? ['Octavos', 'Cuartos', 'Semifinal', 'Final'] 
-                    : config.bracketSize === 'quarter' 
-                      ? ['Cuartos', 'Semifinal', 'Final'] 
+                  {(config.bracketSize === 'eighth'
+                    ? ['Octavos', 'Cuartos', 'Semifinal', 'Final']
+                    : config.bracketSize === 'quarter'
+                      ? ['Cuartos', 'Semifinal', 'Final']
                       : ['Semifinal', 'Final']
                   ).map((stage, sIdx) => (
                     <div key={stage} className="space-y-16 flex flex-col justify-around h-full py-10 relative">
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-10 whitespace-nowrap">
                         <span className="text-[11px] font-black uppercase tracking-[0.5em] text-primary/40 bg-primary/5 px-6 py-2 rounded-full border border-primary/10">{stage}</span>
                       </div>
-                      
+
                       <div className="space-y-24">
                         {bracket.filter(n => n.stage === stage).map((node, nIdx) => {
                           const score = parseScore(node.score);
@@ -1165,7 +1165,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                           return (
                             <div key={node.id} className="relative group">
                               <p className="text-[8px] font-black uppercase opacity-20 mb-2 ml-4 italic tracking-widest">{node.stage} - Partido {nIdx + 1}</p>
-                              <motion.div 
+                              <motion.div
                                 whileHover={{ scale: 1.02, y: -5 }}
                                 className={clsx(
                                   "w-[280px] md:w-[320px] glass border rounded-[2rem] md:rounded-[2.5rem] overflow-hidden transition-all duration-500 shadow-2xl relative z-10",
@@ -1186,7 +1186,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                 )}>
                                   <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
                                     {winner === 1 && <Trophy size={16} className="shrink-0" />}
-                                    <input 
+                                    <input
                                       className={clsx(
                                         "bg-transparent text-sm font-black uppercase italic w-full outline-none transition-all",
                                         winner === 1 ? "text-black" : "text-white opacity-60 focus:opacity-100"
@@ -1227,7 +1227,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                 )}>
                                   <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
                                     {winner === 2 && <Trophy size={16} className="shrink-0" />}
-                                    <input 
+                                    <input
                                       className={clsx(
                                         "bg-transparent text-sm font-black uppercase italic w-full outline-none transition-all",
                                         winner === 2 ? "text-black" : "text-white opacity-60 focus:opacity-100"
@@ -1296,7 +1296,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       <AnimatePresence>
         {showSaveModal && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-xl">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -1304,7 +1304,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
             >
               <div className="absolute top-0 left-0 w-full h-2 bg-white/5">
                 {isSyncing && (
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
                     transition={{ duration: 2, repeat: Infinity }}
@@ -1332,7 +1332,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Nombre de la versión</label>
-                  <input 
+                  <input
                     autoFocus
                     placeholder="Ej: Zonas Listas / Sábado Mañana"
                     className="w-full bg-white/5 border border-white/10 rounded-3xl p-8 text-xl font-black uppercase italic outline-none focus:border-primary/50 focus:bg-primary/5 transition-all"
@@ -1343,13 +1343,13 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 </div>
 
                 <div className="flex gap-4">
-                  <button 
+                  <button
                     onClick={() => setShowSaveModal(false)}
                     className="flex-1 px-8 py-6 rounded-3xl font-black text-[11px] uppercase tracking-widest opacity-40 hover:opacity-100 hover:bg-white/5 transition-all"
                   >
                     Cancelar
                   </button>
-                  <button 
+                  <button
                     disabled={!saveName || isSyncing}
                     onClick={() => handleSave(saveName)}
                     className="flex-[2] bg-primary text-black px-8 py-6 rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-[0_20px_40px_rgba(136,130,220,0.3)] disabled:opacity-30 flex items-center justify-center gap-3"
@@ -1370,7 +1370,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       <AnimatePresence>
         {showLoadModal && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -1383,7 +1383,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
                   {Object.keys(backupsList).length > 0 && (
-                    <button 
+                    <button
                       onClick={() => {
                         setConfirmDialog({
                           isOpen: true,
@@ -1416,53 +1416,53 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   Object.entries(backupsList)
                     .sort((a, b) => new Date(b[1].timestamp).getTime() - new Date(a[1].timestamp).getTime())
                     .map(([name, data]) => (
-                    <div
-                      key={name}
-                      className="w-full text-left p-6 bg-white/5 border border-white/10 rounded-2xl hover:border-primary hover:bg-primary/5 transition-all flex justify-between items-center group"
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          loadLocalBackup(name);
-                        }}
-                        className="flex-1 text-left"
+                      <div
+                        key={name}
+                        className="w-full text-left p-6 bg-white/5 border border-white/10 rounded-2xl hover:border-primary hover:bg-primary/5 transition-all flex justify-between items-center group"
                       >
-                        <p className="text-lg font-black uppercase italic tracking-tight group-hover:text-primary transition-colors">{name}</p>
-                        <p className="text-[9px] opacity-30 font-bold mt-1 uppercase">
-                          {new Date(data.timestamp).toLocaleString()}
-                        </p>
-                      </button>
-                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setConfirmDialog({
-                              isOpen: true,
-                              title: '¿Borrar Versión?',
-                              message: `Se eliminará permanentemente el backup "${name}".`,
-                              isDanger: true,
-                              confirmText: 'Sí, Borrar',
-                              onConfirm: () => {
-                                const newBackups = { ...backupsList };
-                                delete newBackups[name];
-                                localStorage.setItem('tournament_backups', JSON.stringify(newBackups));
-                                setBackupsList(newBackups);
-                                toast.success('Versión eliminada');
-                              }
-                            });
+                            loadLocalBackup(name);
                           }}
-                          className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                          className="flex-1 text-left"
                         >
-                          <Trash2 size={16} />
+                          <p className="text-lg font-black uppercase italic tracking-tight group-hover:text-primary transition-colors">{name}</p>
+                          <p className="text-[9px] opacity-30 font-bold mt-1 uppercase">
+                            {new Date(data.timestamp).toLocaleString()}
+                          </p>
                         </button>
-                        <ChevronRight size={18} className="opacity-0 group-hover:opacity-100 transition-all text-primary translate-x-[-10px] group-hover:translate-x-0" />
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setConfirmDialog({
+                                isOpen: true,
+                                title: '¿Borrar Versión?',
+                                message: `Se eliminará permanentemente el backup "${name}".`,
+                                isDanger: true,
+                                confirmText: 'Sí, Borrar',
+                                onConfirm: () => {
+                                  const newBackups = { ...backupsList };
+                                  delete newBackups[name];
+                                  localStorage.setItem('tournament_backups', JSON.stringify(newBackups));
+                                  setBackupsList(newBackups);
+                                  toast.success('Versión eliminada');
+                                }
+                              });
+                            }}
+                            className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <ChevronRight size={18} className="opacity-0 group-hover:opacity-100 transition-all text-primary translate-x-[-10px] group-hover:translate-x-0" />
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))
                 )}
               </div>
             </motion.div>
@@ -1482,7 +1482,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         </button>
 
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={() => {
               const name = currentVersionName || `Torneo ${new Date().toLocaleDateString()}`;
               setSaveName(name);
@@ -1502,7 +1502,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       <AnimatePresence>
         {confirmDialog?.isOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -1538,21 +1538,21 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
               )}
 
               <div className="flex gap-3 relative z-10 pt-2">
-                <button 
+                <button
                   onClick={() => setConfirmDialog(null)}
                   className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100"
                 >
                   {confirmDialog.cancelText || 'Cancelar'}
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     confirmDialog.onConfirm(confirmDialog.promptValue);
                     setConfirmDialog(null);
                   }}
                   className={clsx(
                     "flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg",
-                    confirmDialog.isDanger 
-                      ? "bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white" 
+                    confirmDialog.isDanger
+                      ? "bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white"
                       : "bg-primary text-black hover:scale-105"
                   )}
                 >
@@ -1605,7 +1605,7 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone }: { zone: Z
   });
 
   return (
-    <div 
+    <div
       ref={setNodeRef}
       className={clsx(
         "glass p-8 rounded-[3rem] border transition-all h-[400px] flex flex-col group/zone",
@@ -1615,7 +1615,7 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone }: { zone: Z
       <div className="flex justify-between items-center mb-6">
         <h4 className="text-xl font-black uppercase italic tracking-tighter">{zone.name}</h4>
         {onDeleteZone && (
-          <button 
+          <button
             onClick={onDeleteZone}
             className="p-2 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover/zone:opacity-100"
             title="Borrar Zona"
@@ -1676,7 +1676,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
   const updateGame = (setIdx: number, playerIdx: 1 | 2, val: string) => {
     // Solo permitir números
     if (val !== '' && !/^\d+$/.test(val)) return;
-    
+
     // Si meten más de 1 número, agarrar el último
     const cleanVal = val.slice(-1);
 
@@ -1688,7 +1688,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
       .map(s => (s.g1 || s.g2) ? `${s.g1 || '0'}-${s.g2 || '0'}` : '-')
       .filter(s => s !== '-')
       .join(' ');
-    
+
     onUpdate({ score: newScoreString, status: newScoreString.length > 0 ? 'finished' : 'pending' });
   };
 
@@ -1704,7 +1704,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
         <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">2</div>
         <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">3</div>
       </div>
-      
+
       {/* Player 1 Row */}
       <div className="flex border-b border-primary/10">
         <div className={clsx(
@@ -1776,7 +1776,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
 
 function calculateStandings(zone: Zone, allPairs: Pair[]) {
   const standingsMap: Record<string, { pj: number, pts: number, sf: number, sc: number, gf: number, gc: number }> = {};
-  
+
   zone.pairs.forEach(pId => {
     standingsMap[pId] = { pj: 0, pts: 0, sf: 0, sc: 0, gf: 0, gc: 0 };
   });
@@ -1787,14 +1787,14 @@ function calculateStandings(zone: Zone, allPairs: Pair[]) {
       if (!score) return;
 
       const { p1Sets, p2Sets, p1Games, p2Games } = score;
-      
+
       // Update P1
       standingsMap[m.p1].pj += 1;
       standingsMap[m.p1].sf += p1Sets;
       standingsMap[m.p1].sc += p2Sets;
       standingsMap[m.p1].gf += p1Games;
       standingsMap[m.p1].gc += p2Games;
-      
+
       // Update P2
       standingsMap[m.p2].pj += 1;
       standingsMap[m.p2].sf += p2Sets;

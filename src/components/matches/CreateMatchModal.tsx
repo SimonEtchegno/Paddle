@@ -108,7 +108,7 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                         type="date" 
                         value={fecha}
                         onChange={(e) => setFecha(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary color-scheme-dark"
                         required
                       />
                     </div>
@@ -121,7 +121,7 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                         type="time" 
                         value={hora}
                         onChange={(e) => setHora(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary color-scheme-dark"
                         required
                       />
                     </div>
@@ -135,15 +135,15 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                     <select 
                       value={nivel}
                       onChange={(e) => setNivel(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none"
+                      className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
                     >
-                      <option value="Principiante">Principiante</option>
-                      <option value="7ma">7ma Categoría</option>
-                      <option value="6ta">6ta Categoría</option>
-                      <option value="5ta">5ta Categoría</option>
-                      <option value="4ta">4ta Categoría</option>
-                      <option value="3ra">3ra Categoría</option>
-                      <option value="Pro">Profesional / Open</option>
+                      <option className="bg-[#1a1d23]" value="Principiante">Principiante</option>
+                      <option className="bg-[#1a1d23]" value="7ma">7ma Categoría</option>
+                      <option className="bg-[#1a1d23]" value="6ta">6ta Categoría</option>
+                      <option className="bg-[#1a1d23]" value="5ta">5ta Categoría</option>
+                      <option className="bg-[#1a1d23]" value="4ta">4ta Categoría</option>
+                      <option className="bg-[#1a1d23]" value="3ra">3ra Categoría</option>
+                      <option className="bg-[#1a1d23]" value="Pro">Profesional / Open</option>
                     </select>
                   </div>
                 </div>
@@ -155,11 +155,11 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                     <select 
                       value={faltan}
                       onChange={(e) => setFaltan(Number(e.target.value))}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none"
+                      className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
                     >
-                      <option value={1}>Falta 1 jugador</option>
-                      <option value={2}>Faltan 2 jugadores</option>
-                      <option value={3}>Faltan 3 jugadores (Busco Pareja + Rival)</option>
+                      <option className="bg-[#1a1d23]" value={1}>Falta 1 jugador</option>
+                      <option className="bg-[#1a1d23]" value={2}>Faltan 2 jugadores</option>
+                      <option className="bg-[#1a1d23]" value={3}>Faltan 3 jugadores (Busco Pareja + Rival)</option>
                     </select>
                   </div>
                 </div>

@@ -10,10 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface CalendarProps {
   selectedDate: Date;
   onChange: (date: Date) => void;
-  isAdmin?: boolean;
 }
 
-export function Calendar({ selectedDate, onChange, isAdmin = false }: CalendarProps) {
+export function Calendar({ selectedDate, onChange }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate));
 
   const renderHeader = () => {
@@ -23,13 +22,13 @@ export function Calendar({ selectedDate, onChange, isAdmin = false }: CalendarPr
           {format(currentMonth, 'MMMM yyyy', { locale: es })}
         </h3>
         <div className="flex gap-1">
-          <button 
+          <button
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
             className="p-2 hover:bg-white/5 rounded-full transition-colors text-primary"
           >
             <ChevronLeft size={20} />
           </button>
-          <button 
+          <button
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
             className="p-2 hover:bg-white/5 rounded-full transition-colors text-primary"
           >
@@ -72,17 +71,15 @@ export function Calendar({ selectedDate, onChange, isAdmin = false }: CalendarPr
         const isToday = isSameDay(day, new Date());
         const isPast = isBefore(day, startOfDay(new Date()));
         const isCurrentMonth = isSameMonth(day, monthStart);
-        const isDisabled = isPast && !isAdmin;
 
         days.push(
           <button
             key={day.toString()}
-            disabled={isDisabled}
+            disabled={isPast}
             className={clsx(
               "relative h-12 flex items-center justify-center text-sm font-bold transition-all rounded-xl",
               !isCurrentMonth && "opacity-10",
-              isDisabled && "cursor-not-allowed opacity-10",
-              !isDisabled && isPast && "opacity-60", // Visual hint for past days when enabled
+              isPast && "cursor-not-allowed opacity-10",
               isSelected ? "bg-primary text-white shadow-[0_0_20px_rgba(136,130,220,0.6)] scale-110 z-10" : "hover:bg-white/5",
               isToday && !isSelected && "text-primary border border-primary/30"
             )}
