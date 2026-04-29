@@ -11,39 +11,48 @@ export const size = {
 export const contentType = 'image/png';
 
 export default function Icon() {
-  // Leer la imagen localmente
-  const logoPath = join(process.cwd(), 'public', 'logo.jpg');
-  const logoData = readFileSync(logoPath);
-  const logoBase64 = `data:image/jpeg;base64,${logoData.toString('base64')}`;
+  try {
+    const logoPath = join(process.cwd(), 'public', 'logo_complejo.png');
+    const logoData = readFileSync(logoPath);
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '50%',
-          background: '#0a0b0e',
-          overflow: 'hidden',
-          border: '1px solid #8882dc',
-        }}
-      >
-        <img
-          src={logoBase64}
-          width="32"
-          height="32"
+    return new ImageResponse(
+      (
+        <div
           style={{
-            objectFit: 'cover',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             borderRadius: '50%',
+            background: 'transparent',
+            overflow: 'hidden',
+            border: '2px solid #8882dc',
           }}
-        />
-      </div>
-    ),
-    {
-      ...size,
-    }
-  );
+        >
+          {/* @ts-ignore */}
+          <img
+            src={logoData}
+            width="32"
+            height="32"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </div>
+      ),
+      {
+        ...size,
+      }
+    );
+  } catch (e) {
+    return new ImageResponse(
+      (
+        <div style={{ width: '100%', height: '100%', background: '#8882dc', borderRadius: '50%' }} />
+      ),
+      { ...size }
+    );
+  }
 }
