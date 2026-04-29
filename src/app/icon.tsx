@@ -47,8 +47,8 @@ export default function Icon() {
           >
             <img
               src={logoArrayBuffer as any}
-              width="90"
-              height="90"
+              width={90}
+              height={90}
               style={{
                 objectFit: 'cover',
                 borderRadius: '50%',

@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: "Peñarol Pádel",
   },
   icons: {
-    icon: "/icon",
+    icon: "/icon?v=4",
     apple: "/logo.jpg",
   },
 };
