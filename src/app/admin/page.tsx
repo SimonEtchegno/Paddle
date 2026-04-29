@@ -889,7 +889,7 @@ export default function AdminPage() {
                     <button
                       onClick={() => {
                         setEditingTourneyId(null);
-                        setNewTourney({ nombre: '', fecha: '', categoria: '', precio: 0, descripcion: '' });
+                        setNewTourney({ nombre: '', fecha: '', hora: '', categoria: '', precio: 0, descripcion: '' });
                         setTourneyDates({ inicio: '', fin: '' });
                       }}
                       className="w-full sm:w-auto text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white py-2"
@@ -1078,7 +1078,8 @@ export default function AdminPage() {
                             categoria: t.categoria,
                             precio: t.precio,
                             descripcion: t.descripcion || '',
-                            fecha: t.fecha
+                            fecha: t.fecha,
+                            hora: t.hora || ''
                           });
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                           toast('Edita los datos arriba', { icon: '✍️' });
