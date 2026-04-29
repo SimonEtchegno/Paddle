@@ -30,8 +30,8 @@ export const metadata: Metadata = {
     title: "Peñarol Pádel",
   },
   icons: {
-    icon: "/icon",
-    apple: "/logo.jpg",
+    icon: "/icon.svg",
+    apple: "/logo_complejo.png",
   },
 };
 
@@ -47,11 +47,11 @@ export default async function RootLayout({
     // 1. Detectamos el slug del club
     const headerList = await headers();
     const cookieStore = await cookies();
-    
+
     // Prioridad: 1. El subdominio (Vercel) | 2. La cookie de Vista Previa | 3. Peñarol por defecto
-    const activeSlug = headerList.get('x-active-club-slug') || 
-                      cookieStore.get('active_club_slug')?.value || 
-                      'penarol';
+    const activeSlug = headerList.get('x-active-club-slug') ||
+      cookieStore.get('active_club_slug')?.value ||
+      'penarol';
 
     // 2. Obtenemos los datos del club de la base de datos
     const { data } = await supabase
@@ -59,7 +59,7 @@ export default async function RootLayout({
       .select('*')
       .eq('slug', activeSlug)
       .single();
-    
+
     if (data) {
       club = data;
       primaryColor = data.color_principal || '#8882dc';
@@ -73,9 +73,9 @@ export default async function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body 
+      <body
         className="min-h-full flex flex-col pb-20 md:pb-0"
-        style={{ 
+        style={{
           // @ts-ignore
           '--primary': primaryColor,
           // @ts-ignore
@@ -90,7 +90,7 @@ export default async function RootLayout({
             {children}
           </main>
           <Footer />
-          <Toaster 
+          <Toaster
             position="bottom-right"
             toastOptions={{
               style: {
