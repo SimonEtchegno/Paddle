@@ -40,7 +40,7 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
       // 1. Obtener el club activo (Multi-Tenant)
       const cookies = document.cookie.split('; ');
       const slugCookie = cookies.find(row => row.startsWith('active_club_slug='));
-      const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'penarol';
+      const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'peñarol';
 
       const { data: clubData } = await supabase
         .from('clubes')

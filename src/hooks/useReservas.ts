@@ -15,7 +15,7 @@ export function useReservas(selectedDate: string) {
       // 1. Obtener el slug activo de la cookie (Multi-Tenant)
       const cookies = document.cookie.split('; ');
       const slugCookie = cookies.find(row => row.startsWith('active_club_slug='));
-      const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'penarol';
+      const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'peñarol';
 
       // 2. Obtener el ID del club correspondiente
       const { data: clubData, error: clubError } = await supabase

@@ -249,7 +249,7 @@ export default function SuperAdminPage() {
                       </button>
                       <button 
                         onClick={() => {
-                          document.cookie = `active_club_slug=${club.slug || 'penarol'}; path=/; max-age=31536000`;
+                          document.cookie = `active_club_slug=${club.slug || 'peñarol'}; path=/; max-age=31536000`;
                           toast.success(`Cambiando a vista de ${club.nombre}...`);
                           setTimeout(() => window.location.href = '/', 1000);
                         }}
