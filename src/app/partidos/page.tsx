@@ -370,15 +370,14 @@ export default function PartidosPage() {
                             )} />
                             
                             <div className={clsx(
-                              "w-16 h-16 bg-zinc-900 rounded-full border-2 backdrop-blur-xl flex items-center justify-center relative z-10 shadow-2xl transition-all duration-500",
+                              "w-16 h-16 bg-zinc-900 rounded-full border-2 backdrop-blur-xl flex items-center justify-center relative z-10 shadow-2xl transition-all duration-500 overflow-hidden",
                               ringBorder
                             )}>
-                              <span 
-                                className="text-4xl select-none leading-none mb-1 animate-float-slow"
-                                style={{ display: 'inline-block', filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.3))' }}
-                              >
-                                {(esMio ? profile?.avatar_emoji : p.avatar_emoji) || '👨‍🦱'}
-                              </span>
+                              <img 
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.nombre_creador}&backgroundColor=transparent`}
+                                alt="Avatar"
+                                className="w-full h-full object-cover scale-110 translate-y-1"
+                              />
                               
                               {/* Mini Paleta Técnica (Sincronizada con el Rango) */}
                               <div className="absolute -bottom-1 -right-1 w-7 h-9 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] rotate-[15deg] z-20">

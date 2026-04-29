@@ -223,10 +223,14 @@ export function Navbar({ club }: { club?: any }) {
                         auraColor
                       )} />
                       <div className={clsx(
-                        "w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-lg relative z-10 border",
+                        "w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center relative z-10 border overflow-hidden",
                         isDiamante ? "border-cyan-400/50" : isOro ? "border-yellow-400/50" : "border-white/10"
                       )}>
-                        {profile.avatar_emoji || '👨‍🦱'}
+                        <img 
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.nombre}${profile.apellido}&backgroundColor=transparent`}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     </div>
                     <div className="hidden sm:block text-xs">

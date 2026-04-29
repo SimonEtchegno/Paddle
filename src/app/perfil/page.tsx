@@ -26,11 +26,6 @@ export default function PerfilPage() {
     paleta_modelo: 'carbono'
   });
 
-  const AVATARS = [
-    '👨‍🦱', '👩‍🦱', '🧔‍♂️', '👱‍♀️', '👨‍🦲', '👩‍🦳', '👨‍💼', '👩‍🎨', '🧔‍♀️', '👩‍🎓',
-    '👨‍🎤', '👩‍🔬', '👨‍🚀', '👩‍🚀', '😎', '🤩', '🧐'
-  ];
-
   useEffect(() => {
     if (profile) {
       setFormData({
@@ -62,39 +57,24 @@ export default function PerfilPage() {
   };
 
   // Lógica de Prestigio para el Ambiente
-  const isDiamante = formData.nivel >= 6.5;
-  const isOro = formData.nivel >= 5.5;
-  const isPlata = formData.nivel >= 4.5;
-  const isMaster = formData.nivel >= 3.5;
-  const isPro = formData.nivel >= 2.5;
+  const isTOTY = formData.nivel >= 6.0;
+  const isGold = formData.nivel >= 5.0 && formData.nivel < 6.0;
+  const isSilver = formData.nivel >= 3.5 && formData.nivel < 5.0;
 
-  const themeColor = isDiamante ? "rgba(34, 211, 238, 0.2)" : 
-                    isOro ? "rgba(250, 204, 21, 0.2)" : 
-                    isPlata ? "rgba(255, 255, 255, 0.1)" :
-                    isMaster ? "rgba(168, 85, 247, 0.15)" :
-                    isPro ? "rgba(59, 130, 246, 0.15)" :
-                    "rgba(16, 185, 129, 0.1)";
+  const themeColor = isTOTY ? "rgba(30, 58, 138, 0.3)" : 
+                    isGold ? "rgba(250, 204, 21, 0.15)" : 
+                    isSilver ? "rgba(161, 161, 170, 0.1)" :
+                    "rgba(154, 52, 18, 0.1)";
 
-  const accentColor = isDiamante ? "#22d3ee" : isOro ? "#facc15" : isMaster ? "#a855f7" : "#8882dc";
+  const accentColor = isTOTY ? "#fbbf24" : isGold ? "#facc15" : isSilver ? "#a1a1aa" : "#c2410c";
 
   const getNivelLabel = (n: number) =>
-    n <= 2.5 ? 'Iniciado' : n <= 4.0 ? 'Intermedio' : n <= 5.5 ? 'Avanzado' : n <= 6.5 ? 'Élite' : 'Leyenda Suprema';
-
-  const getCategoriaFromNivel = (val: number) => {
-    if (val >= 6.0) return '1ra';
-    if (val >= 5.0) return '2da';
-    if (val >= 4.0) return '3ra';
-    if (val >= 3.0) return '4ta';
-    if (val >= 2.0) return '5ma';
-    if (val >= 1.5) return '6ta';
-    return '7ma';
-  };
+    n <= 2.5 ? 'Prospecto' : n <= 4.0 ? 'Avanzado' : n <= 5.5 ? 'Profesional' : n <= 6.5 ? 'World Class' : 'Icono TOTY';
 
   const isPhoneValid = formData.telefono.length >= 8;
 
   return (
     <PageWrapper>
-      {/* Ambiente Dinámico de Prestigio - relative al layout, no fixed */}
       <div 
         className="pointer-events-none absolute inset-0 transition-colors duration-1000 z-0 overflow-hidden" 
         style={{ 
@@ -104,33 +84,30 @@ export default function PerfilPage() {
 
       <div className="max-w-6xl mx-auto pb-20 relative z-10">
         <header className="mb-12">
-          <h2 className="text-5xl font-black uppercase tracking-tighter italic">Tu Perfil <span className="text-primary">Pro</span></h2>
-          <p className="text-xs font-bold opacity-30 uppercase tracking-[0.3em] mt-2">Configurá tu identidad en la cancha</p>
+          <h2 className="text-5xl font-black uppercase tracking-tighter italic">Tu Ficha <span className="text-primary">FUT</span></h2>
+          <p className="text-xs font-bold opacity-30 uppercase tracking-[0.3em] mt-2">Personalizá tu tarjeta de jugador profesional</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           
-          {/* COLUMNA IZQUIERDA: VISTA PREVIA (Sticky) */}
           <div className="lg:col-span-5 relative">
             <div className="lg:sticky lg:top-24 flex flex-col items-center gap-6 pb-12">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-center opacity-30 italic">Previsualización de Ficha</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-center opacity-30 italic">Previsualización de Carta</h3>
             
-            <div className="relative group">
-              {/* Brillo Ambiental detrás de la carta */}
-              <div className="absolute inset-0 blur-[100px] opacity-20 transition-colors duration-1000" style={{ backgroundColor: accentColor }} />
+            <div className="relative flex justify-center" style={{ overflow: 'visible' }}>
+              <div className="absolute inset-0 blur-[120px] opacity-25 transition-colors duration-1000" style={{ backgroundColor: accentColor }} />
               <PlayerCard profile={formData as any} />
             </div>
 
             <div className="w-full max-w-[320px] space-y-5 pt-2">
-              {/* Progress Bar */}
               <div className="space-y-2">
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
-                  <span>Rank Progress</span>
-                  <span style={{ color: accentColor }}>{Math.round(formData.nivel * 30)} / {Math.round(Math.min(7.0, formData.nivel + 0.5) * 30)} PTS</span>
+                  <span>Siguiente Rareza</span>
+                  <span style={{ color: accentColor }}>{Math.round(formData.nivel * 14)} / 100 OVR</span>
                 </div>
                 <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
                   <motion.div 
-                    animate={{ width: `${formData.nivel === 7.0 ? 100 : (formData.nivel % 1) * 100}%` }}
+                    animate={{ width: `${(formData.nivel / 7.0) * 100}%` }}
                     transition={{ type: "spring", bounce: 0.4 }}
                     className="h-full rounded-full"
                     style={{ backgroundColor: accentColor, boxShadow: `0 0 15px ${accentColor}` }}
@@ -138,25 +115,22 @@ export default function PerfilPage() {
                 </div>
               </div>
 
-              {/* Share Button */}
               <button 
                 type="button"
-                onClick={() => toast.success('¡Captura lista para Instagram!')}
+                onClick={() => toast.success('¡Ficha lista para compartir!')}
                 className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:scale-105 active:scale-95 shadow-xl"
                 style={{ backgroundColor: `${accentColor}15`, color: accentColor, border: `1px solid ${accentColor}40` }}
               >
                 <Share2 size={16} />
-                Compartir Ficha
+                Descargar Carta
               </button>
             </div>
           </div>
         </div>
 
-          {/* COLUMNA DERECHA: FORMULARIO */}
           <div className="lg:col-span-7">
             <form onSubmit={handleSubmit} className="space-y-8">
               
-              {/* Sección 1: Datos Personales */}
               <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-6">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Información Personal</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -202,19 +176,18 @@ export default function PerfilPage() {
                 </div>
               </div>
 
-              {/* Sección 2: Perfil Técnico */}
               <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-8">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Nivel y Categoría</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Atributos y Estadísticas</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase opacity-40">Nivel de Juego</label>
+                      <label className="text-[10px] font-black uppercase opacity-40">Nivel de Habilidad</label>
                       <div className="text-xl font-black text-primary italic uppercase tracking-tighter">
                         {getNivelLabel(formData.nivel)}
                       </div>
                     </div>
                     <div className="text-right space-y-0.5">
-                      <span className="text-4xl font-black italic text-white opacity-20">L{formData.nivel.toFixed(1)} <span className="text-xl">({Math.round(formData.nivel * 30)} PTS)</span></span>
+                      <span className="text-4xl font-black italic text-white opacity-20">L{formData.nivel.toFixed(1)} <span className="text-xl">({Math.round((formData.nivel / 7) * 99)} OVR)</span></span>
                       <p className="text-[9px] font-black uppercase tracking-widest opacity-40">{formData.categoria} Categoría</p>
                     </div>
                   </div>
@@ -225,17 +198,10 @@ export default function PerfilPage() {
                       const val = parseFloat(e.target.value);
                       setFormData({...formData, nivel: val});
                     }}
-                    className={`w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer transition-colors duration-500 ${
-                      isDiamante ? "accent-cyan-400" :
-                      isOro ? "accent-yellow-400" :
-                      isPlata ? "accent-slate-300" :
-                      isMaster ? "accent-purple-500" :
-                      isPro ? "accent-blue-500" :
-                      "accent-green-500"
-                    }`}
+                    className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]"
                   />
                   <div className="flex justify-between text-[8px] font-black uppercase tracking-widest opacity-30 px-0.5">
-                    <span>Iniciado</span><span>Intermedio</span><span>Avanzado</span><span>Élite</span><span>Leyenda</span>
+                    <span>Bronze</span><span>Silver</span><span>Gold</span><span>Elite</span><span>TOTY</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -258,40 +224,25 @@ export default function PerfilPage() {
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase opacity-40 ml-1">Tu Paleta Real</label>
-                  <div className="relative">
-                    <Zap className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/30" size={16} />
-                    <input 
-                      type="text" placeholder="Ej: Bullpadel Vertex"
-                      value={formData.paleta}
-                      onChange={(e) => setFormData({...formData, paleta: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-5 text-sm focus:border-primary outline-none font-bold"
-                    />
-                  </div>
-                </div>
               </div>
 
-              {/* Sección 3: Personalización Visual */}
-              <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-8">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Estilo Visual</h3>
-                
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase opacity-40">Elegí tu Rostro</label>
-                  <div className="flex flex-wrap gap-2">
-                    {AVATARS.map(a => (
-                      <button
-                        key={a} type="button"
-                        onClick={() => setFormData({...formData, avatar_emoji: a})}
-                        className={clsx(
-                          "w-10 h-10 flex items-center justify-center text-xl rounded-xl border transition-all",
-                          formData.avatar_emoji === a ? "bg-primary border-primary scale-110 shadow-lg" : "bg-white/5 border-white/10 hover:bg-white/10"
-                        )}
-                      >
-                        {a}
-                      </button>
-                    ))}
-                  </div>
+              <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-6">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Elegí tu Rostro</h3>
+                <div className="flex flex-wrap gap-2">
+                  {['👱‍♂️','🧔','👱‍♀️','👨‍🦲','👵','👨‍💼','👩‍🎨','👱🏻‍♀️','👩‍🎓','🧑‍🎤','👩‍🔬','👩‍🚀','👨‍🚀','😎','🤩','🧐'].map(emoji => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setFormData({...formData, avatar_emoji: emoji})}
+                      className={`w-12 h-12 text-2xl flex items-center justify-center rounded-2xl transition-all duration-300 ${
+                        formData.avatar_emoji === emoji
+                          ? 'bg-primary text-black scale-110 shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]'
+                          : 'bg-white/5 hover:bg-white/10 text-white/70 hover:scale-105'
+                      }`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -303,10 +254,8 @@ export default function PerfilPage() {
                   boxShadow: `0 20px 40px ${accentColor}33`
                 }}
               >
-                {/* Efecto de Brillo al pasar el mouse */}
                 <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity" />
-                
-                {loading ? 'Sincronizando...' : 'Guardar Identidad Legendaria'}
+                {loading ? 'Actualizando Stats...' : 'Guardar Ficha Profesional'}
               </button>
             </form>
           </div>
