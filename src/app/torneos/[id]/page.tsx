@@ -182,7 +182,7 @@ export default function TournamentDetailPage() {
 
       // WhatsApp aviso al complejo
       const msg = encodeURIComponent(`¡Hola! Quisiera inscribirme al torneo "${torneo.nombre}".\nPareja: ${jugador1} y ${jugador2}.\nTel: ${telefono}`);
-      window.open(`https://wa.me/2923659885?text=${msg}`, '_blank');
+      window.open(`https://wa.me/2923460902?text=${msg}`, '_blank');
 
     } catch (e) {
       toast.error('Error al inscribirse');

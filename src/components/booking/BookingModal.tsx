@@ -90,7 +90,7 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
       
       // Notify WhatsApp (Optional, usually better to let user click)
       const msg = encodeURIComponent(`¡Hola! Reservé el ${fecha} a las ${hora} hs (Cancha ${cancha}). Nombre: ${nombre}.`);
-      window.open(`https://wa.me/2923659885?text=${msg}`, '_blank');
+      window.open(`https://wa.me/2923460902?text=${msg}`, '_blank');
       
       onSuccess();
       onClose();

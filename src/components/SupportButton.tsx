@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function SupportButton() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const whatsappNumber = "2923659885"; // Número del complejo
+  const whatsappNumber = "2923460902"; // Número del complejo
 
   return (
     <div className="fixed bottom-24 md:bottom-6 right-6 z-[100] flex flex-col items-end gap-4">
