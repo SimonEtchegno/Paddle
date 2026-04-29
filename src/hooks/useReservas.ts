@@ -24,20 +24,22 @@ export function useReservas(selectedDate: string) {
         .eq('slug', activeSlug)
         .single();
 
-      if (clubError || !clubData) {
-        console.warn(`⚠️ Multi-tenant: No se encontró el club con slug "${activeSlug}". Asegúrate de que existe en la tabla 'clubes'.`);
-        setReservas([]);
-        setLoading(false);
-        return;
-      }
-
-      // 3. Filtrar las reservas de ESE club específico (y las antiguas sin club_id)
-      const { data, error } = await supabase
+      // 3. Filtrar las reservas (con o sin club_id)
+      let query = supabase
         .from('reservas')
         .select('*')
-        .eq('fecha', selectedDate)
-        .or(`club_id.eq.${clubData.id},club_id.is.null`)
-        .order('hora', { ascending: true });
+        .eq('fecha', selectedDate);
+
+      if (clubData?.id) {
+        // Si tenemos el club, traemos las de ese club y las que no tienen club (retrocompatibilidad)
+        query = query.or(`club_id.eq.${clubData.id},club_id.is.null`);
+      } else {
+        // Si no encontramos el club, traemos todas las del día o al menos las huérfanas
+        console.warn(`⚠️ Multi-tenant: No se encontró el club con slug "${activeSlug}".`);
+        query = query.filter('club_id', 'is', null);
+      }
+
+      const { data, error } = await query.order('hora', { ascending: true });
 
       if (error) throw error;
       setReservas(data || []);

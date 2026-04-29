@@ -41,7 +41,12 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate }: BookingGri
             </div>
             
             {[1, 2].map((cancha) => {
-              const reserva = reservas.find(r => r.hora === hora && r.cancha === cancha);
+              // Normalizar hora para la comparación (por si viene con segundos de la DB)
+              const reserva = reservas.find(r => {
+                const h1 = r.hora.split(':').slice(0, 2).join(':'); // '14:30:00' -> '14:30'
+                const h2 = hora.split(':').slice(0, 2).join(':');   // '14:30' -> '14:30'
+                return h1 === h2 && r.cancha === cancha;
+              });
               const fijo = fixedTurns[hora]?.[cancha];
               const isMine = reserva && profile && reserva.telefono === profile.telefono;
               const ocupado = !!reserva || !!fijo;
