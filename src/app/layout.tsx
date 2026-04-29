@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: "Peñarol Pádel",
   },
   icons: {
-    icon: "/icon.svg",
+    icon: "/icon.svg?v=3",
     apple: "/logo_complejo.png",
   },
 };
@@ -51,7 +51,7 @@ export default async function RootLayout({
     // Prioridad: 1. El subdominio (Vercel) | 2. La cookie de Vista Previa | 3. Peñarol por defecto
     const activeSlug = headerList.get('x-active-club-slug') ||
       cookieStore.get('active_club_slug')?.value ||
-      'penarol';
+      'peñarol';
 
     // 2. Obtenemos los datos del club de la base de datos
     const { data } = await supabase
