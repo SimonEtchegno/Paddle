@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, Calendar as CalendarIcon } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, Camera, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -583,6 +583,7 @@ export default function AdminPage() {
         parejas_data: data.parejas_data,
         zonas_data: data.zonas_data,
         cuadro_data: data.cuadro_data,
+        champions_data: data.champions_data,
         visible: data.visible !== false // Default a true si no es explícitamente false
       };
 
@@ -952,7 +953,7 @@ export default function AdminPage() {
 
                     <AnimatePresence>
                       {activePicker && (
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
@@ -967,7 +968,7 @@ export default function AdminPage() {
                                 <X size={14} />
                               </button>
                             </div>
-                            <Calendar 
+                            <Calendar
                               selectedDate={tourneyDates[activePicker] ? parseISO(tourneyDates[activePicker]) : new Date()}
                               onChange={(date) => {
                                 setTourneyDates({ ...tourneyDates, [activePicker]: format(date, 'yyyy-MM-dd') });

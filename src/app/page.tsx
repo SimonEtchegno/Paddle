@@ -39,7 +39,7 @@ export default function Home() {
             <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-tight italic">
               Reservá tu <span className="text-primary relative inline-block">
                 Turno
-                <motion.div 
+                <motion.div
                   className="absolute -inset-x-2 -bottom-1 h-2 bg-primary/20 blur-lg rounded-full"
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
                   transition={{ duration: 3, repeat: Infinity }}
@@ -64,12 +64,12 @@ export default function Home() {
           <aside id="tutorial-calendar" className="space-y-6 lg:sticky lg:top-24">
             <div id="tutorial-date-picker" className="px-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-4 ml-1">Seleccionar Fecha</h3>
-              <Calendar 
-                selectedDate={parseISO(selectedDate + 'T00:00:00')} 
-                onChange={handleDateChange} 
+              <Calendar
+                selectedDate={parseISO(selectedDate + 'T00:00:00')}
+                onChange={handleDateChange}
               />
             </div>
-            
+
             <div className="glass p-6 rounded-3xl border border-white/5 mx-4">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-2">Fecha Seleccionada</p>
               <p className="text-xl font-black text-primary capitalize">
@@ -88,17 +88,17 @@ export default function Home() {
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Actualizando canchas...</p>
               </div>
             ) : (
-              <BookingGrid 
-                reservas={reservas} 
-                selectedDate={selectedDate} 
-                onSelectSlot={handleSelectSlot} 
+              <BookingGrid
+                reservas={reservas}
+                selectedDate={selectedDate}
+                onSelectSlot={handleSelectSlot}
               />
             )}
           </main>
         </div>
 
         {/* Modal */}
-        <BookingModal 
+        <BookingModal
           isOpen={!!selectedSlot}
           onClose={() => setSelectedSlot(null)}
           onSuccess={refresh}

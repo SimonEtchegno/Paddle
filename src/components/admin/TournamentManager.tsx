@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy, Users, Layout, Plus, X, Save, ChevronLeft,
   CheckCircle2, Search, Trash2, Calendar, Clock,
-  ChevronRight, Camera, Settings2, GripVertical, Sparkles, Share2, Globe
+  ChevronRight, Camera, Settings2, GripVertical, Sparkles, Share2, Globe, Crown
 } from 'lucide-react';
 import {
   DndContext as DndKitContext,
@@ -38,7 +39,7 @@ interface TournamentManagerProps {
   onClose: () => void;
 }
 
-type ManagementStep = 'config' | 'pairs' | 'assignment' | 'groups' | 'bracket';
+type ManagementStep = 'config' | 'pairs' | 'assignment' | 'groups' | 'bracket' | 'champions';
 
 export default function TournamentManager({ tournament, inscripciones, onSave, onClose }: TournamentManagerProps) {
   // --- STATE ---
@@ -50,7 +51,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
   });
 
   const [unlockedSteps, setUnlockedSteps] = useState<string[]>(() => {
-    const all = ['config', 'pairs', 'assignment', 'groups', 'bracket'];
+    const all = ['config', 'pairs', 'assignment', 'groups', 'bracket', 'champions'];
     const isExisting = tournament.id && tournament.id !== 'new';
     if (isExisting) return all;
 
@@ -103,6 +104,78 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
   const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isVisible, setIsVisible] = useState(tournament.visible !== false);
+
+  const [champions, setChampions] = useState<any>(() => {
+    return tournament.champions_data || {
+      winner: '',
+      runnerUp: '',
+      score: '',
+      photoUrl: '',
+      runnerUpPhotoUrl: ''
+    };
+  });
+
+  const [isUploading, setIsUploading] = useState<'winner' | 'runnerUp' | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const runnerUpFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'winner' | 'runnerUp') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo y tamaño
+    if (!file.type.startsWith('image/')) return toast.error('El archivo debe ser una imagen');
+    if (file.size > 5 * 1024 * 1024) return toast.error('La imagen no puede pesar más de 5MB');
+
+    setIsUploading(type);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${tournament.id || 'new'}_${type}_${Date.now()}.${fileExt}`;
+      const filePath = `champions/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('torneos')
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('torneos')
+        .getPublicUrl(filePath);
+
+      setChampions({ ...champions, [type === 'winner' ? 'photoUrl' : 'runnerUpPhotoUrl']: publicUrl });
+      toast.success(`¡Foto de ${type === 'winner' ? 'campeones' : 'subcampeones'} subida!`);
+    } catch (e: any) {
+      toast.error('Error al subir: ' + e.message);
+    } finally {
+      setIsUploading(null);
+    }
+  };
+
+  const detectChampionsFromBracket = () => {
+    const finalMatch = bracket.find(n => n.id === 'final');
+    if (!finalMatch || !finalMatch.score) {
+      return toast.error('Cargá el resultado de la Final primero');
+    }
+
+    const score = parseScore(finalMatch.score);
+    if (!score) return;
+
+    const winner = score.p1Sets > score.p2Sets ? 1 : (score.p2Sets > score.p1Sets ? 2 : 0);
+
+    if (winner === 0) {
+      return toast.error('La final no tiene un ganador claro aún');
+    }
+
+    setChampions({
+      ...champions,
+      winner: winner === 1 ? finalMatch.p1 : finalMatch.p2,
+      runnerUp: winner === 1 ? finalMatch.p2 : finalMatch.p1,
+      score: finalMatch.score
+    });
+
+    toast.success('¡Resultados sincronizados!');
+  };
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -255,6 +328,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         parejas_data: pairs,
         zonas_data: zones,
         cuadro_data: bracket,
+        champions_data: champions,
         visible: isVisible
       });
 
@@ -436,6 +510,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     { id: 'assignment', label: 'Asignación', icon: Layout },
     { id: 'groups', label: 'Zonas', icon: Trophy },
     { id: 'bracket', label: 'Cuadro', icon: Layout },
+    { id: 'champions', label: 'Premiación', icon: Crown },
   ];
 
   return (
@@ -1283,8 +1358,148 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 <button onClick={prevStep} className="flex items-center gap-3 px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-all hover:bg-white/5">
                   <ChevronLeft size={20} /> Volver a Zonas
                 </button>
-                <div className="flex items-center gap-3 px-8 text-primary opacity-40 font-black text-[10px] uppercase tracking-widest">
-                  <CheckCircle2 size={16} /> Gestión Finalizada
+                <button
+                  onClick={() => {
+                    setStep('champions');
+                    unlock('champions');
+                  }}
+                  className="bg-primary text-black px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-[0_20px_40px_rgba(136,130,220,0.3)] flex items-center gap-3"
+                >
+                  Ir a Premiación <Crown size={18} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 'champions' && (
+            <motion.div
+              key="champions"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="max-w-4xl mx-auto space-y-12 py-10"
+            >
+              <div className="text-center space-y-4">
+                <h3 className="text-5xl font-black uppercase italic tracking-tighter flex items-center justify-center gap-6">
+                  <Crown size={48} className="text-primary" /> Galería de <span className="text-primary">Campeones</span>
+                </h3>
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-sm opacity-40 font-bold uppercase tracking-widest text-center max-w-lg mx-auto">
+                    Inmortalizá a los ganadores del torneo. Esta información se mostrará públicamente como el Hall of Fame.
+                  </p>
+                  <button
+                    onClick={detectChampionsFromBracket}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all"
+                  >
+                    <Sparkles size={14} /> Sincronizar desde el Cuadro
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="glass p-10 rounded-[3.5rem] border border-white/5 space-y-8">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">Pareja Campeona</label>
+                      <div className="relative group">
+                        <Trophy className="absolute left-5 top-1/2 -translate-y-1/2 text-primary" size={20} />
+                        <input
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl py-6 pl-16 pr-6 text-xl font-black uppercase italic tracking-tight outline-none focus:border-primary transition-all"
+                          placeholder="EJ: BELASTEGUÍN / COELLO"
+                          value={champions.winner}
+                          onChange={(e) => setChampions({ ...champions, winner: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">Pareja Subcampeona</label>
+                      <div className="relative group">
+                        <Users className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20" size={20} />
+                        <input
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl py-5 pl-16 pr-6 text-sm font-black uppercase italic tracking-tight outline-none focus:border-primary transition-all opacity-60 focus:opacity-100"
+                          placeholder="EJ: GALÁN / LEBRÓN"
+                          value={champions.runnerUp}
+                          onChange={(e) => setChampions({ ...champions, runnerUp: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">Resultado de la Final</label>
+                      <input
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl py-5 px-8 text-center text-sm font-black uppercase tracking-widest outline-none focus:border-primary transition-all"
+                        placeholder="EJ: 6-4 / 7-5"
+                        value={champions.score}
+                        onChange={(e) => setChampions({ ...champions, score: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* FOTO CAMPEONES */}
+                  <div className="glass p-8 rounded-[3rem] border border-white/5 space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Foto de los Campeones</label>
+                    <div
+                      onClick={() => isUploading !== 'winner' && fileInputRef.current?.click()}
+                      className={clsx(
+                        "aspect-video relative rounded-[2rem] border-2 border-dashed overflow-hidden group flex flex-col items-center justify-center gap-2 transition-all bg-black/20 cursor-pointer",
+                        champions.photoUrl ? "border-primary/20" : "border-white/10 hover:border-primary/40"
+                      )}
+                    >
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e, 'winner')} />
+                      {isUploading === 'winner' ? (
+                        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : champions.photoUrl ? (
+                        <>
+                          <img src={champions.photoUrl} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
+                          <button onClick={(e) => { e.stopPropagation(); setChampions({ ...champions, photoUrl: '' }); }} className="relative z-10 p-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 opacity-20"><Camera size={32} /><p className="text-[9px] font-black uppercase">Subir Foto Ganadores</p></div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* FOTO SUBCAMPEONES */}
+                  <div className="glass p-8 rounded-[3rem] border border-white/5 space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Foto de los Subcampeones</label>
+                    <div
+                      onClick={() => isUploading !== 'runnerUp' && runnerUpFileInputRef.current?.click()}
+                      className={clsx(
+                        "aspect-video relative rounded-[2rem] border-2 border-dashed overflow-hidden group flex flex-col items-center justify-center gap-2 transition-all bg-black/20 cursor-pointer",
+                        champions.runnerUpPhotoUrl ? "border-white/40" : "border-white/10 hover:border-white/20"
+                      )}
+                    >
+                      <input type="file" ref={runnerUpFileInputRef} className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e, 'runnerUp')} />
+                      {isUploading === 'runnerUp' ? (
+                        <div className="w-8 h-8 border-3 border-white/40 border-t-transparent rounded-full animate-spin" />
+                      ) : champions.runnerUpPhotoUrl ? (
+                        <>
+                          <img src={champions.runnerUpPhotoUrl} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
+                          <button onClick={(e) => { e.stopPropagation(); setChampions({ ...champions, runnerUpPhotoUrl: '' }); }} className="relative z-10 p-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 opacity-20"><Camera size={32} /><p className="text-[9px] font-black uppercase">Subir Foto Podio</p></div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-8">
+                <button onClick={() => setStep('bracket')} className="flex items-center gap-3 px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-all hover:bg-white/5">
+                  <ChevronLeft size={20} /> Volver al Cuadro
+                </button>
+                <div className="flex items-center gap-6">
+                  <p className="text-[9px] font-black uppercase opacity-30 italic">No te olvides de guardar los cambios arriba ↑</p>
+                  <button
+                    onClick={() => handleSave('Hall of Fame')}
+                    className="bg-primary text-black px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-[0_20px_40px_rgba(136,130,220,0.3)] flex items-center gap-3"
+                  >
+                    Guardar Hall of Fame <Save size={20} />
+                  </button>
                 </div>
               </div>
             </motion.div>

@@ -3,19 +3,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { 
-  Trophy, 
-  Calendar, 
-  Users, 
-  ChevronLeft, 
-  Layout, 
-  Target, 
+import {
+  Trophy,
+  Calendar,
+  Users,
+  ChevronLeft,
+  Layout,
+  Target,
   Award,
   Info,
   Clock,
   MapPin,
   Share2,
-  CheckCircle2
+  CheckCircle2,
+  Camera,
+  Star,
+  Crown
 } from 'lucide-react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { PageWrapper } from '@/components/PageWrapper';
@@ -33,8 +36,8 @@ export default function TournamentDetailPage() {
   const [torneo, setTorneo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { profile } = useGuestProfile();
-  const [activeTab, setActiveTab] = useState<'info' | 'zones' | 'bracket'>('zones');
-  
+  const [activeTab, setActiveTab] = useState<'info' | 'zones' | 'bracket' | 'champions'>('zones');
+
   const [showInscribir, setShowInscribir] = useState(false);
   const [jugador1, setJugador1] = useState('');
   const [jugador2, setJugador2] = useState('');
@@ -42,21 +45,30 @@ export default function TournamentDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
 
-  // Calcular campeón una sola vez cuando cambia el bracket (no en cada render)
-  const champion = useMemo(() => {
-    const bracketData: BracketNode[] = torneo?.cuadro_data || [];
-    const finalNode = bracketData.find((n: BracketNode) => n.stage === 'Final' && n.score);
-    if (!finalNode?.score) return null;
-    const sets = finalNode.score.split(/[\s,]+/).filter((s: string) => s.includes('-'));
+  // Auto-detect champions from bracket if manual data is missing
+  const autoChampions = useMemo(() => {
+    if (!torneo?.cuadro_data || !Array.isArray(torneo.cuadro_data)) return null;
+    const finalMatch = torneo.cuadro_data.find((n: any) => n.stage === 'Final' && n.score);
+    if (!finalMatch || !finalMatch.score) return null;
+
+    const sets = finalMatch.score.split(/[\s,]+/).filter((s: string) => s.includes('-'));
     let p1S = 0, p2S = 0;
     sets.forEach((s: string) => {
       const [g1, g2] = s.split('-').map(Number);
       if (!isNaN(g1) && !isNaN(g2)) { if (g1 > g2) p1S++; else if (g2 > g1) p2S++; }
     });
-    if (p1S > p2S) return finalNode.p1 || null;
-    if (p2S > p1S) return finalNode.p2 || null;
-    return null;
+
+    if (p1S === p2S) return null;
+
+    return {
+      winner: p1S > p2S ? finalMatch.p1 : finalMatch.p2,
+      runnerUp: p1S > p2S ? finalMatch.p2 : finalMatch.p1,
+      score: finalMatch.score
+    };
   }, [torneo?.cuadro_data]);
+
+  // For compatibility with other parts of the UI
+  const champion = autoChampions?.winner;
 
   useEffect(() => {
     if (profile?.telefono) {
@@ -72,7 +84,7 @@ export default function TournamentDetailPage() {
       .select('id')
       .eq('torneo_id', id)
       .eq('telefono_contacto', phone);
-    
+
     if (data && data.length > 0) {
       setIsRegistered(true);
     }
@@ -84,9 +96,9 @@ export default function TournamentDetailPage() {
 
     const channel = supabase
       .channel(`tournament_${id}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
         table: 'torneos',
         filter: `id=eq.${id}`
       }, () => {
@@ -112,11 +124,14 @@ export default function TournamentDetailPage() {
       setTorneo(data);
 
 
-      
+
       const hasZones = data.zonas_data && data.zonas_data.length > 0;
       const hasBracket = data.cuadro_data && data.cuadro_data.length > 0;
-      
-      if (hasBracket && !hasZones) {
+      const hasChampions = data.champions_data && (data.champions_data.winner || data.champions_data.photoUrl);
+
+      if (hasChampions) {
+        setActiveTab('champions');
+      } else if (hasBracket && !hasZones) {
         setActiveTab('bracket');
       } else if (hasZones) {
         setActiveTab('zones');
@@ -164,11 +179,11 @@ export default function TournamentDetailPage() {
       toast.success('¡Inscripción enviada!');
       setIsRegistered(true);
       setShowInscribir(false);
-      
+
       // WhatsApp aviso al complejo
       const msg = encodeURIComponent(`¡Hola! Quisiera inscribirme al torneo "${torneo.nombre}".\nPareja: ${jugador1} y ${jugador2}.\nTel: ${telefono}`);
       window.open(`https://wa.me/2923659885?text=${msg}`, '_blank');
-      
+
     } catch (e) {
       toast.error('Error al inscribirse');
     } finally {
@@ -180,6 +195,7 @@ export default function TournamentDetailPage() {
     { id: 'info', label: 'Información', icon: Info },
     { id: 'zones', label: 'Zonas y Fixture', icon: Layout },
     { id: 'bracket', label: 'Cuadro Final', icon: Trophy },
+    { id: 'champions', label: 'Campeones', icon: Crown },
   ];
 
   const handleShare = () => {
@@ -195,18 +211,18 @@ export default function TournamentDetailPage() {
   return (
     <PageWrapper>
       {/* Ambiente Dinámico de Prestigio */}
-      <div 
-        className="fixed inset-0 pointer-events-none transition-colors duration-1000 z-0" 
-        style={{ 
+      <div
+        className="fixed inset-0 pointer-events-none transition-colors duration-1000 z-0"
+        style={{
           background: `radial-gradient(circle at 80% 20%, ${isDiamante ? 'rgba(34,211,238,0.15)' : isOro ? 'rgba(250,204,21,0.15)' : 'rgba(136,130,220,0.1)'} 0%, transparent 70%)`
-        }} 
+        }}
       />
 
       <div className="max-w-7xl mx-auto space-y-8 pb-32 relative z-10">
         {/* Navigation & Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => router.push('/torneos')}
               className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group"
             >
@@ -216,7 +232,7 @@ export default function TournamentDetailPage() {
               <div className="flex items-center gap-3 mb-1">
                 <span className={clsx(
                   "px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest",
-                  torneo.categoria.includes('1ra') || torneo.categoria.includes('Pro') 
+                  torneo.categoria.includes('1ra') || torneo.categoria.includes('Pro')
                     ? "bg-cyan-400/10 border-cyan-400/20 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                     : "bg-primary/10 border-primary/20 text-primary"
                 )}>
@@ -233,13 +249,13 @@ export default function TournamentDetailPage() {
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <button 
+            <button
               onClick={handleShare}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
             >
               <Share2 size={16} /> Compartir
             </button>
-            
+
             {champion ? (
               <div className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(136,130,220,0.1)]">
                 🏆 Torneo Finalizado
@@ -253,7 +269,7 @@ export default function TournamentDetailPage() {
                 {torneo.parejas_data?.length > 0 ? '⚡ Torneo En Curso' : 'Inscripciones Cerradas'}
               </div>
             ) : (
-              <button 
+              <button
                 onClick={() => setShowInscribir(true)}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_20px_rgba(136,130,220,0.3)]"
               >
@@ -269,7 +285,7 @@ export default function TournamentDetailPage() {
             <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
               <Trophy size={200} />
             </div>
-            
+
             <div className="relative z-10 space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div>
@@ -294,7 +310,7 @@ export default function TournamentDetailPage() {
 
           <div className={clsx(
             "border p-10 rounded-[3rem] flex flex-col justify-center items-center text-center space-y-4 transition-all duration-700",
-            champion 
+            champion
               ? "bg-primary/10 border-primary/40 shadow-[0_0_50px_rgba(136,130,220,0.2)]"
               : "bg-primary/5 border-primary/20"
           )}>
@@ -420,9 +436,9 @@ export default function TournamentDetailPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <TournamentZones 
-                  zones={torneo.zonas_data || []} 
-                  allPairs={torneo.parejas_data || []} 
+                <TournamentZones
+                  zones={torneo.zonas_data || []}
+                  allPairs={torneo.parejas_data || []}
                   highlightName={profile ? `${profile.nombre} ${profile.apellido}` : undefined}
                 />
               </motion.div>
@@ -474,11 +490,101 @@ export default function TournamentDetailPage() {
                     </div>
                   </motion.div>
                 )}
-                <TournamentBracket 
-                  bracket={torneo.cuadro_data || []} 
-                  config={torneo.config || { bracketSize: 'semi' } as any} 
+                <TournamentBracket
+                  bracket={torneo.cuadro_data || []}
+                  config={torneo.config || { bracketSize: 'semi' } as any}
                   highlightName={profile ? `${profile.nombre} ${profile.apellido}` : undefined}
                 />
+              </motion.div>
+            )}
+
+            {activeTab === 'champions' && (
+              <motion.div
+                key="champions"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-12"
+              >
+                { (torneo.champions_data?.winner || autoChampions?.winner) ? (
+                  <div className="max-w-6xl mx-auto space-y-12">
+                    <header className="text-center space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Hall of Fame</p>
+                      <h2 className="text-5xl md:text-7xl font-black uppercase italic tracking-tighter">
+                        CAMPEONES <span className="opacity-20 text-white">OFICIALES</span>
+                      </h2>
+                    </header>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* CAMPEÓN CARD */}
+                      <div className="space-y-6">
+                        <div className="relative rounded-[3rem] overflow-hidden border border-white/10 bg-zinc-900 aspect-video shadow-2xl group">
+                          <img 
+                            src={(torneo.champions_data?.photoUrl && !torneo.champions_data.photoUrl.includes('random')) ? torneo.champions_data.photoUrl : "https://images.unsplash.com/photo-1592709823125-a191f07a2a5e?q=80&w=2013&auto=format&fit=crop"} 
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1592709823125-a191f07a2a5e?q=80&w=2013&auto=format&fit=crop"; }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                          <div className="absolute top-6 right-6">
+                            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-black shadow-lg">
+                              <Crown size={24} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="px-4 space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-primary">Pareja Campeona</p>
+                          <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">
+                            {torneo.champions_data?.winner || "A. GALÁN / J. LEBRÓN"}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* SUBCAMPEÓN CARD */}
+                      <div className="space-y-6">
+                        <div className="relative rounded-[3rem] overflow-hidden border border-white/10 bg-zinc-900 aspect-video opacity-80 group hover:opacity-100 transition-opacity shadow-xl">
+                          <img 
+                            src={(torneo.champions_data?.runnerUpPhotoUrl && !torneo.champions_data.runnerUpPhotoUrl.includes('random')) ? torneo.champions_data.runnerUpPhotoUrl : "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?q=80&w=2070&auto=format&fit=crop"} 
+                            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?q=80&w=2070&auto=format&fit=crop"; }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                          <div className="absolute top-6 right-6">
+                            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white/40">
+                              <Users size={24} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="px-4 space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Subcampeones</p>
+                          <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter opacity-60">
+                            {torneo.champions_data?.runnerUp || "F. BELASTEGUÍN / A. COELLO"}
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SCORE & INFO */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-10">
+                       <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] text-center">
+                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">Resultado Final</p>
+                          <p className="text-3xl font-black text-primary italic tracking-tighter">{torneo.champions_data?.score || autoChampions?.score || "-- / --"}</p>
+                       </div>
+                       <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] text-center">
+                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">Categoría</p>
+                          <p className="text-3xl font-black italic tracking-tighter">{torneo.categoria}</p>
+                       </div>
+                       <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] text-center">
+                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">Torneo</p>
+                          <p className="text-2xl font-black italic tracking-tighter uppercase">{torneo.nombre}</p>
+                       </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-40 bg-white/[0.02] border border-white/5 rounded-[4rem] space-y-6">
+                    <Trophy size={60} className="mx-auto opacity-10" />
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-20">La premiación se publicará al finalizar el torneo</p>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -488,14 +594,14 @@ export default function TournamentDetailPage() {
         <AnimatePresence>
           {showInscribir && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowInscribir(false)}
                 className="absolute inset-0 bg-black/80 backdrop-blur-md"
               />
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -513,8 +619,8 @@ export default function TournamentDetailPage() {
                   <form onSubmit={handleInscribirse} className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Tu Nombre (Jugador 1)</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={jugador1}
                         onChange={(e) => setJugador1(e.target.value)}
                         placeholder="Ej: Juan Pérez"
@@ -523,8 +629,8 @@ export default function TournamentDetailPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre de tu Compañero (Jugador 2)</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={jugador2}
                         onChange={(e) => setJugador2(e.target.value)}
                         placeholder="Ej: Pablo Gómez"
@@ -533,8 +639,8 @@ export default function TournamentDetailPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">WhatsApp de Contacto</label>
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         value={telefono}
                         onChange={(e) => setTelefono(e.target.value)}
                         placeholder="Ej: 2923..."
@@ -542,7 +648,7 @@ export default function TournamentDetailPage() {
                       />
                     </div>
 
-                    <button 
+                    <button
                       type="submit"
                       disabled={submitting}
                       className="w-full bg-primary text-black py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_15px_30px_rgba(200,255,0,0.2)] hover:scale-[1.02] transition-all disabled:opacity-50 mt-4"

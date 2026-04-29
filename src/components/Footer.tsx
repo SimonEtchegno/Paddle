@@ -14,7 +14,6 @@ export function Footer() {
             </div>
             <div className="text-left">
               <h3 className="text-2xl font-black uppercase tracking-tighter italic leading-none">Complejo <span className="text-primary">CAP</span></h3>
-              <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em]">Pádel & Social</p>
             </div>
           </div>
 
