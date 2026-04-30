@@ -40,6 +40,8 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
         jugadores_faltantes: faltan,
         contacto_whatsapp: profile.telefono,
         avatar_emoji: profile.avatar_emoji || '👤',
+        avatar_url: profile.avatar_url || '',
+        nivel_num: profile.nivel || 1.0,
         paleta_emoji: profile.paleta_emoji || '⚡️',
         paleta_modelo: profile.paleta_modelo || 'carbono'
       });
@@ -143,6 +145,8 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                       <option className="bg-[#1a1d23]" value="5ta">5ta Categoría</option>
                       <option className="bg-[#1a1d23]" value="4ta">4ta Categoría</option>
                       <option className="bg-[#1a1d23]" value="3ra">3ra Categoría</option>
+                      <option className="bg-[#1a1d23]" value="2da">2da Categoría</option>
+                      <option className="bg-[#1a1d23]" value="1ra">1ra Categoría</option>
                       <option className="bg-[#1a1d23]" value="Pro">Profesional / Open</option>
                     </select>
                   </div>

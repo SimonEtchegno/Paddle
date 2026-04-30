@@ -57,4 +57,5 @@ export interface UserProfile {
   avatar_emoji?: string;
   paleta_emoji?: string;
   paleta_modelo?: string;
+  avatar_url?: string;
 }

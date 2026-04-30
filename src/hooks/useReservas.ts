@@ -18,45 +18,58 @@ export function useReservas(selectedDate: string) {
       const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'peñarol';
 
       // 2. Obtener el ID del club correspondiente
-      const { data: clubData, error: clubError } = await supabase
-        .from('clubes')
-        .select('id')
-        .eq('slug', activeSlug)
-        .single();
-
+      let clubId = null;
+      try {
+        const { data: clubData } = await supabase
+          .from('clubes')
+          .select('id')
+          .eq('slug', activeSlug)
+          .single();
+        clubId = clubData?.id;
+      } catch (err) {
+        console.warn('Multi-tenant: No se pudo acceder a la tabla de clubes, usando modo simple.');
+      }
+ 
       // 3. Filtrar las reservas (con o sin club_id)
       let query = supabase
         .from('reservas')
         .select('*')
         .eq('fecha', selectedDate);
-
-      if (clubData?.id) {
-        // Si tenemos el club, traemos las de ese club y las que no tienen club (retrocompatibilidad)
-        query = query.or(`club_id.eq.${clubData.id},club_id.is.null`);
-      } else {
-        // Si no encontramos el club, traemos todas las del día o al menos las huérfanas
-        console.warn(`⚠️ Multi-tenant: No se encontró el club con slug "${activeSlug}".`);
-        query = query.filter('club_id', 'is', null);
+ 
+      if (clubId) {
+        query = query.or(`club_id.eq.${clubId},club_id.is.null`);
       }
 
       const { data, error } = await query.order('hora', { ascending: true });
 
       if (error) throw error;
       setReservas(data || []);
-    } catch (e) {
-      console.error('Error fetching reservas:', e);
+    } catch (e: any) {
+      console.error('Error fetching reservas details:', {
+        message: e.message,
+        details: e.details,
+        hint: e.hint,
+        code: e.code
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!selectedDate) return;
+    
     fetchReservas();
     
     // Subscribe to changes
     const channel = supabase
-      .channel('reservas_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas', filter: `fecha=eq.${selectedDate}` }, () => {
+      .channel(`reservas_${selectedDate}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'reservas', 
+        filter: `fecha=eq.${selectedDate}` 
+      }, () => {
         fetchReservas();
       })
       .subscribe();

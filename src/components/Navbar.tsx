@@ -204,47 +204,34 @@ export function Navbar({ club }: { club?: any }) {
               </div>
             )}
 
-            {profile ? (() => {
-                const currentLevel = profile.nivel || 1.0;
-                const isDiamante = currentLevel >= 6.5;
-                const isOro = currentLevel >= 5.5;
-                const isPlata = currentLevel >= 4.5;
-                const isMaster = currentLevel >= 3.5;
-                const isPro = currentLevel >= 2.5;
-
-                const auraColor = isDiamante ? "bg-cyan-400" : isOro ? "bg-yellow-400" : isPlata ? "bg-zinc-200" : isMaster ? "bg-purple-500" : isPro ? "bg-blue-500" : "bg-primary";
-
-                return (
-                  <Link href="/perfil" className="hidden sm:flex items-center gap-2 bg-white/5 p-1.5 pr-4 rounded-full border border-white/10 hover:bg-white/10 transition-all group relative">
-                    <div className="relative">
-                      {/* Aura Mini */}
-                      <div className={clsx(
-                        "absolute inset-0 rounded-full blur-md opacity-40 group-hover:scale-125 transition-transform",
-                        auraColor
-                      )} />
-                      <div className={clsx(
-                        "w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center relative z-10 border overflow-hidden",
-                        isDiamante ? "border-cyan-400/50" : isOro ? "border-yellow-400/50" : "border-white/10"
-                      )}>
-                        <img 
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.nombre}${profile.apellido}&backgroundColor=transparent`}
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
-                        />
+            {profile ? (
+              <Link href="/perfil" className="hidden sm:flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-full border border-white/10 hover:bg-white/10 transition-all group relative">
+                <div className="relative">
+                  <div className={clsx(
+                    "w-9 h-9 rounded-full bg-zinc-900 flex items-center justify-center relative z-10 border border-white/20 overflow-hidden shadow-lg",
+                    profile.nivel && profile.nivel >= 6 ? "border-yellow-400/50 shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "border-white/10"
+                  )}>
+                    {profile.avatar_url ? (
+                      <img 
+                        src={profile.avatar_url}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                        {(profile.nombre?.[0] || '') + (profile.apellido?.[0] || '')}
                       </div>
-                    </div>
-                    <div className="hidden sm:block text-xs">
-                      <p className="font-bold leading-none">{profile.nombre}</p>
-                      <p className={clsx(
-                        "text-[9px] uppercase tracking-widest font-black mt-0.5",
-                        isDiamante ? "text-cyan-400" : isOro ? "text-yellow-400" : "opacity-50"
-                      )}>
-                        {isDiamante ? "Legend" : isOro ? "Elite" : "Pro"}
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })() : (
+                    )}
+                  </div>
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-black leading-none text-white/90">{profile.nombre}</p>
+                  <p className="text-[9px] uppercase tracking-widest font-black mt-1 text-primary">
+                    {Math.round(((profile.nivel || 1.0) / 7) * 1000)} PTS
+                  </p>
+                </div>
+              </Link>
+            ) : (
               <Link href="/perfil" className="hidden sm:flex bg-primary text-black px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all active:scale-95 shadow-[0_0_20px_rgba(200,255,0,0.2)]">
                 Perfil
               </Link>

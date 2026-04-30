@@ -97,7 +97,11 @@ export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+
+  useEffect(() => {
+    setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+  }, []);
   const [selectedCancha, setSelectedCancha] = useState<string>('Todas');
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [espera, setEspera] = useState<ListaEspera[]>([]);
@@ -779,7 +783,7 @@ export default function AdminPage() {
                   </span>
                 </div>
                 <Calendar
-                  selectedDate={parseISO(selectedDate + 'T00:00:00')}
+                  selectedDate={selectedDate ? parseISO(selectedDate + 'T00:00:00') : new Date()}
                   onChange={handleDateChange}
                   isAdmin={true}
                 />

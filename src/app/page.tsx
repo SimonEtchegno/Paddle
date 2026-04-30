@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useReservas } from '@/hooks/useReservas';
@@ -14,7 +14,11 @@ import { WeatherWidget } from '@/components/WeatherWidget';
 import { motion } from 'framer-motion';
 
 export default function Home() {
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDate, setSelectedDate] = useState<string>('');
+
+  useEffect(() => {
+    setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+  }, []);
   const [selectedSlot, setSelectedSlot] = useState<{ hora: string; cancha: number } | null>(null);
   const { reservas, loading, refresh } = useReservas(selectedDate);
 
@@ -65,7 +69,7 @@ export default function Home() {
             <div id="tutorial-date-picker" className="px-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-4 ml-1">Seleccionar Fecha</h3>
               <Calendar
-                selectedDate={parseISO(selectedDate + 'T00:00:00')}
+                selectedDate={selectedDate ? parseISO(selectedDate + 'T00:00:00') : new Date()}
                 onChange={handleDateChange}
               />
             </div>
@@ -73,7 +77,7 @@ export default function Home() {
             <div className="glass p-6 rounded-3xl border border-white/5 mx-4">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-2">Fecha Seleccionada</p>
               <p className="text-xl font-black text-primary capitalize">
-                {format(parseISO(selectedDate + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es })}
+                {selectedDate ? format(parseISO(selectedDate + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es }) : 'Cargando...'}
               </p>
             </div>
 

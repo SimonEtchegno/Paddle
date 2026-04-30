@@ -25,7 +25,7 @@ export default function PartidosPage() {
   const [hasActiveReservation, setHasActiveReservation] = useState(false);
   const [filterLevel, setFilterLevel] = useState('Todos');
 
-  const CATEGORIES = ['Todos', 'Principiante', '7ma', '6ta', '5ta', '4ta', '3ra', 'Pro'];
+  const CATEGORIES = ['Todos', '7ma', '6ta', '5ta', '4ta', '3ra', '2da', '1ra', 'Pro'];
 
   const fetchData = async (isBackground = false) => {
     if (!profile) {
@@ -93,9 +93,11 @@ export default function PartidosPage() {
   };
 
   useEffect(() => {
-    fetchData(); // Carga inicial con loader
+    fetchData();
+    if (profile?.categoria) {
+      setFilterLevel(profile.categoria);
+    }
 
-    // Polling: Actualización en segundo plano cada 5 segundos (Simulación de Tiempo Real)
     const intervalId = setInterval(() => {
       fetchData(true); 
     }, 5000);
@@ -316,18 +318,19 @@ export default function PartidosPage() {
                 .map((p) => {
                   const esMio = profile && p.contacto_whatsapp === profile.telefono;
                   const completo = p.jugadores_faltantes <= 0;
-                  
-                  const currentLevel = esMio ? profile?.nivel : p.nivel;
-                  const currentCat = esMio ? profile?.categoria : p.nivel;
-                  
-                  const isDiamante = currentLevel === 'Pro' || currentLevel === 7.0 || (typeof currentLevel === 'number' && currentLevel >= 6.5);
-                  const isOro = currentCat === '1ra' || (typeof currentLevel === 'number' && currentLevel >= 5.5);
-                  const isPlata = currentCat === '2da' || (typeof currentLevel === 'number' && currentLevel >= 4.5);
-                  const isMaster = currentCat === '3ra' || (typeof currentLevel === 'number' && currentLevel >= 3.5);
-                  const isPro = currentCat === '4ta' || (typeof currentLevel === 'number' && currentLevel >= 2.5);
+                  const cat = (esMio ? profile?.categoria : p.nivel) || '7ma';
+                  const levelNum = esMio ? (profile?.nivel || 1.0) : (p.nivel_num || 1.0);
 
-                  const auraColor = isDiamante ? "bg-cyan-400" : isOro ? "bg-yellow-400" : isPlata ? "bg-zinc-200" : isMaster ? "bg-purple-500" : isPro ? "bg-blue-500" : "bg-emerald-500";
-                  const ringBorder = isDiamante ? "border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.4)]" : isOro ? "border-yellow-400/50 shadow-[0_0_20px_rgba(250,204,21,0.4)]" : isMaster ? "border-purple-400/50" : "border-white/5";
+                  // Sync with PlayerCard logic
+                  const isDiamond = cat === '2da' || (cat === '1ra' && levelNum >= 6.8);
+                  const isGold = cat === '1ra' && levelNum < 6.8;
+                  const isRed = cat === '3ra';
+                  const isPurple = cat === '5ta';
+                  const isGreen = cat === '6ta';
+                  
+                  const auraColor = isDiamond ? "bg-cyan-400" : isGold ? "bg-yellow-400" : isRed ? "bg-red-500" : isPurple ? "bg-purple-500" : "bg-zinc-400";
+                  const ringBorder = isDiamond ? "border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]" : isGold ? "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)]" : "border-white/20";
+                  const categoryLabel = cat.toUpperCase();
 
                   return (
                     <motion.div 
@@ -337,25 +340,24 @@ export default function PartidosPage() {
                       className={clsx(
                         "relative p-6 rounded-[2.5rem] flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-all border overflow-hidden",
                         completo ? "opacity-60 border-white/5 bg-black/20" : 
-                        isDiamante ? "bg-gradient-to-br from-cyan-950/40 to-black/60 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]" :
-                        isOro ? "bg-gradient-to-br from-yellow-950/40 to-black/60 border-yellow-400/30 shadow-[0_0_30px_rgba(250,204,21,0.15)]" :
-                        isPlata ? "bg-gradient-to-br from-zinc-800/40 to-black/60 border-zinc-200/20" :
-                        isMaster ? "bg-gradient-to-br from-purple-950/40 to-black/60 border-purple-500/20" :
-                        isPro ? "bg-gradient-to-br from-blue-950/40 to-black/60 border-blue-500/20" :
+                        isDiamond ? "bg-gradient-to-br from-cyan-950/40 to-black/60 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]" :
+                        isGold ? "bg-gradient-to-br from-yellow-950/40 to-black/60 border-yellow-400/30 shadow-[0_0_30px_rgba(250,204,21,0.15)]" :
+                        isRed ? "bg-gradient-to-br from-red-950/40 to-black/60 border-red-500/20" :
                         "bg-white/5 border-white/10"
                       )}
                     >
-                      {/* Status Badge Superior (Rareza) */}
+                      {/* Category Badge - Corner */}
                       <div className="absolute top-0 right-0">
                         <div className={clsx(
-                          "px-4 py-1 rounded-bl-2xl font-black text-[9px] uppercase tracking-[0.2em] italic",
-                          isDiamante ? "bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]" :
-                          isOro ? "bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]" :
-                          isPlata ? "bg-zinc-200 text-black" :
-                          isMaster ? "bg-purple-500 text-white" :
-                          "hidden"
+                          "px-5 py-1.5 rounded-bl-2xl font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2",
+                          isDiamond ? "bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]" :
+                          isGold ? "bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]" :
+                          isRed ? "bg-red-500 text-white" :
+                          isPurple ? "bg-purple-500 text-white" :
+                          "bg-white/10 text-white/60"
                         )}>
-                          {isDiamante ? "Legendary Diamond" : isOro ? "Gold Elite" : isPlata ? "Silver Master" : "Master"}
+                          <Trophy size={10} />
+                          {categoryLabel}
                         </div>
                       </div>
 
@@ -373,55 +375,18 @@ export default function PartidosPage() {
                               "w-16 h-16 bg-zinc-900 rounded-full border-2 backdrop-blur-xl flex items-center justify-center relative z-10 shadow-2xl transition-all duration-500 overflow-hidden",
                               ringBorder
                             )}>
-                              <img 
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.nombre_creador}&backgroundColor=transparent`}
-                                alt="Avatar"
-                                className="w-full h-full object-cover scale-110 translate-y-1"
-                              />
+                              {(esMio ? profile?.avatar_url : p.avatar_url) ? (
+                                <img 
+                                  src={esMio ? profile?.avatar_url : p.avatar_url}
+                                  alt="Avatar"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs uppercase">
+                                  {p.nombre_creador.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                </div>
+                              )}
                               
-                              {/* Mini Paleta Técnica (Sincronizada con el Rango) */}
-                              <div className="absolute -bottom-1 -right-1 w-7 h-9 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] rotate-[15deg] z-20">
-                                <svg viewBox="0 0 100 150" className="w-full h-full">
-                                  {/* Head */}
-                                  <circle cx="50" cy="44" r="40"
-                                    fill={
-                                      isDiamante ? '#AA00FF' :
-                                      isOro ? '#FF4400' :
-                                      isPlata ? '#55DDFF' :
-                                      isMaster ? '#FFB800' :
-                                      isPro ? '#A8A8A8' :
-                                      '#CD7F32' // Amateur/Iniciado
-                                    }
-                                    stroke={
-                                      isDiamante ? '#00FFFF' :
-                                      isOro ? '#FFCC00' :
-                                      isPlata ? '#FFFFFF' :
-                                      isMaster ? '#FFFFFF' :
-                                      isPro ? '#FFFFFF' :
-                                      '#111'
-                                    }
-                                    strokeWidth="6"
-                                  />
-                                  {/* Throat */}
-                                  <path d="M28 80 Q50 100 72 80 L68 84 Q50 104 32 84 Z" 
-                                    fill={
-                                      isDiamante ? '#AA00FF' :
-                                      isOro ? '#FF4400' :
-                                      isPlata ? '#55DDFF' :
-                                      isMaster ? '#FFB800' :
-                                      isPro ? '#A8A8A8' :
-                                      '#CD7F32'
-                                    } 
-                                  />
-                                  {/* Handle */}
-                                  <rect x="43" y="97" width="14" height="46" rx="6" fill="#111" />
-                                  <rect x="43" y="100" width="14" height="5" fill="#333" />
-                                  <rect x="43" y="110" width="14" height="5" fill="#333" />
-                                  <rect x="43" y="120" width="14" height="5" fill="#333" />
-                                  <rect x="43" y="130" width="14" height="5" fill="#333" />
-                                  <ellipse cx="50" cy="143" rx="9" ry="4" fill="#252525" />
-                                </svg>
-                              </div>
                             </div>
                           </div>
 
@@ -431,9 +396,9 @@ export default function PartidosPage() {
                               {esMio && <span className="bg-primary text-black text-[8px] px-2 py-0.5 rounded-full font-black tracking-widest">TÚ</span>}
                             </p>
                             <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.1em] opacity-50">
-                              <span className="flex items-center gap-1.5"><Calendar size={12} className={isOro ? "text-yellow-400" : isDiamante ? "text-cyan-400" : "text-primary"} /> {format(parseISO(p.fecha), 'd MMM', { locale: es })}</span>
-                              <span className="flex items-center gap-1.5"><Clock size={12} className={isOro ? "text-yellow-400" : isDiamante ? "text-cyan-400" : "text-primary"} /> {p.hora} hs</span>
-                              <span className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-md border border-white/10"><Trophy size={10} className={isOro ? "text-yellow-400" : isDiamante ? "text-cyan-400" : "text-primary"} /> {p.nivel}</span>
+                              <span className="flex items-center gap-1.5"><Calendar size={12} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {format(parseISO(p.fecha), 'd MMM', { locale: es })}</span>
+                              <span className="flex items-center gap-1.5"><Clock size={12} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {p.hora} hs</span>
+                              <span className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-md border border-white/10"><Trophy size={10} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {p.nivel}</span>
                             </div>
                           </div>
                         </div>
@@ -470,8 +435,8 @@ export default function PartidosPage() {
                             onClick={() => handleJoin(p)}
                             className={clsx(
                               "px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg",
-                              isDiamante ? "bg-cyan-400 text-black shadow-cyan-400/20" :
-                              isOro ? "bg-yellow-400 text-black shadow-yellow-400/20" :
+                              isDiamond ? "bg-cyan-400 text-black shadow-cyan-400/20" :
+                              isGold ? "bg-yellow-400 text-black shadow-yellow-400/20" :
                               "bg-primary text-white"
                             )}
                           >
