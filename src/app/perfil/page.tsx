@@ -223,7 +223,7 @@ export default function PerfilPage() {
                     className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]"
                   />
                   <div className="flex justify-between text-[8px] font-black uppercase tracking-widest opacity-30 px-0.5">
-                    <span>Bronze</span><span>Silver</span><span>Gold</span><span>Elite</span><span>TOTY</span>
+                    <span>Bronze</span><span>Silver</span><span>Gold</span><span>Elite</span><span>Leyenda</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

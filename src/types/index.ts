@@ -18,6 +18,8 @@ export interface PartidoAbierto {
   jugadores_faltantes: number;
   nivel: string;
   contacto_whatsapp: string;
+  avatar_url?: string;
+  nivel_num?: number;
   created_at: string;
   avatar_emoji?: string;
   paleta_modelo?: string;
