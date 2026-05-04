@@ -10,6 +10,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Calendar, Users, History, User, Trophy, Bell, X, Check, Crown, ShoppingBag, Menu } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { InstallAppButton } from '@/components/InstallAppButton';
 
 export function Navbar({ club }: { club?: any }) {
   const pathname = usePathname();
@@ -109,6 +110,9 @@ export function Navbar({ club }: { club?: any }) {
           {/* Profile & Notifications Section */}
           <div className="flex items-center gap-2 sm:gap-4">
             
+            {/* Install App Button (Desktop) */}
+            <InstallAppButton className="hidden sm:flex" />
+
             {/* Hamburger Menu (Mobile Only) */}
             <button 
               onClick={() => setIsMenuOpen(true)}
@@ -291,6 +295,10 @@ export function Navbar({ club }: { club?: any }) {
                     </Link>
                   );
                 })}
+              </div>
+
+              <div className="p-4 border-t border-white/5">
+                <InstallAppButton className="w-full justify-center py-3" />
               </div>
 
               <div className="p-6 border-t border-white/5 bg-white/[0.01]">
