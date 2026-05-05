@@ -5,6 +5,8 @@ export interface Pair {
   name: string;
   player1: string;
   player2: string;
+  timeRange?: string;
+  dayRange?: string;
 }
 
 export interface Match {
@@ -13,6 +15,7 @@ export interface Match {
   p2: string; // Pair ID or Name
   score: string; // e.g. "6-4 6-2"
   time?: string;
+  court?: string;
   date?: string;
   status: 'pending' | 'finished';
   winner?: string;
@@ -32,6 +35,7 @@ export interface BracketNode {
   p2: string;
   score: string;
   time?: string;
+  court?: string;
   winnerTo?: string; // Next node ID
   slot?: 1 | 2; // Which slot in the next node
 }

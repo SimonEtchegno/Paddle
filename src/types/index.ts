@@ -23,6 +23,7 @@ export interface PartidoAbierto {
   created_at: string;
   avatar_emoji?: string;
   paleta_modelo?: string;
+  uniones_partidos?: { user_id: string; nombre_interesado: string; estado: string; whatsapp_interesado: string; }[];
 }
 
 export interface UnionPartido {

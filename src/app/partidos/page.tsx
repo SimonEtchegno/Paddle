@@ -40,7 +40,15 @@ export default function PartidosPage() {
       // 1. Cargar Partidos
       const { data: pData, error: pError } = await supabase
         .from('partidos_abiertos')
-        .select('*')
+        .select(`
+          *,
+          uniones_partidos (
+            user_id,
+            nombre_interesado,
+            estado,
+            whatsapp_interesado
+          )
+        `)
         .gte('fecha', hoy)
         .order('fecha', { ascending: true })
         .order('hora', { ascending: true });
@@ -129,6 +137,7 @@ export default function PartidosPage() {
       }
 
       toast.success('¡Solicitud enviada!');
+      fetchData(true);
       const msg = encodeURIComponent(`¡Hola! Me gustaría sumarme a tu partido de Pádel del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`);
       window.open(`https://wa.me/${p.contacto_whatsapp}?text=${msg}`, '_blank');
     } catch (e) {
@@ -332,6 +341,11 @@ export default function PartidosPage() {
                   const ringBorder = isDiamond ? "border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]" : isGold ? "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)]" : "border-white/20";
                   const categoryLabel = cat.toUpperCase();
 
+                  const miUnion = p.uniones_partidos?.find(u => u.user_id === profile?.telefono || u.whatsapp_interesado === profile?.telefono);
+                  const isPending = miUnion?.estado === 'pendiente';
+                  const isConfirmed = miUnion?.estado === 'confirmado';
+                  const jugadoresConfirmados = p.uniones_partidos?.filter(u => u.estado === 'confirmado') || [];
+
                   return (
                     <motion.div 
                       layout
@@ -404,16 +418,27 @@ export default function PartidosPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
-                        <div className="text-right">
-                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Cupos</p>
-                          <p className={clsx("text-sm font-black", completo ? "text-primary" : "text-white")}>
-                            {completo ? "¡COMPLETO!" : `Faltan ${p.jugadores_faltantes}`}
-                          </p>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0 w-full sm:w-auto">
+                        <div className="flex flex-col gap-2 w-full sm:w-auto text-left sm:text-right">
+                          {jugadoresConfirmados.length > 0 && (
+                            <div className="flex flex-wrap sm:justify-end gap-1 mb-1">
+                              {jugadoresConfirmados.map((jc, i) => (
+                                <span key={i} className="text-[9px] bg-white/10 px-2 py-1 rounded-md font-bold text-white/80 uppercase">
+                                  {jc.nombre_interesado}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between sm:block">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Cupos</p>
+                            <p className={clsx("text-sm font-black", completo ? "text-primary" : "text-white")}>
+                              {completo ? "¡COMPLETO!" : `Faltan ${p.jugadores_faltantes}`}
+                            </p>
+                          </div>
                         </div>
 
                         {esMio && (
-                          <div className="flex gap-2 relative z-50">
+                          <div className="flex gap-2 relative z-50 self-end mt-2 sm:mt-0">
                             <button 
                               onClick={() => handleShare(p)}
                               className="p-3 bg-white/5 text-white/40 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
@@ -430,18 +455,30 @@ export default function PartidosPage() {
                           </div>
                         )}
 
-                        {!esMio && !completo && (
-                          <button 
-                            onClick={() => handleJoin(p)}
-                            className={clsx(
-                              "px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg",
-                              isDiamond ? "bg-cyan-400 text-black shadow-cyan-400/20" :
-                              isGold ? "bg-yellow-400 text-black shadow-yellow-400/20" :
-                              "bg-primary text-white"
-                            )}
-                          >
-                            Sumarme
-                          </button>
+                        {!esMio && (
+                          <div className="shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                            {isConfirmed ? (
+                              <div className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest bg-success/20 text-success border border-success/30 flex items-center justify-center gap-2">
+                                <Check size={16} /> Adentro
+                              </div>
+                            ) : isPending ? (
+                              <div className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-white/10 text-white/60 flex items-center justify-center gap-2 border border-white/10">
+                                <Clock size={16} /> Solicitud Enviada
+                              </div>
+                            ) : !completo ? (
+                              <button 
+                                onClick={() => handleJoin(p)}
+                                className={clsx(
+                                  "w-full sm:w-auto px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2",
+                                  isDiamond ? "bg-cyan-400 text-black shadow-cyan-400/20" :
+                                  isGold ? "bg-yellow-400 text-black shadow-yellow-400/20" :
+                                  "bg-primary text-white"
+                                )}
+                              >
+                                <Send size={16} /> Sumarme
+                              </button>
+                            ) : null}
+                          </div>
                         )}
                       </div>
                     </motion.div>

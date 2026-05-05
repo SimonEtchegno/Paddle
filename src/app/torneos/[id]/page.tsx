@@ -38,12 +38,7 @@ export default function TournamentDetailPage() {
   const { profile } = useGuestProfile();
   const [activeTab, setActiveTab] = useState<'info' | 'zones' | 'bracket' | 'champions'>('zones');
 
-  const [showInscribir, setShowInscribir] = useState(false);
-  const [jugador1, setJugador1] = useState('');
-  const [jugador2, setJugador2] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
+
 
   // Auto-detect champions from bracket if manual data is missing
   const autoChampions = useMemo(() => {
@@ -70,25 +65,6 @@ export default function TournamentDetailPage() {
   // For compatibility with other parts of the UI
   const champion = autoChampions?.winner;
 
-  useEffect(() => {
-    if (profile?.telefono) {
-      setTelefono(profile.telefono);
-      setJugador1(`${profile.nombre} ${profile.apellido}`);
-      checkRegistration(profile.telefono);
-    }
-  }, [profile, id]);
-
-  const checkRegistration = async (phone: string) => {
-    const { data } = await supabase
-      .from('inscripciones_torneos')
-      .select('id')
-      .eq('torneo_id', id)
-      .eq('telefono_contacto', phone);
-
-    if (data && data.length > 0) {
-      setIsRegistered(true);
-    }
-  };
 
   useEffect(() => {
     if (!id) return;
@@ -159,37 +135,6 @@ export default function TournamentDetailPage() {
     </PageWrapper>
   );
 
-  const handleInscribirse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!jugador1 || !jugador2 || !telefono) {
-      return toast.error('Completá todos los campos');
-    }
-
-    setSubmitting(true);
-    try {
-      const { error } = await supabase.from('inscripciones_torneos').insert({
-        torneo_id: id,
-        jugador1,
-        jugador2,
-        telefono_contacto: telefono
-      });
-
-      if (error) throw error;
-
-      toast.success('¡Inscripción enviada!');
-      setIsRegistered(true);
-      setShowInscribir(false);
-
-      // WhatsApp aviso al complejo
-      const msg = encodeURIComponent(`¡Hola! Quisiera inscribirme al torneo "${torneo.nombre}".\nPareja: ${jugador1} y ${jugador2}.\nTel: ${telefono}`);
-      window.open(`https://wa.me/2923460902?text=${msg}`, '_blank');
-
-    } catch (e) {
-      toast.error('Error al inscribirse');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const tabs = [
     { id: 'info', label: 'Información', icon: Info },
@@ -260,21 +205,10 @@ export default function TournamentDetailPage() {
               <div className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(136,130,220,0.1)]">
                 🏆 Torneo Finalizado
               </div>
-            ) : isRegistered ? (
-              <div className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(34,197,94,0.1)]">
-                <CheckCircle2 size={16} /> ¡Ya Inscripto!
-              </div>
-            ) : (torneo.parejas_data?.length > 0 || !torneo.abierto) ? (
-              <div className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest opacity-40 cursor-not-allowed">
-                {torneo.parejas_data?.length > 0 ? '⚡ Torneo En Curso' : 'Inscripciones Cerradas'}
-              </div>
             ) : (
-              <button
-                onClick={() => setShowInscribir(true)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_20px_rgba(136,130,220,0.3)]"
-              >
-                <Target size={16} /> Inscribirme
-              </button>
+              <div className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest opacity-40 cursor-default">
+                {torneo.parejas_data?.length > 0 ? '⚡ Torneo En Curso' : 'Modo Informativo'}
+              </div>
             )}
           </div>
         </div>
@@ -590,77 +524,7 @@ export default function TournamentDetailPage() {
           </AnimatePresence>
         </div>
 
-        {/* Modal de Inscripción */}
-        <AnimatePresence>
-          {showInscribir && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowInscribir(false)}
-                className="absolute inset-0 bg-black/80 backdrop-blur-md"
-              />
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative glass w-full max-w-md rounded-[3rem] border border-white/10 overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.5)]"
-              >
-                <div className="p-8 space-y-8">
-                  <header className="text-center space-y-2">
-                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto text-primary border border-primary/30 mb-2">
-                      <Target size={32} />
-                    </div>
-                    <h3 className="text-2xl font-black uppercase tracking-tight italic">Inscripción</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{torneo.nombre}</p>
-                  </header>
 
-                  <form onSubmit={handleInscribirse} className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Tu Nombre (Jugador 1)</label>
-                      <input
-                        type="text"
-                        value={jugador1}
-                        onChange={(e) => setJugador1(e.target.value)}
-                        placeholder="Ej: Juan Pérez"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all font-bold"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre de tu Compañero (Jugador 2)</label>
-                      <input
-                        type="text"
-                        value={jugador2}
-                        onChange={(e) => setJugador2(e.target.value)}
-                        placeholder="Ej: Pablo Gómez"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all font-bold"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">WhatsApp de Contacto</label>
-                      <input
-                        type="tel"
-                        value={telefono}
-                        onChange={(e) => setTelefono(e.target.value)}
-                        placeholder="Ej: 2923..."
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-primary transition-all font-bold"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full bg-primary text-black py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_15px_30px_rgba(200,255,0,0.2)] hover:scale-[1.02] transition-all disabled:opacity-50 mt-4"
-                    >
-                      {submitting ? 'Enviando...' : 'Confirmar Inscripción'}
-                    </button>
-                  </form>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
       </div>
     </PageWrapper>
   );

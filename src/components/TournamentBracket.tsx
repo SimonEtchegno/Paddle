@@ -35,7 +35,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracket, c
             </div>
             
             <div className="space-y-16">
-              {bracket.filter(n => n.stage === stage).map((node) => {
+              {bracket.filter(n => n.stage === stage).map((node, nIdx) => {
                 const results = parsePublicScore(node.score);
                 const winner = results ? (results.p1S > results.p2S ? 1 : results.p2S > results.p1S ? 2 : 0) : 0;
                 const isFinal = node.stage === 'Final';
@@ -61,6 +61,17 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracket, c
                         Tu Partido
                       </div>
                     )}
+
+                    <div className="px-4 pt-3 pb-1 flex items-center justify-between opacity-40 text-[8px] font-black uppercase tracking-widest border-b border-white/5 bg-black/20">
+                      <span>Partido {nIdx + 1}</span>
+                      {node.time && (
+                        <div className="flex items-center gap-1">
+                          <Clock size={8} />
+                          <span>{node.time}</span>
+                          {node.court && <span className="ml-1 text-primary">C{node.court}</span>}
+                        </div>
+                      )}
+                    </div>
                     
                     {/* Player 1 */}
                     <div className={clsx(
@@ -68,7 +79,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracket, c
                       winner === 1 ? "bg-primary text-black" : "bg-transparent"
                     )}>
                       <span className={clsx(
-                        "text-[11px] font-black uppercase italic truncate pr-2",
+                        "text-[12px] md:text-sm font-black uppercase italic truncate pr-2",
                         highlightName && node.p1?.toLowerCase().includes(highlightName.toLowerCase()) && winner !== 1 && "text-primary"
                       )}>
                         {node.p1}
@@ -93,7 +104,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracket, c
                       winner === 2 ? "bg-primary text-black" : "bg-transparent"
                     )}>
                       <span className={clsx(
-                        "text-[11px] font-black uppercase italic truncate pr-2",
+                        "text-[12px] md:text-sm font-black uppercase italic truncate pr-2",
                         highlightName && node.p2?.toLowerCase().includes(highlightName.toLowerCase()) && winner !== 2 && "text-primary"
                       )}>
                         {node.p2}

@@ -5,49 +5,16 @@ import { PageWrapper } from '@/components/PageWrapper';
 import { Trophy, Crown, Search, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
+import { rankingData } from '@/lib/rankingData';
 
 export default function RankingPage() {
   const [activeCategory, setActiveCategory] = useState('6ta');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categories = ['4ta', '5ta', '6ta', '7ma'];
+  const categories = ['4ta', '5ta', '6ta'];
 
-  const allPlayers = [
-    { pos: 1, name: 'Toy Julian', pts: 200 },
-    { pos: 2, name: 'Marcenac Jorge', pts: 150 },
-    { pos: 3, name: 'Loaldi Nicolas', pts: 150 },
-    { pos: 4, name: 'Apelhanz Juan', pts: 100 },
-    { pos: 5, name: 'Heiland Joaquin', pts: 100 },
-    { pos: 6, name: 'Gianfelici Cristian', pts: 100 },
-    { pos: 7, name: 'Lencina David', pts: 75 },
-    { pos: 8, name: 'Lencina Claudio', pts: 75 },
-    { pos: 9, name: 'Selesan Rodrigo', pts: 75 },
-    { pos: 10, name: 'Salvatierra Roberto', pts: 75 },
-    { pos: 11, name: 'Scro Gonzalo', pts: 75 },
-    { pos: 12, name: 'Saur Franco', pts: 75 },
-    { pos: 13, name: 'Philipp Pablo', pts: 75 },
-    { pos: 14, name: 'Rauch Dario', pts: 75 },
-    { pos: 15, name: 'Iros Martin', pts: 50 },
-    { pos: 16, name: 'Aguilera Nicolas', pts: 50 },
-    { pos: 17, name: 'Garcia Juan Pablo', pts: 50 },
-    { pos: 18, name: 'Davita German', pts: 50 },
-    { pos: 19, name: 'Della Giusta Arturo', pts: 50 },
-    { pos: 20, name: 'Helbert Eduardo', pts: 50 },
-    { pos: 21, name: 'Willhelem Guillermo', pts: 50 },
-    { pos: 22, name: 'Badias Luciano', pts: 50 },
-    { pos: 23, name: 'Chavez Walter', pts: 10 },
-    { pos: 24, name: 'Calmels Mariano', pts: 10 },
-    { pos: 25, name: 'Almestro Ariel', pts: 10 },
-    { pos: 26, name: 'Lelco Tomas', pts: 10 },
-    { pos: 27, name: 'Lefler Alejo', pts: 10 },
-    { pos: 28, name: 'Kleer Valentin', pts: 10 },
-    { pos: 29, name: 'Lima Eduardo', pts: 10 },
-    { pos: 30, name: 'Lacasta Jeremias', pts: 10 },
-    { pos: 31, name: 'Cuvertino Agustin', pts: 10 },
-    { pos: 32, name: 'Vaga Juan Segundo', pts: 10 },
-  ];
-
-  const filteredRanking = allPlayers.filter(p => 
+  const currentPlayers = rankingData[activeCategory] || [];
+  const filteredRanking = currentPlayers.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -116,9 +83,9 @@ export default function RankingPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {activeCategory === '6ta' ? (
+          {rankingData[activeCategory] ? (
             <motion.div
-              key="ranking-6ta"
+              key={`ranking-${activeCategory}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}

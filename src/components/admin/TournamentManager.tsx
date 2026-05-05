@@ -6,8 +6,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy, Users, Layout, Plus, X, Save, ChevronLeft,
   CheckCircle2, Search, Trash2, Calendar, Clock,
-  ChevronRight, Camera, Settings2, GripVertical, Sparkles, Share2, Globe, Crown
+  ChevronRight, Camera, Settings2, GripVertical, Sparkles, Share2, Globe, Crown, MapPin
 } from 'lucide-react';
+
+const DAY_OPTIONS = ['Viernes', 'Sábado', 'Domingo'];
+const TIME_OPTIONS = [
+  '',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', 
+  '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', 
+  '22:00', '22:30', '23:00', '23:30'
+];
 import {
   DndContext as DndKitContext,
   DragEndEvent,
@@ -31,6 +39,7 @@ import { toast } from 'react-hot-toast';
 import { toPng } from 'html-to-image';
 import { useTutorial } from '@/hooks/useTutorial';
 import { TournamentPhaseType, Pair, Zone, Match, BracketNode, TournamentConfig } from '@/types/tournament';
+import { rankingData, getPairScore } from '@/lib/rankingData';
 
 interface TournamentManagerProps {
   tournament: any;
@@ -487,20 +496,71 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
   };
 
   const autoAssignPairs = () => {
-    const unassigned = pairs.filter(p => !zones.some(z => z.pairs.includes(p.id)));
+    let currentZones = [...zones];
+    
+    // Si no hay zonas (por ejemplo, si el usuario las borró), las creamos automáticamente
+    if (currentZones.length === 0) {
+      currentZones = Array.from({ length: config.numZones }).map((_, i) => ({
+        id: generateId(),
+        name: `Zona ${String.fromCharCode(65 + i)}`,
+        pairs: [],
+        matches: []
+      }));
+    }
+
+    const unassigned = pairs.filter(p => !currentZones.some(z => z.pairs.includes(p.id)));
     if (unassigned.length === 0) return toast.error('No hay parejas sin asignar');
 
-    const newZones = [...zones];
-    unassigned.forEach((pair, idx) => {
-      // Find the zone with fewest pairs
-      const targetZone = newZones.reduce((prev, curr) =>
-        prev.pairs.length <= curr.pairs.length ? prev : curr
-      );
-      targetZone.pairs.push(pair.id);
+    const timeToMinutes = (time?: string, day?: string) => {
+      let dayMins = 0;
+      if (day === 'Sábado') dayMins = 24 * 60;
+      else if (day === 'Domingo') dayMins = 48 * 60;
+      
+      if (!time) return dayMins;
+      const match = time.match(/(\d+):(\d+)/);
+      if (match) return dayMins + parseInt(match[1]) * 60 + parseInt(match[2]);
+      return dayMins;
+    };
+
+    // Ordenar de mayor a menor puntaje (Cabezas de serie)
+    const sortedUnassigned = [...unassigned].sort((a, b) => getPairScore(b) - getPairScore(a));
+
+    const newZones = [...currentZones];
+    sortedUnassigned.forEach((pair) => {
+      // 1. Encontrar las zonas con la menor cantidad de parejas para mantener el balance
+      const minPairsCount = Math.min(...newZones.map(z => z.pairs.length));
+      const candidateZones = newZones.filter(z => z.pairs.length === minPairsCount);
+
+      const pairMins = timeToMinutes(pair.timeRange, pair.dayRange);
+      let bestZone = candidateZones[0];
+
+      // 2. Si la pareja tiene horario/dia, buscar la zona candidata con el promedio más cercano
+      if (pairMins > 0) {
+        let minDistance = Infinity;
+        for (const z of candidateZones) {
+          const zonePairs = z.pairs.map(pId => pairs.find(p => p.id === pId)).filter(Boolean) as Pair[];
+          const zoneTimes = zonePairs.map(p => timeToMinutes(p.timeRange, p.dayRange)).filter(m => m > 0);
+          
+          let distance = 0;
+          if (zoneTimes.length > 0) {
+            const avgTime = zoneTimes.reduce((a, b) => a + b, 0) / zoneTimes.length;
+            distance = Math.abs(avgTime - pairMins);
+          }
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            bestZone = z;
+          }
+        }
+      }
+
+      if (bestZone) {
+        bestZone.pairs.push(pair.id);
+      }
     });
 
     setZones(newZones);
-    toast.success(`${unassigned.length} parejas asignadas automáticamente`);
+    toast.success(`${unassigned.length} parejas asignadas (Cabezas de serie + Agrupadas por Horario)`);
   };
 
   // --- RENDERING HELPERS ---
@@ -797,18 +857,18 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   <button
                     onClick={() => {
                       const testData = [
-                        ['Los Galácticos', 'Juan Pérez', 'Diego Gómez'],
-                        ['Pádel Pro', 'Lucas Martínez', 'Mateo Rodríguez'],
-                        ['El Muro', 'Carlos Sánchez', 'Roberto Díaz'],
-                        ['Saque As', 'Fernando López', 'Jorge Ruiz'],
-                        ['La Red', 'Santi García', 'Nico Torres'],
-                        ['Top Spin', 'Mariano Castro', 'Enzo Silva'],
-                        ['Smash It', 'Hugo Romero', 'Beto Sosa'],
-                        ['Volea Letal', 'Fede Blanco', 'Ramiro Jara']
+                        ['Juan Pérez', 'Diego Gómez'],
+                        ['Lucas Martínez', 'Mateo Rodríguez'],
+                        ['Carlos Sánchez', 'Roberto Díaz'],
+                        ['Fernando López', 'Jorge Ruiz'],
+                        ['Santi García', 'Nico Torres'],
+                        ['Mariano Castro', 'Enzo Silva'],
+                        ['Hugo Romero', 'Beto Sosa'],
+                        ['Fede Blanco', 'Ramiro Jara']
                       ];
-                      const newPairs = testData.map(([name, p1, p2]) => ({
+                      const newPairs = testData.map(([p1, p2]) => ({
                         id: generateId(),
-                        name,
+                        name: `${p1} / ${p2}`,
                         player1: p1,
                         player2: p2
                       }));
@@ -845,46 +905,67 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       <Trash2 size={16} />
                     </button>
 
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black uppercase tracking-widest opacity-30 ml-1">Nombre Pareja</label>
-                      <input
-                        className="w-full bg-transparent text-xl font-black uppercase italic outline-none focus:text-primary transition-all tracking-tighter"
-                        placeholder="EJ: LOS NINJAS"
-                        value={p.name}
-                        onChange={(e) => {
-                          const newPairs = [...pairs];
-                          newPairs[idx].name = e.target.value;
-                          setPairs(newPairs);
-                        }}
-                      />
-                    </div>
-
                     <div className="space-y-4 pt-2">
                       <div className="space-y-1">
-                        <label className="text-[8px] font-black uppercase tracking-widest opacity-20 ml-1">Jugador 1</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Jugador 1</label>
                         <input
-                          className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-primary/40 transition-all"
-                          placeholder="Nombre..."
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-black uppercase outline-none focus:border-primary/50 transition-all"
+                          placeholder="Nombre y Apellido"
                           value={p.player1}
                           onChange={(e) => {
                             const newPairs = [...pairs];
                             newPairs[idx].player1 = e.target.value;
+                            newPairs[idx].name = `${e.target.value} / ${p.player2}`;
                             setPairs(newPairs);
                           }}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] font-black uppercase tracking-widest opacity-20 ml-1">Jugador 2</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Jugador 2</label>
                         <input
-                          className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-primary/40 transition-all"
-                          placeholder="Nombre..."
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-black uppercase outline-none focus:border-primary/50 transition-all"
+                          placeholder="Nombre y Apellido"
                           value={p.player2}
                           onChange={(e) => {
                             const newPairs = [...pairs];
                             newPairs[idx].player2 = e.target.value;
+                            newPairs[idx].name = `${p.player1} / ${e.target.value}`;
                             setPairs(newPairs);
                           }}
                         />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Disponibilidad</label>
+                        <div className="flex gap-2">
+                          <select
+                            className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-black uppercase outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
+                            value={p.dayRange || ''}
+                            onChange={(e) => {
+                              const newPairs = [...pairs];
+                              newPairs[idx].dayRange = e.target.value;
+                              setPairs(newPairs);
+                            }}
+                          >
+                            <option value="" className="bg-black text-white/50">Día...</option>
+                            {DAY_OPTIONS.map(day => (
+                              <option key={day} value={day} className="bg-black">{day}</option>
+                            ))}
+                          </select>
+                          <select
+                            className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-black uppercase outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
+                            value={p.timeRange || ''}
+                            onChange={(e) => {
+                              const newPairs = [...pairs];
+                              newPairs[idx].timeRange = e.target.value;
+                              setPairs(newPairs);
+                            }}
+                          >
+                            <option value="" className="bg-black text-white/50">Hora...</option>
+                            {TIME_OPTIONS.filter(t => t !== '').map(time => (
+                              <option key={time} value={time} className="bg-black">Desde {time}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -1045,24 +1126,114 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 <button
                   id="tutorial-gen-fixtures"
                   onClick={() => {
-                    const newZones = zones.map(z => {
-                      if (z.matches.length > 0) return z;
-                      const matches: Match[] = [];
-                      for (let i = 0; i < z.pairs.length; i++) {
-                        for (let j = i + 1; j < z.pairs.length; j++) {
-                          matches.push({
-                            id: generateId(),
-                            p1: z.pairs[i],
-                            p2: z.pairs[j],
-                            score: '',
-                            status: 'pending'
-                          });
+                    if (zones.some(z => z.pairs.length < 2)) {
+                      return toast.error('Todas las zonas deben tener al menos 2 parejas');
+                    }
+
+                    const timeToMinutes = (time?: string, day?: string) => {
+                      let dayMins = 0;
+                      if (day === 'Sábado') dayMins = 24 * 60;
+                      else if (day === 'Domingo') dayMins = 48 * 60;
+                      
+                      if (!time) return dayMins + 16 * 60;
+                      const match = time.match(/(\d+):(\d+)/);
+                      if (match) return dayMins + parseInt(match[1]) * 60 + parseInt(match[2]);
+                      return dayMins + 16 * 60;
+                    };
+
+                    const minutesToTimeAndDay = (mins: number) => {
+                      let day = 'Viernes';
+                      if (mins >= 48 * 60) { day = 'Domingo'; mins -= 48 * 60; }
+                      else if (mins >= 24 * 60) { day = 'Sábado'; mins -= 24 * 60; }
+                      
+                      const h = Math.floor(mins / 60);
+                      const m = mins % 60;
+                      return {
+                        time: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`,
+                        date: day
+                      };
+                    };
+
+                    let allMatches: any[] = [];
+                    
+                    zones.forEach(zone => {
+                      if (zone.matches.length > 0) {
+                        allMatches.push(...zone.matches.map(m => ({ ...m, zoneId: zone.id, earliestStart: timeToMinutes(m.time, m.date) })));
+                        return;
+                      }
+
+                      for (let i = 0; i < zone.pairs.length; i++) {
+                        for (let j = i + 1; j < zone.pairs.length; j++) {
+                           const p1 = pairs.find(p => p.id === zone.pairs[i]);
+                           const p2 = pairs.find(p => p.id === zone.pairs[j]);
+                           if (!p1 || !p2) continue;
+                           
+                           const p1Mins = timeToMinutes(p1.timeRange, p1.dayRange);
+                           const p2Mins = timeToMinutes(p2.timeRange, p2.dayRange);
+                           
+                           allMatches.push({
+                             id: generateId(),
+                             zoneId: zone.id,
+                             p1: p1.id,
+                             p2: p2.id,
+                             earliestStart: Math.max(p1Mins, p2Mins),
+                             score: '',
+                             status: 'pending'
+                           });
                         }
                       }
-                      return { ...z, matches };
                     });
+
+                    const matchesToSchedule = allMatches.filter(m => !m.time);
+                    matchesToSchedule.sort((a, b) => a.earliestStart - b.earliestStart);
+
+                    const courtFreeTime = { '1': 16 * 60, '2': 16 * 60 };
+                    const pairNextAvail: Record<string, number> = {};
+
+                    allMatches.filter(m => m.time).forEach(m => {
+                      const start = timeToMinutes(m.time);
+                      const end = start + 60;
+                      if (m.court === '1' || m.court === '2') {
+                        courtFreeTime[m.court as '1'|'2'] = Math.max(courtFreeTime[m.court as '1'|'2'], end);
+                      }
+                      pairNextAvail[m.p1] = Math.max(pairNextAvail[m.p1] || 0, end);
+                      pairNextAvail[m.p2] = Math.max(pairNextAvail[m.p2] || 0, end);
+                    });
+
+                    matchesToSchedule.forEach(m => {
+                      const p1Avail = pairNextAvail[m.p1] || m.earliestStart;
+                      const p2Avail = pairNextAvail[m.p2] || m.earliestStart;
+                      const matchMinStart = Math.max(p1Avail, p2Avail);
+
+                      let bestCourt = '1';
+                      let earliestPossible = Infinity;
+
+                      for (const court of ['1', '2']) {
+                        const possibleStart = Math.max(matchMinStart, courtFreeTime[court as '1'|'2']);
+                        if (possibleStart < earliestPossible) {
+                          earliestPossible = possibleStart;
+                          bestCourt = court;
+                        }
+                      }
+
+                      const { time, date } = minutesToTimeAndDay(earliestPossible);
+                      m.time = time;
+                      m.date = date;
+                      m.court = bestCourt;
+
+                      const endTime = earliestPossible + 60;
+                      courtFreeTime[bestCourt as '1'|'2'] = endTime;
+                      pairNextAvail[m.p1] = endTime;
+                      pairNextAvail[m.p2] = endTime;
+                    });
+
+                    const newZones = zones.map(z => ({
+                      ...z,
+                      matches: allMatches.filter(m => m.zoneId === z.id).map(({ zoneId, earliestStart, ...matchData }) => matchData as Match)
+                    }));
+
                     setZones(newZones);
-                    toast.success('Fixtures generados');
+                    toast.success('Fixtures generados con horarios auto-calculados');
                   }}
                   className="w-full md:w-auto bg-primary/10 text-primary border border-primary/30 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-3"
                 >
@@ -1094,7 +1265,17 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                 <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors text-[10px] md:text-[11px]">
                                   <td className="py-4 md:py-5 flex items-center gap-2 md:gap-3 italic uppercase min-w-[150px] md:min-w-[200px]">
                                     <span className={clsx("w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-full text-[7px] md:text-[8px]", idx < config.qualifiersPerZone ? "bg-primary text-black" : "bg-white/5 opacity-30")}>{idx + 1}</span>
-                                    <span className="truncate">{s.name}</span>
+                                    <div className="flex items-center gap-2 truncate text-xs md:text-sm">
+                                      <span className="truncate">{s.name}</span>
+                                      {(() => {
+                                        const p = pairs.find(pair => pair.name === s.name);
+                                        return p && getPairScore(p) > 0 ? (
+                                          <span title={`Puntos: ${getPairScore(p)}`} className="flex items-center">
+                                            <Crown size={10} className="text-yellow-400 shrink-0" />
+                                          </span>
+                                        ) : null;
+                                      })()}
+                                    </div>
                                   </td>
                                   <td className="py-4 md:py-5 text-center opacity-40">{s.pj}</td>
                                   <td className="py-4 md:py-5 text-center text-primary font-black">{s.pts}</td>
@@ -1159,54 +1340,86 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> Camino a la Gloria
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    const classified: string[] = [];
-                    zones.forEach((z, idx) => {
-                      const top = calculateStandings(z, pairs).slice(0, config.qualifiersPerZone);
-                      top.forEach(p => classified.push(p.name));
-                    });
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      const newBracket = [...bracket];
+                      const standingsByZone: Record<string, string[]> = {};
+                      zones.forEach((z, idx) => {
+                        const letter = String.fromCharCode(65 + idx);
+                        const standings = calculateStandings(z, pairs);
+                        standingsByZone[letter] = standings.map(s => s.name);
+                      });
 
-                    const newBracket: BracketNode[] = [];
+                      let syncedCount = 0;
+                      newBracket.forEach(node => {
+                        const syncPos = (val: string) => {
+                          const match = val.match(/^[12]º\s*(Zona\s*)?([A-Z])$/i);
+                          if (match) {
+                            const pos = parseInt(val[0]) - 1;
+                            const letter = match[2].toUpperCase();
+                            if (standingsByZone[letter] && standingsByZone[letter][pos]) {
+                              return standingsByZone[letter][pos];
+                            }
+                          }
+                          return val;
+                        };
+                        const oldP1 = node.p1;
+                        const oldP2 = node.p2;
+                        node.p1 = syncPos(node.p1);
+                        node.p2 = syncPos(node.p2);
+                        if (oldP1 !== node.p1 || oldP2 !== node.p2) syncedCount++;
+                      });
+
+                      if (syncedCount > 0) {
+                        setBracket(newBracket);
+                        toast.success(`Se sincronizaron lugares del cuadro automáticamente`);
+                      } else {
+                        toast.error('No se encontraron posiciones (ej: 1º A) o aún no hay clasificados');
+                      }
+                    }}
+                    className="bg-primary/10 text-primary px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all border border-primary/20 flex items-center gap-2"
+                  >
+                    <Sparkles size={16} /> Sincronizar
+                  </button>
+                  <button
+                    onClick={() => {
+                      const newBracket: BracketNode[] = [];
 
                     if (config.bracketSize === 'eighth') {
                       // 8 Octavos -> 4 Cuartos -> 2 Semis -> 1 Final
                       for (let i = 1; i <= 8; i++) {
                         newBracket.push({
                           id: `eighth-${i}`, stage: 'Octavos',
-                          p1: classified[(i - 1) * 2] || `Pareja ${(i - 1) * 2 + 1}`,
-                          p2: classified[(i - 1) * 2 + 1] || `Pareja ${(i - 1) * 2 + 2}`,
-                          score: '', winnerTo: `quarter-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2)
+                          p1: `1º Zona ${String.fromCharCode(64 + i)}`,
+                          p2: `2º Zona ${String.fromCharCode(72 - i + 1)}`,
+                          score: '', time: '', winnerTo: `quarter-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2)
                         });
                       }
                       for (let i = 1; i <= 4; i++) {
-                        newBracket.push({ id: `quarter-${i}`, stage: 'Cuartos', p1: '?', p2: '?', score: '', winnerTo: `semi-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2) });
+                        newBracket.push({ id: `quarter-${i}`, stage: 'Cuartos', p1: '?', p2: '?', score: '', time: '', winnerTo: `semi-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2) });
                       }
                       for (let i = 1; i <= 2; i++) {
-                        newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
+                        newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
                       }
-                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '' });
+                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                     }
                     else if (config.bracketSize === 'quarter') {
                       // 4 Cuartos -> 2 Semis -> 1 Final
-                      for (let i = 1; i <= 4; i++) {
-                        newBracket.push({
-                          id: `quarter-${i}`, stage: 'Cuartos',
-                          p1: classified[(i - 1) * 2] || `Pareja ${(i - 1) * 2 + 1}`,
-                          p2: classified[(i - 1) * 2 + 1] || `Pareja ${(i - 1) * 2 + 2}`,
-                          score: '', winnerTo: `semi-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2)
-                        });
-                      }
+                      newBracket.push({ id: `quarter-1`, stage: 'Cuartos', p1: '1º A', p2: '2º C', score: '', time: '', winnerTo: `semi-1`, slot: 1 });
+                      newBracket.push({ id: `quarter-2`, stage: 'Cuartos', p1: '1º B', p2: '2º D', score: '', time: '', winnerTo: `semi-1`, slot: 2 });
+                      newBracket.push({ id: `quarter-3`, stage: 'Cuartos', p1: '1º C', p2: '2º A', score: '', time: '', winnerTo: `semi-2`, slot: 1 });
+                      newBracket.push({ id: `quarter-4`, stage: 'Cuartos', p1: '1º D', p2: '2º B', score: '', time: '', winnerTo: `semi-2`, slot: 2 });
                       for (let i = 1; i <= 2; i++) {
-                        newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
+                        newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
                       }
-                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '' });
+                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                     }
                     else {
                       // Semifinales (config.bracketSize === 'semi')
-                      newBracket.push({ id: 'semi-1', stage: 'Semifinal', p1: classified[0] || '1° Zona A', p2: classified[3] || '2° Zona B', score: '', winnerTo: 'final', slot: 1 });
-                      newBracket.push({ id: 'semi-2', stage: 'Semifinal', p1: classified[2] || '1° Zona B', p2: classified[1] || '2° Zona A', score: '', winnerTo: 'final', slot: 2 });
-                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '' });
+                      newBracket.push({ id: 'semi-1', stage: 'Semifinal', p1: '1º A', p2: '2º B', score: '', time: '', winnerTo: 'final', slot: 1 });
+                      newBracket.push({ id: 'semi-2', stage: 'Semifinal', p1: '1º B', p2: '2º A', score: '', time: '', winnerTo: 'final', slot: 2 });
+                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                     }
 
                     setBracket(newBracket);
@@ -1216,6 +1429,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 >
                   <Trophy size={18} /> Generar Cuadro
                 </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-x-auto custom-scrollbar pb-20">
@@ -1239,7 +1453,44 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
                           return (
                             <div key={node.id} className="relative group">
-                              <p className="text-[8px] font-black uppercase opacity-20 mb-2 ml-4 italic tracking-widest">{node.stage} - Partido {nIdx + 1}</p>
+                              <div className="flex justify-between items-center mb-2 ml-4 mr-4">
+                                <p className="text-[8px] font-black uppercase opacity-40 italic tracking-widest">{node.stage} - Partido {nIdx + 1}</p>
+                                <div className="flex items-center gap-2 opacity-40 focus-within:opacity-100 transition-all">
+                                  <div className="flex items-center gap-1">
+                                    <Clock size={10} />
+                                    <select
+                                      value={node.time || ''}
+                                      onChange={(e) => {
+                                        const newBracket = [...bracket];
+                                        newBracket.find(n => n.id === node.id)!.time = e.target.value;
+                                        setBracket(newBracket);
+                                      }}
+                                      className="bg-transparent text-[8px] font-black w-12 outline-none cursor-pointer appearance-none"
+                                    >
+                                      <option value="" className="bg-black">Hora</option>
+                                      {TIME_OPTIONS.filter(t => t !== '').map(time => (
+                                        <option key={time} value={time} className="bg-black">{time}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="flex items-center gap-1 border-l border-white/10 pl-2">
+                                    <MapPin size={10} />
+                                    <select
+                                      value={node.court || ''}
+                                      onChange={(e) => {
+                                        const newBracket = [...bracket];
+                                        newBracket.find(n => n.id === node.id)!.court = e.target.value;
+                                        setBracket(newBracket);
+                                      }}
+                                      className="bg-transparent text-[8px] font-black w-12 outline-none cursor-pointer appearance-none"
+                                    >
+                                      <option value="" className="bg-black">Cancha</option>
+                                      <option value="1" className="bg-black">C1</option>
+                                      <option value="2" className="bg-black">C2</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
                               <motion.div
                                 whileHover={{ scale: 1.02, y: -5 }}
                                 className={clsx(
@@ -1803,9 +2054,21 @@ function DraggablePair({ pair }: { pair: Pair }) {
       {...listeners}
       className="w-full p-5 rounded-[1.5rem] border bg-white/5 border-white/5 hover:border-primary/40 hover:bg-primary/5 transition-all text-left flex items-center justify-between group cursor-grab active:cursor-grabbing"
     >
-      <div className="min-w-0 pr-4">
-        <p className="text-xs font-black uppercase italic leading-tight truncate">{pair.name || 'Sin Nombre'}</p>
-        <p className="text-[9px] font-bold opacity-30 uppercase truncate mt-1">{pair.player1} / {pair.player2}</p>
+      <div className="min-w-0 pr-4 flex items-center gap-2">
+        <div className="min-w-0">
+          <p className="text-sm md:text-base font-black uppercase italic leading-tight truncate">{pair.name || 'Sin Jugadores'}</p>
+          {(pair.dayRange || pair.timeRange) && (
+            <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
+              Disp: {pair.dayRange} {pair.timeRange}
+            </p>
+          )}
+        </div>
+        {getPairScore(pair) > 0 && (
+          <div className="bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-yellow-400/20" title={`Puntos de Ranking: ${getPairScore(pair)}`}>
+            <Crown size={10} />
+            <span className="text-[8px] font-black">{getPairScore(pair)} pts</span>
+          </div>
+        )}
       </div>
       <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
         <GripVertical size={14} className="text-primary" />
@@ -1845,9 +2108,20 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone }: { zone: Z
           if (!pair) return null;
           return (
             <div key={pId} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex justify-between items-center group/pair">
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase truncate">{pair.name}</p>
-                <p className="text-[8px] opacity-30 truncate">{pair.player1} / {pair.player2}</p>
+              <div className="min-w-0 pr-4 flex items-center gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm font-black uppercase truncate">{pair.name}</p>
+                  {(pair.dayRange || pair.timeRange) && (
+                    <p className="text-[8px] font-bold text-primary/60 mt-0.5 uppercase tracking-widest truncate">
+                      Disp: {pair.dayRange} {pair.timeRange}
+                    </p>
+                  )}
+                </div>
+                {getPairScore(pair) > 0 && (
+                  <span title={`Puntos de Ranking: ${getPairScore(pair)}`} className="flex items-center">
+                    <Crown size={10} className="text-yellow-400" />
+                  </span>
+                )}
               </div>
               <button onClick={() => onRemovePair(pId)} className="p-2 text-error/20 hover:text-error hover:bg-error/10 rounded-xl transition-all opacity-0 group-hover/pair:opacity-100">
                 <X size={14} />
@@ -1912,9 +2186,45 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
       "border rounded-[1rem] overflow-hidden shadow-lg transition-all",
       (p1Wins || p2Wins) ? "border-primary/40 shadow-primary/10" : "border-primary/20 bg-primary/5"
     )}>
-      {/* Header Numbers */}
-      <div className="flex bg-black/40 border-b border-primary/20">
-        <div className="flex-1 py-1 px-4"></div>
+      {/* Header Numbers & Time */}
+      <div className="flex items-center bg-black/40 border-b border-primary/20">
+        <div className="flex-1 py-1 px-4 flex items-center gap-4">
+          <div className="flex items-center">
+            <Clock size={12} className="text-primary/40 mr-2" />
+            <select
+              value={match.date || ''}
+              onChange={(e) => onUpdate({ date: e.target.value })}
+              className="bg-transparent text-[10px] font-black tracking-widest text-primary/60 outline-none w-16 cursor-pointer appearance-none"
+            >
+              <option value="" className="bg-black">Día...</option>
+              {DAY_OPTIONS.map(d => (
+                <option key={d} value={d} className="bg-black">{d}</option>
+              ))}
+            </select>
+            <select
+              value={match.time || ''}
+              onChange={(e) => onUpdate({ time: e.target.value })}
+              className="bg-transparent text-[10px] font-black tracking-widest text-primary/60 outline-none w-14 cursor-pointer appearance-none ml-2"
+            >
+              <option value="" className="bg-black">Hora...</option>
+              {TIME_OPTIONS.filter(t => t !== '').map(time => (
+                <option key={time} value={time} className="bg-black">{time}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center border-l border-white/10 pl-4">
+            <MapPin size={12} className="text-primary/40 mr-2" />
+            <select
+              value={match.court || ''}
+              onChange={(e) => onUpdate({ court: e.target.value })}
+              className="bg-transparent text-[10px] font-black tracking-widest text-primary/60 outline-none cursor-pointer appearance-none"
+            >
+              <option value="" className="bg-black">Cancha...</option>
+              <option value="1" className="bg-black">Cancha 1</option>
+              <option value="2" className="bg-black">Cancha 2</option>
+            </select>
+          </div>
+        </div>
         <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">1</div>
         <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">2</div>
         <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">3</div>
@@ -1923,12 +2233,16 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
       {/* Player 1 Row */}
       <div className="flex border-b border-primary/10">
         <div className={clsx(
-          "flex-1 py-3 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
+          "flex-1 py-4 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
           p1Wins ? "bg-primary/20 border-primary" : "bg-primary/10 border-transparent",
           p2Wins ? "opacity-40" : ""
         )}>
-          <p className="text-[11px] font-black uppercase truncate tracking-tight text-white">{p1?.name || '??'}</p>
-          <p className="text-[8px] opacity-50 font-bold uppercase truncate text-white">{p1?.player1} / {p1?.player2}</p>
+          <p className="text-xs md:text-sm font-black uppercase truncate tracking-tight text-white leading-tight">{p1?.name || '??'}</p>
+          {(p1?.dayRange || p1?.timeRange) && (
+            <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
+              Disp: {p1.dayRange} {p1.timeRange}
+            </p>
+          )}
         </div>
         {[0, 1, 2].map(i => {
           const g1 = parseInt(parsedSets[i].g1);
@@ -1956,12 +2270,16 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
       {/* Player 2 Row */}
       <div className="flex">
         <div className={clsx(
-          "flex-1 py-3 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
+          "flex-1 py-4 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
           p2Wins ? "bg-primary/20 border-primary" : "bg-primary/5 border-transparent",
           p1Wins ? "opacity-40" : ""
         )}>
-          <p className="text-[11px] font-black uppercase truncate tracking-tight text-white">{p2?.name || '??'}</p>
-          <p className="text-[8px] opacity-50 font-bold uppercase truncate text-white">{p2?.player1} / {p2?.player2}</p>
+          <p className="text-xs md:text-sm font-black uppercase truncate tracking-tight text-white leading-tight">{p2?.name || '??'}</p>
+          {(p2?.dayRange || p2?.timeRange) && (
+            <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
+              Disp: {p2.dayRange} {p2.timeRange}
+            </p>
+          )}
         </div>
         {[0, 1, 2].map(i => {
           const g1 = parseInt(parsedSets[i].g1);

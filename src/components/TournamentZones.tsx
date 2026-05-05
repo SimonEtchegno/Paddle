@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Clock } from 'lucide-react';
+import { Trophy, Clock, Crown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Zone, Pair, Match } from '@/types/tournament';
+import { getPairScore } from '@/lib/rankingData';
 
 interface TournamentZonesProps {
   zones: Zone[];
@@ -76,8 +77,18 @@ export const TournamentZones: React.FC<TournamentZonesProps> = ({ zones, allPair
                                 )}>
                                   {sIdx + 1}
                                 </span>
-                                {s.name}
-                                {isUser && <span className="ml-2 text-[7px] font-black uppercase bg-primary text-black px-1.5 py-0.5 rounded-full">Tú</span>}
+                                <div className="flex items-center gap-2 truncate text-xs md:text-sm">
+                                  <span>{s.name}</span>
+                                  {(() => {
+                                    const p = allPairs.find(pair => pair.name === s.name);
+                                    return p && getPairScore(p) > 0 ? (
+                                      <span title={`Puntos: ${getPairScore(p)}`} className="flex items-center">
+                                        <Crown size={10} className="text-yellow-400 shrink-0" />
+                                      </span>
+                                    ) : null;
+                                  })()}
+                                  {isUser && <span className="text-[7px] font-black uppercase bg-primary text-black px-1.5 py-0.5 rounded-full">Tú</span>}
+                                </div>
                               </td>
                               <td className="py-4 text-center">{s.pts || 0}</td>
                               <td className="py-4 text-center opacity-40">{((s.sf || 0) - (s.sc || 0)) || 0}</td>
@@ -110,24 +121,32 @@ export const TournamentZones: React.FC<TournamentZonesProps> = ({ zones, allPair
                               Tu Partido
                             </div>
                           )}
-                          <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest opacity-40">
-                            <span className={clsx(highlighted && "text-primary opacity-100")}>Partido {mIdx + 1}</span>
+                          <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className={clsx(highlighted && "text-primary opacity-100")}>Partido {mIdx + 1}</span>
+                              {m.time && (
+                                <span className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md border border-white/10 text-[8px]">
+                                  <Clock size={8} /> {m.time}
+                                  {m.court && <span className="ml-1 text-primary">C{m.court}</span>}
+                                </span>
+                              )}
+                            </div>
                             {m.status === 'finished' ? (
                               <span className="text-primary">Finalizado</span>
                             ) : (
                               <span>Pendiente</span>
                             )}
                           </div>
-                          <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center justify-between gap-4 py-2">
                             <span className={clsx(
-                              "text-xs font-black uppercase italic flex-1 truncate",
+                              "text-sm md:text-base font-black uppercase italic flex-1 truncate",
                               highlightName && p1?.name.toLowerCase().includes(highlightName.toLowerCase()) && "text-primary"
                             )}>{p1?.name || '??'}</span>
-                            <div className="bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 min-w-[80px] text-center font-black text-xs text-primary shadow-inner">
+                            <div className="bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 min-w-[80px] text-center font-black text-sm md:text-base text-primary shadow-inner">
                               {m.score || 'VS'}
                             </div>
                             <span className={clsx(
-                              "text-xs font-black uppercase italic flex-1 text-right truncate",
+                              "text-sm md:text-base font-black uppercase italic flex-1 text-right truncate",
                               highlightName && p2?.name.toLowerCase().includes(highlightName.toLowerCase()) && "text-primary"
                             )}>{p2?.name || '??'}</span>
                           </div>
