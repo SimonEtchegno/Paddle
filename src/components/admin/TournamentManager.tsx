@@ -1446,12 +1446,28 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       </div>
 
                       <div className="space-y-24">
-                        {bracket.filter(n => n.stage === stage).map((node, nIdx) => {
-                          const score = parseScore(node.score);
-                          const winner = score ? (score.p1Sets > score.p2Sets ? 1 : score.p2Sets > score.p1Sets ? 2 : 0) : 0;
-                          const isFinal = node.stage === 'Final';
+                                {bracket.filter(n => n.stage === stage).map((node, nIdx) => {
+                                  const score = parseScore(node.score);
+                                  const winner = score ? (score.p1Sets > score.p2Sets ? 1 : score.p2Sets > score.p1Sets ? 2 : 0) : 0;
+                                  const isFinal = node.stage === 'Final';
 
-                          return (
+                                  const resolvePairName = (val: string) => {
+                                    if (!val) return 'Por definir';
+                                    const match = val.match(/^[12]º\s*(Zona\s*)?([A-Z])$/i);
+                                    if (match) {
+                                      const pos = parseInt(val[0]) - 1;
+                                      const letter = match[2].toUpperCase();
+                                      const zoneIdx = letter.charCodeAt(0) - 65;
+                                      const zone = zones[zoneIdx];
+                                      if (zone) {
+                                        const standings = calculateStandings(zone, pairs);
+                                        if (standings[pos]) return `${val}: ${standings[pos].name}`;
+                                      }
+                                    }
+                                    return val;
+                                  };
+
+                                  return (
                             <div key={node.id} className="relative group">
                               <div className="flex justify-between items-center mb-2 ml-4 mr-4">
                                 <p className="text-[8px] font-black uppercase opacity-40 italic tracking-widest">{node.stage} - Partido {nIdx + 1}</p>
@@ -1510,20 +1526,42 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                   "p-6 flex justify-between items-center transition-all duration-500",
                                   winner === 1 ? "bg-primary text-black" : "bg-transparent"
                                 )}>
-                                  <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0 pr-4 relative group/p1">
                                     {winner === 1 && <Trophy size={16} className="shrink-0" />}
-                                    <input
-                                      className={clsx(
-                                        "bg-transparent text-sm font-black uppercase italic w-full outline-none transition-all",
-                                        winner === 1 ? "text-black" : "text-white opacity-60 focus:opacity-100"
+                                    <div className="flex-1 min-w-0 relative">
+                                      <input
+                                        className={clsx(
+                                          "bg-transparent text-sm font-black uppercase italic w-full outline-none transition-all",
+                                          winner === 1 ? "text-black placeholder:text-black/30" : "text-white opacity-60 focus:opacity-100"
+                                        )}
+                                        list={`pairs-list-${node.id}-p1`}
+                                        placeholder="Buscar pareja..."
+                                        value={node.p1}
+                                        onChange={(e) => {
+                                          const newBracket = [...bracket];
+                                          newBracket.find(n => n.id === node.id)!.p1 = e.target.value;
+                                          setBracket(newBracket);
+                                        }}
+                                      />
+                                      <datalist id={`pairs-list-${node.id}-p1`}>
+                                        {pairs.map(p => <option key={p.id} value={p.name} />)}
+                                        <option value="1º Zona A" />
+                                        <option value="2º Zona A" />
+                                        <option value="1º Zona B" />
+                                        <option value="2º Zona B" />
+                                        <option value="1º Zona C" />
+                                        <option value="2º Zona C" />
+                                        <option value="1º Zona D" />
+                                        <option value="2º Zona D" />
+                                      </datalist>
+                                      
+                                      {/* Full Name Preview Tooltip - Only show if different from value (i.e. if it's a placeholder) */}
+                                      {resolvePairName(node.p1) !== node.p1 && (
+                                        <div className="absolute left-0 -top-12 bg-black/90 text-primary text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-primary/20 opacity-0 group-hover/p1:opacity-100 pointer-events-none transition-all whitespace-nowrap z-[60] shadow-2xl translate-y-2 group-hover/p1:translate-y-0">
+                                          {resolvePairName(node.p1)}
+                                        </div>
                                       )}
-                                      value={node.p1}
-                                      onChange={(e) => {
-                                        const newBracket = [...bracket];
-                                        newBracket.find(n => n.id === node.id)!.p1 = e.target.value;
-                                        setBracket(newBracket);
-                                      }}
-                                    />
+                                    </div>
                                   </div>
                                   <div className="flex gap-2">
                                     {[0, 1, 2].map((i) => (
@@ -1551,20 +1589,42 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                   "p-6 flex justify-between items-center transition-all duration-500",
                                   winner === 2 ? "bg-primary text-black" : "bg-transparent"
                                 )}>
-                                  <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0 pr-4 relative group/p2">
                                     {winner === 2 && <Trophy size={16} className="shrink-0" />}
-                                    <input
-                                      className={clsx(
-                                        "bg-transparent text-sm font-black uppercase italic w-full outline-none transition-all",
-                                        winner === 2 ? "text-black" : "text-white opacity-60 focus:opacity-100"
+                                    <div className="flex-1 min-w-0 relative">
+                                      <input
+                                        className={clsx(
+                                          "bg-transparent text-sm font-black uppercase italic w-full outline-none transition-all",
+                                          winner === 2 ? "text-black placeholder:text-black/30" : "text-white opacity-60 focus:opacity-100"
+                                        )}
+                                        list={`pairs-list-${node.id}-p2`}
+                                        placeholder="Buscar pareja..."
+                                        value={node.p2}
+                                        onChange={(e) => {
+                                          const newBracket = [...bracket];
+                                          newBracket.find(n => n.id === node.id)!.p2 = e.target.value;
+                                          setBracket(newBracket);
+                                        }}
+                                      />
+                                      <datalist id={`pairs-list-${node.id}-p2`}>
+                                        {pairs.map(p => <option key={p.id} value={p.name} />)}
+                                        <option value="1º Zona A" />
+                                        <option value="2º Zona A" />
+                                        <option value="1º Zona B" />
+                                        <option value="2º Zona B" />
+                                        <option value="1º Zona C" />
+                                        <option value="2º Zona C" />
+                                        <option value="1º Zona D" />
+                                        <option value="2º Zona D" />
+                                      </datalist>
+
+                                      {/* Full Name Preview Tooltip - Only show if different from value (i.e. if it's a placeholder) */}
+                                      {resolvePairName(node.p2) !== node.p2 && (
+                                        <div className="absolute left-0 -top-12 bg-black/90 text-primary text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-primary/20 opacity-0 group-hover/p2:opacity-100 pointer-events-none transition-all whitespace-nowrap z-[60] shadow-2xl translate-y-2 group-hover/p2:translate-y-0">
+                                          {resolvePairName(node.p2)}
+                                        </div>
                                       )}
-                                      value={node.p2}
-                                      onChange={(e) => {
-                                        const newBracket = [...bracket];
-                                        newBracket.find(n => n.id === node.id)!.p2 = e.target.value;
-                                        setBracket(newBracket);
-                                      }}
-                                    />
+                                    </div>
                                   </div>
                                   <div className="flex gap-2">
                                     {[0, 1, 2].map((i) => (
