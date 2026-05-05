@@ -40,11 +40,11 @@ export const TournamentZones: React.FC<TournamentZonesProps> = ({ zones, allPair
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
-              className="glass p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group hover:border-primary/20 transition-all"
+              className="glass p-5 md:p-6 rounded-[2rem] border border-white/5 shadow-2xl relative overflow-hidden group hover:border-primary/20 transition-all"
             >
               <div className="relative z-10 space-y-8">
                 <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-primary">
+                  <h3 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter text-primary">
                     {zone.name}
                   </h3>
                   <Trophy className="text-primary/20" size={24} />
@@ -70,28 +70,24 @@ export const TournamentZones: React.FC<TournamentZonesProps> = ({ zones, allPair
                               "border-b border-white/5 last:border-0 transition-colors",
                               isUser && "bg-primary/10 text-primary"
                             )}>
-                              <td className="py-4 italic uppercase flex items-center gap-2">
-                                <span className={clsx(
-                                  "w-4 h-4 flex items-center justify-center rounded-full text-[7px]",
-                                  isUser ? "bg-primary text-black" : (sIdx < 2 ? "bg-white/20 text-white" : "bg-white/5 opacity-30")
-                                )}>
+                               <td className="py-2.5 italic uppercase flex items-center gap-2">
+                                <div className="w-5 h-5 flex items-center justify-center rounded-full text-[7px] bg-white/5 border border-white/10 italic text-white/40">
                                   {sIdx + 1}
-                                </span>
-                                <div className="flex items-center gap-2 truncate text-xs md:text-sm">
+                                </div>
+                                <div className="flex items-center gap-2 truncate text-[11px] md:text-xs">
                                   <span>{s.name}</span>
                                   {(() => {
                                     const p = allPairs.find(pair => pair.name === s.name);
                                     return p && getPairScore(p) > 0 ? (
                                       <span title={`Puntos: ${getPairScore(p)}`} className="flex items-center">
-                                        <Crown size={10} className="text-yellow-400 shrink-0" />
+                                        <Crown size={9} className="text-yellow-400 shrink-0" />
                                       </span>
                                     ) : null;
                                   })()}
-                                  {isUser && <span className="text-[7px] font-black uppercase bg-primary text-black px-1.5 py-0.5 rounded-full">Tú</span>}
                                 </div>
                               </td>
-                              <td className="py-4 text-center">{s.pts || 0}</td>
-                              <td className="py-4 text-center opacity-40">{((s.sf || 0) - (s.sc || 0)) || 0}</td>
+                              <td className="py-2.5 text-center text-[10px]">{s.pts || 0}</td>
+                              <td className="py-2.5 text-center opacity-40 text-[10px]">{((s.sf || 0) - (s.sc || 0)) || 0}</td>
                             </tr>
                           );
                         })}
@@ -111,44 +107,57 @@ export const TournamentZones: React.FC<TournamentZonesProps> = ({ zones, allPair
                       
                       return (
                         <div key={m.id} className={clsx(
-                          "p-4 rounded-2xl border transition-all flex flex-col gap-3 relative",
+                          "p-3 rounded-xl border transition-all flex flex-col gap-2 relative",
                           highlighted 
                             ? "bg-primary/10 border-primary shadow-[0_0_20px_rgba(136,130,220,0.15)]" 
                             : "bg-white/5 border-white/5"
                         )}>
                           {highlighted && (
-                            <div className="absolute -top-2 -right-2 bg-primary text-black text-[7px] font-black uppercase px-3 py-1 rounded-full shadow-lg z-20 animate-bounce">
+                            <div className="absolute -top-2 -right-2 bg-primary text-black text-[6px] font-black uppercase px-2 py-0.5 rounded-full shadow-lg z-20 animate-bounce">
                               Tu Partido
                             </div>
                           )}
-                          <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">
+                          <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest opacity-40">
                             <div className="flex items-center gap-2">
-                              <span className={clsx(highlighted && "text-primary opacity-100")}>Partido {mIdx + 1}</span>
-                              {m.time && (
-                                <span className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md border border-white/10 text-[8px]">
-                                  <Clock size={8} /> {m.time}
+                              <span className={clsx(highlighted && "text-primary opacity-100")}>P{mIdx + 1}</span>
+                              {(m.time || m.date) && (
+                                <span className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md border border-white/10 text-[7px]">
+                                  <Clock size={7} /> {m.date && <span>{m.date} • </span>}{m.time}
                                   {m.court && <span className="ml-1 text-primary">C{m.court}</span>}
                                 </span>
                               )}
                             </div>
                             {m.status === 'finished' ? (
-                              <span className="text-primary">Finalizado</span>
+                              <span className="text-primary">Final</span>
                             ) : (
-                              <span>Pendiente</span>
+                              <span>Pend.</span>
                             )}
                           </div>
-                          <div className="flex items-center justify-between gap-4 py-2">
-                            <span className={clsx(
-                              "text-sm md:text-base font-black uppercase italic flex-1 truncate",
-                              highlightName && p1?.name.toLowerCase().includes(highlightName.toLowerCase()) && "text-primary"
-                            )}>{p1?.name || '??'}</span>
-                            <div className="bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 min-w-[80px] text-center font-black text-sm md:text-base text-primary shadow-inner">
-                              {m.score || 'VS'}
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-3">
+                                <span className={clsx(
+                                  "text-[11px] md:text-sm font-black uppercase italic tracking-tight truncate",
+                                  highlightName && p1?.name.toLowerCase().includes(highlightName.toLowerCase()) ? "text-primary" : "text-white/90"
+                                )}>
+                                  {p1?.name || '??'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className={clsx(
+                                  "text-[11px] md:text-sm font-black uppercase italic tracking-tight truncate",
+                                  highlightName && p2?.name.toLowerCase().includes(highlightName.toLowerCase()) ? "text-primary" : "text-white/90"
+                                )}>
+                                  {p2?.name || '??'}
+                                </span>
+                              </div>
                             </div>
-                            <span className={clsx(
-                              "text-sm md:text-base font-black uppercase italic flex-1 text-right truncate",
-                              highlightName && p2?.name.toLowerCase().includes(highlightName.toLowerCase()) && "text-primary"
-                            )}>{p2?.name || '??'}</span>
+
+                            <div className="flex flex-col items-center justify-center bg-black/40 px-3 py-2 rounded-xl border border-white/10 min-w-[85px] shadow-inner">
+                              <span className="text-xs md:text-sm font-black text-primary tracking-tighter whitespace-nowrap">
+                                {m.score || 'VS'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
