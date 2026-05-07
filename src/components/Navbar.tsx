@@ -54,6 +54,10 @@ export function Navbar({ club }: { club?: any }) {
     };
   }, [showNotifs]);
 
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/super-admin')) {
+    return null;
+  }
+
   const navItems = [
     { name: 'Reservar', href: '/', icon: Calendar },
     { name: 'Partidos', href: '/partidos', icon: Users },

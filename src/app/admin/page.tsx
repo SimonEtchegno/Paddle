@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, Camera, Calendar as CalendarIcon } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, Camera, Calendar as CalendarIcon, Home } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -690,11 +691,18 @@ export default function AdminPage() {
             </button>
             <button
               onClick={() => { supabase.auth.signOut(); setIsLoggedIn(false); }}
-              className="p-4 bg-white/5 border border-white/10 rounded-2xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
+              className="p-4 bg-error/10 border border-error/20 rounded-2xl text-error hover:bg-error/20 transition-all"
               title="Cerrar Sesión"
             >
               <LogOut size={20} />
             </button>
+            <Link
+              href="/"
+              className="p-4 bg-white/5 border border-white/10 rounded-2xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
+              title="Volver a Inicio"
+            >
+              <Home size={20} />
+            </Link>
           </div>
         </header>
         {/* Stats Grid */}

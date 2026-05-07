@@ -2,8 +2,15 @@
 
 import Link from 'next/link';
 import { Crown, Instagram } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export function Footer() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/super-admin')) {
+    return null;
+  }
+
   return (
     <footer className="w-full border-t border-white/5 py-12 px-4 mt-20">
       <div className="max-w-7xl mx-auto flex flex-col items-center gap-10">

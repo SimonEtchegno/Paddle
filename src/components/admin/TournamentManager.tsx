@@ -10,12 +10,24 @@ import {
 } from 'lucide-react';
 
 const DAY_OPTIONS = ['Viernes', 'Sábado', 'Domingo'];
-const TIME_OPTIONS = [
-  '',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', 
-  '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', 
-  '22:00', '22:30', '23:00', '23:30'
-];
+const getTimeOptions = (day?: string) => {
+  if (day === 'Sábado') {
+    return [
+      '',
+      '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', 
+      '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', 
+      '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', 
+      '23:00', '23:30'
+    ];
+  }
+  return [
+    '',
+    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', 
+    '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', 
+    '22:00', '22:30', '23:00', '23:30'
+  ];
+};
 import {
   DndContext as DndKitContext,
   DragEndEvent,
@@ -961,7 +973,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                             }}
                           >
                             <option value="" className="bg-black text-white/50">Hora...</option>
-                            {TIME_OPTIONS.filter(t => t !== '').map(time => (
+                            {getTimeOptions(p.dayRange).filter(t => t !== '').map(time => (
                               <option key={time} value={time} className="bg-black">Desde {time}</option>
                             ))}
                           </select>
@@ -1484,7 +1496,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                       className="bg-transparent text-[8px] font-black w-12 outline-none cursor-pointer appearance-none"
                                     >
                                       <option value="" className="bg-black">Hora</option>
-                                      {TIME_OPTIONS.filter(t => t !== '').map(time => (
+                                      {getTimeOptions().filter(t => t !== '').map(time => (
                                         <option key={time} value={time} className="bg-black">{time}</option>
                                       ))}
                                     </select>
@@ -2267,7 +2279,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
               className="bg-transparent text-[10px] font-black tracking-widest text-primary/60 outline-none w-14 cursor-pointer appearance-none ml-2"
             >
               <option value="" className="bg-black">Hora...</option>
-              {TIME_OPTIONS.filter(t => t !== '').map(time => (
+              {getTimeOptions(match.date).filter(t => t !== '').map(time => (
                 <option key={time} value={time} className="bg-black">{time}</option>
               ))}
             </select>
