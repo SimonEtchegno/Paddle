@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion';
 import { UserProfile } from '@/types';
 
-interface Props { profile: UserProfile & { paleta_modelo?: string }; compact?: boolean; }
+interface Props { profile: UserProfile & { paleta_modelo?: string }; compact?: boolean; realPoints?: number | null; }
 
 const CATEGORY_BGS = {
   '1ra': '/card-bg-elite.png',
@@ -37,14 +37,20 @@ function getStyles(l: number, cat: string) {
   };
 }
 
-export function PlayerCard({ profile, compact = false }: Props) {
-  const level = profile.nivel || 1;
-  const s = getStyles(level, profile.categoria || '7ma');
+export function PlayerCard({ profile, compact = false, realPoints = null }: Props) {
+  const displayPoints = realPoints !== null ? realPoints : 0;
+  
+  let calculatedLevel = 1.0;
+  if (displayPoints >= 1000) calculatedLevel = 7.0;
+  else if (displayPoints >= 500) calculatedLevel = 6.0;
+  else if (displayPoints >= 200) calculatedLevel = 5.0;
+  else if (displayPoints >= 100) calculatedLevel = 3.5;
+  else calculatedLevel = 1.0;
+
+  const s = getStyles(calculatedLevel, profile.categoria || '7ma');
   
   // OVR Calculation (Points)
-  const basePoints = (level / 7) * 99;
-  const catBonus = profile.categoria === '1ra' ? 15 : profile.categoria === '2da' ? 10 : profile.categoria === '3ra' ? 5 : 0;
-  const ovr = Math.min(99, Math.round(basePoints + catBonus));
+  const ovr = displayPoints === 0 ? 0 : Math.min(99, 45 + Math.round(displayPoints / 15));
 
   const pos   = profile.posicion === 'Drive' ? 'DRV' : profile.posicion === 'Revés' ? 'REV' : 'MID';
   const name  = (profile.apellido || profile.nombre || 'JUGADOR').toUpperCase().slice(0, 13);
@@ -177,7 +183,7 @@ export function PlayerCard({ profile, compact = false }: Props) {
             letterSpacing:-2,
             position: 'relative',
             zIndex: 1
-          }}>{Math.round((level/7)*1000)}</div>
+          }}>{displayPoints}</div>
           
           {/* PTS Label */}
           <div style={{ 

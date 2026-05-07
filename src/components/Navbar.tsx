@@ -15,7 +15,7 @@ import { InstallAppButton } from '@/components/InstallAppButton';
 export function Navbar({ club }: { club?: any }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { profile } = useGuestProfile();
+  const { profile, realPoints } = useGuestProfile();
   const [showNotifs, setShowNotifs] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -235,7 +235,7 @@ export function Navbar({ club }: { club?: any }) {
                 <div className="hidden sm:block text-left">
                   <p className="text-xs font-black leading-none text-white/90">{profile.nombre}</p>
                   <p className="text-[9px] uppercase tracking-widest font-black mt-1 text-primary">
-                    {Math.round(((profile.nivel || 1.0) / 7) * 1000)} PTS
+                    {realPoints !== null ? realPoints : 0} PTS
                   </p>
                 </div>
               </Link>

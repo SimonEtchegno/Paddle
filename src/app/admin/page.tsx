@@ -606,6 +606,67 @@ export default function AdminPage() {
         if (updateError) throw updateError;
       }
 
+      // --- ACTUALIZAR RANKING PUNTOS AUTOMÁTICAMENTE ---
+      if (payload.champions_data?.champions) {
+        // Borramos los puntos anteriores asignados a este torneo
+        await supabase.from('ranking_historial').delete().eq('torneo_id', searchId);
+
+        const pairs = payload.parejas_data || [];
+        const bracket = payload.cuadro_data || [];
+        const category = payload.categoria;
+        
+        if (category) {
+          const pairPointsMap = new Map<string, number>();
+
+          // 1. Puntos base por participar en zona (20 pts)
+          pairs.forEach((p: any) => pairPointsMap.set(p.name, 20));
+
+          // 2. Progreso en eliminatorias (Bracket)
+          bracket.forEach((node: any) => {
+            let points = 20;
+            if (node.stage === 'Octavos') points = 50;
+            else if (node.stage === 'Cuartos') points = 75;
+            else if (node.stage === 'Semifinal') points = 100;
+            
+            const p1Name = pairs.find((p: any) => p.id === node.p1)?.name;
+            const p2Name = pairs.find((p: any) => p.id === node.p2)?.name;
+            
+            if (p1Name && (pairPointsMap.get(p1Name) || 0) < points) pairPointsMap.set(p1Name, points);
+            if (p2Name && (pairPointsMap.get(p2Name) || 0) < points) pairPointsMap.set(p2Name, points);
+          });
+
+          // 3. Subcampeones (150 pts)
+          const runnersUp = payload.champions_data.runnersUp;
+          if (runnersUp) pairPointsMap.set(runnersUp.name, 150);
+
+          // 4. Campeones (200 pts)
+          const champions = payload.champions_data.champions;
+          if (champions) pairPointsMap.set(champions.name, 200);
+
+          // 5. Separar nombres individuales e insertar
+          const individualsToInsert: any[] = [];
+          pairPointsMap.forEach((pts, pairName) => {
+            // Dividir por "/" o "-"
+            const playerNames = pairName.split(/[\/-]/).map(s => s.trim().toUpperCase());
+            playerNames.forEach(playerName => {
+              if (playerName.length > 2 && playerName !== '??' && !playerName.includes('1º') && !playerName.includes('2º')) {
+                individualsToInsert.push({
+                  torneo_id: searchId,
+                  nombre: playerName,
+                  categoria: category,
+                  puntos: pts
+                });
+              }
+            });
+          });
+
+          if (individualsToInsert.length > 0) {
+            await supabase.from('ranking_historial').insert(individualsToInsert);
+          }
+        }
+      }
+      // --- FIN RANKING PUNTOS ---
+
       toast.success('¡Torneo actualizado correctamente!');
       setEditingZonesTourney((prev: any) => prev ? { ...prev, ...payload } : null);
       fetchData();
@@ -890,13 +951,6 @@ export default function AdminPage() {
                   >
                     <BookOpen size={14} /> Manual
                   </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 sm:flex-none flex items-center justify-center p-3.5 bg-white/5 border border-white/10 rounded-2xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                    title="Cerrar Sesión"
-                  >
-                    <LogOut size={20} />
-                  </button>
                   {editingTourneyId && (
                     <button
                       onClick={() => {
@@ -911,8 +965,8 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-4 space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Nombre del Torneo</label>
                   <div className="relative group">
                     <Trophy className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
@@ -926,7 +980,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="lg:col-span-5 space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Rango de Fechas</label>
                   <div className="flex flex-col gap-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -995,7 +1049,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="lg:col-span-3 space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Horario de Inicio</label>
                   <div className="relative group">
                     <CalendarIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
@@ -1009,28 +1063,28 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="lg:col-span-4 space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Categoría</label>
                   <div className="relative group">
                     <Users className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
                     <select
                       value={newTourney.categoria}
                       onChange={(e) => setNewTourney({ ...newTourney, categoria: e.target.value })}
-                      className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary appearance-none cursor-pointer font-bold"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary appearance-none cursor-pointer font-bold"
                     >
-                      <option value="">Seleccionar...</option>
-                      <option value="Principiante">Principiante</option>
-                      <option value="7ma">7ma Categoría</option>
-                      <option value="6ta">6ta Categoría</option>
-                      <option value="5ta">5ta Categoría</option>
-                      <option value="4ta">4ta Categoría</option>
-                      <option value="3ra">3ra Categoría</option>
-                      <option value="Pro">Profesional / Open</option>
+                      <option value="" className="bg-[#0a0b0e]">Seleccionar...</option>
+                      <option value="Principiante" className="bg-[#0a0b0e]">Principiante</option>
+                      <option value="7ma" className="bg-[#0a0b0e]">7ma Categoría</option>
+                      <option value="6ta" className="bg-[#0a0b0e]">6ta Categoría</option>
+                      <option value="5ta" className="bg-[#0a0b0e]">5ta Categoría</option>
+                      <option value="4ta" className="bg-[#0a0b0e]">4ta Categoría</option>
+                      <option value="3ra" className="bg-[#0a0b0e]">3ra Categoría</option>
+                      <option value="Pro" className="bg-[#0a0b0e]">Profesional / Open</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="lg:col-span-3 space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Precio Inscripción</label>
                   <div className="relative group">
                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 font-black group-focus-within:text-primary transition-colors">$</span>
@@ -1043,7 +1097,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="lg:col-span-5 space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-30 ml-2">Descripción corta</label>
                   <div className="relative group">
                     <BookOpen className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />

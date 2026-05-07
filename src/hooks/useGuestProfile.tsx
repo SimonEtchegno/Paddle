@@ -8,6 +8,7 @@ interface ProfileContextType {
   saveProfile: (newProfile: UserProfile) => void;
   logout: () => void;
   loading: boolean;
+  realPoints: number | null;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ const generateUUID = () => {
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [realPoints, setRealPoints] = useState<number | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('paddle_guest_info');
@@ -59,8 +61,50 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('paddle_guest_info');
   };
 
+  useEffect(() => {
+    if (profile?.nombre && profile?.apellido) {
+      const fetchRealPoints = async () => {
+        let pts = 0;
+        const nUpper = profile.nombre.toUpperCase();
+        const aUpper = profile.apellido.toUpperCase();
+
+        // 1. Buscar en data estática
+        import('@/lib/rankingData').then(({ rankingData }) => {
+          Object.values(rankingData).forEach(cat => {
+            cat.forEach(p => {
+              const pName = p.name.toUpperCase();
+              // A veces los anotan "APELLIDO NOMBRE" o "NOMBRE APELLIDO"
+              if (pName.includes(nUpper) && pName.includes(aUpper)) {
+                pts += p.pts;
+              }
+            });
+          });
+
+          // 2. Buscar en Supabase
+          import('@/lib/supabase').then(({ supabase }) => {
+            supabase.from('ranking_historial')
+              .select('puntos')
+              .ilike('nombre', `%${profile.nombre}%`)
+              .ilike('nombre', `%${profile.apellido}%`)
+              .then(({ data, error }) => {
+                if (!error && data) {
+                  data.forEach(row => {
+                    pts += row.puntos;
+                  });
+                }
+                setRealPoints(pts > 0 ? pts : null);
+              });
+          });
+        });
+      };
+      fetchRealPoints();
+    } else {
+      setRealPoints(null);
+    }
+  }, [profile?.nombre, profile?.apellido]);
+
   return (
-    <ProfileContext.Provider value={{ profile, saveProfile, logout, loading }}>
+    <ProfileContext.Provider value={{ profile, saveProfile, logout, loading, realPoints }}>
       {children}
     </ProfileContext.Provider>
   );

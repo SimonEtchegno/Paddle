@@ -1,19 +1,77 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageWrapper } from '@/components/PageWrapper';
-import { Trophy, Crown, Search, Clock } from 'lucide-react';
+import { Trophy, Crown, Search, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { rankingData } from '@/lib/rankingData';
+import { supabase } from '@/lib/supabase';
 
 export default function RankingPage() {
   const [activeCategory, setActiveCategory] = useState('6ta');
   const [searchQuery, setSearchQuery] = useState('');
+  const [liveRanking, setLiveRanking] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(true);
 
-  const categories = ['4ta', '5ta', '6ta'];
+  const categories = ['4ta', '5ta', '6ta', '7ma', 'Principiante', 'Pro'];
 
-  const currentPlayers = rankingData[activeCategory] || [];
+  useEffect(() => {
+    async function fetchRanking() {
+      setLoading(true);
+      const { data, error } = await supabase.from('ranking_historial').select('*');
+      if (error) {
+        console.error("Error fetching ranking", error);
+        setLoading(false);
+        return;
+      }
+      
+      const dynamicPoints: Record<string, Record<string, number>> = {};
+      
+      data?.forEach(row => {
+        const cat = row.categoria;
+        const name = row.nombre.toUpperCase();
+        if (!dynamicPoints[cat]) dynamicPoints[cat] = {};
+        dynamicPoints[cat][name] = (dynamicPoints[cat][name] || 0) + row.puntos;
+      });
+
+      const combinedRanking: Record<string, any[]> = {};
+      
+      // Combinar con base estática
+      Object.keys(rankingData).forEach(cat => {
+        if (!combinedRanking[cat]) combinedRanking[cat] = [];
+        rankingData[cat].forEach(basePlayer => {
+          const name = basePlayer.name.toUpperCase();
+          const extraPts = dynamicPoints[cat]?.[name] || 0;
+          combinedRanking[cat].push({
+            name: basePlayer.name,
+            pts: basePlayer.pts + extraPts
+          });
+          if (dynamicPoints[cat]) delete dynamicPoints[cat][name];
+        });
+      });
+
+      // Agregar los nuevos (que no estaban en el fijo)
+      Object.keys(dynamicPoints).forEach(cat => {
+        if (!combinedRanking[cat]) combinedRanking[cat] = [];
+        Object.entries(dynamicPoints[cat]).forEach(([name, pts]) => {
+          combinedRanking[cat].push({ name, pts });
+        });
+      });
+
+      // Ordenar por puntos y asignar posición
+      Object.keys(combinedRanking).forEach(cat => {
+        combinedRanking[cat].sort((a, b) => b.pts - a.pts);
+        combinedRanking[cat].forEach((p, idx) => { p.pos = idx + 1; });
+      });
+
+      setLiveRanking(combinedRanking);
+      setLoading(false);
+    }
+    fetchRanking();
+  }, []);
+
+  const currentPlayers = liveRanking[activeCategory] || [];
   const filteredRanking = currentPlayers.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -83,7 +141,17 @@ export default function RankingPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {rankingData[activeCategory] ? (
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex justify-center items-center py-32"
+            >
+              <Loader2 className="animate-spin text-primary w-12 h-12" />
+            </motion.div>
+          ) : currentPlayers.length > 0 ? (
             <motion.div
               key={`ranking-${activeCategory}`}
               initial={{ opacity: 0, y: 20 }}

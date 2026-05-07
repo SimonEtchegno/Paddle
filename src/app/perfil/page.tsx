@@ -10,7 +10,7 @@ import { PlayerCard } from '@/components/PlayerCard';
 import { clsx } from 'clsx';
 
 export default function PerfilPage() {
-  const { profile, saveProfile } = useGuestProfile();
+  const { profile, saveProfile, realPoints } = useGuestProfile();
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -118,18 +118,18 @@ export default function PerfilPage() {
 
               <div className="relative flex justify-center" style={{ overflow: 'visible' }}>
                 <div className="absolute inset-0 blur-[120px] opacity-25 transition-colors duration-1000" style={{ backgroundColor: accentColor }} />
-                <PlayerCard profile={formData as any} />
+                <PlayerCard profile={formData as any} realPoints={realPoints} />
               </div>
 
               <div className="w-full max-w-[320px] space-y-5 pt-2">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
-                    <span>Siguiente Rareza</span>
-                    <span style={{ color: accentColor }}>{Math.round(formData.nivel * 14)} / 100 OVR</span>
+                    <span>Progreso de Ranking</span>
+                    <span style={{ color: accentColor }}>{realPoints !== null ? realPoints : 0} PTS</span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
                     <motion.div
-                      animate={{ width: `${(formData.nivel / 7.0) * 100}%` }}
+                      animate={{ width: `${Math.min(100, ((realPoints || 0) / 1000) * 100)}%` }}
                       transition={{ type: "spring", bounce: 0.4 }}
                       className="h-full rounded-full"
                       style={{ backgroundColor: accentColor, boxShadow: `0 0 15px ${accentColor}` }}
@@ -203,27 +203,28 @@ export default function PerfilPage() {
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase opacity-40">Nivel de Habilidad</label>
                       <div className="text-xl font-black text-primary italic uppercase tracking-tighter">
-                        {getNivelLabel(formData.nivel, formData.categoria)}
+                        {realPoints !== null ? (realPoints >= 1000 ? 'Leyenda' : realPoints >= 500 ? 'Elite' : realPoints >= 200 ? 'Gold' : realPoints >= 100 ? 'Silver' : 'Bronze') : 'Inicial'}
                       </div>
                     </div>
                     <div className="text-right space-y-0.5">
                       <span className="text-4xl font-black italic text-white opacity-20">
-                        {Math.round((formData.nivel / 7) * 1000)} <span className="text-xl">PTS</span>
+                        {realPoints !== null ? realPoints : 0} <span className="text-xl">PTS</span>
                       </span>
                       <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Ranking Peñarol</p>
                     </div>
                   </div>
-                  <input
-                    type="range" min="1.0" max="7.0" step="0.1"
-                    value={formData.nivel}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setFormData({ ...formData, nivel: val });
-                    }}
-                    className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]"
-                  />
+                  
+                  {/* Barra visual bloqueada */}
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary" 
+                      style={{ width: `${Math.min(100, ((realPoints || 0) / 1000) * 100)}%` }}
+                    />
+                  </div>
                   <div className="flex justify-between text-[8px] font-black uppercase tracking-widest opacity-30 px-0.5">
-                    <span>Bronze</span><span>Silver</span><span>Gold</span><span>Elite</span><span>Leyenda</span>
+                    <span>0 PTS</span>
+                    <span>Puntos obtenidos en Torneos Oficiales</span>
+                    <span>1000+ PTS</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
