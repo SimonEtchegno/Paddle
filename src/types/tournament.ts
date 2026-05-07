@@ -36,6 +36,7 @@ export interface BracketNode {
   score: string;
   time?: string;
   court?: string;
+  date?: string;
   winnerTo?: string; // Next node ID
   slot?: 1 | 2; // Which slot in the next node
 }
