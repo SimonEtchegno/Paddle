@@ -32,7 +32,8 @@ export default function PerfilPage() {
     categoria: '7ma',
     paleta: '',
     avatar_url: '',
-    paleta_modelo: 'carbono'
+    paleta_modelo: 'carbono',
+    paleta_emoji: '⚡️'
   });
 
   useEffect(() => {
@@ -46,7 +47,8 @@ export default function PerfilPage() {
         categoria: profile.categoria || '7ma',
         paleta: profile.paleta || '',
         avatar_url: profile.avatar_url || '',
-        paleta_modelo: profile.paleta_modelo || 'carbono'
+        paleta_modelo: profile.paleta_modelo || 'carbono',
+        paleta_emoji: profile.paleta_emoji || '⚡️'
       });
     }
   }, [profile]);
@@ -311,6 +313,52 @@ export default function PerfilPage() {
                       <option key={c} value={c} className="bg-zinc-900">{c} Categoría</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-8">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Estética y Equipamiento</h3>
+                
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase opacity-40">Emoji de Identidad</label>
+                  <div className="grid grid-cols-6 gap-3">
+                    {['⚡️', '🔥', '💎', '🎯', '👑', '🚀', '⭐', '🧨', '🧿', '🧬', '⚔️', '🛡️'].map(emoji => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, paleta_emoji: emoji })}
+                        className={clsx(
+                          "aspect-square flex items-center justify-center text-xl rounded-xl border transition-all",
+                          formData.paleta_emoji === emoji 
+                            ? "bg-primary/20 border-primary scale-110 shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]" 
+                            : "bg-white/5 border-white/10 hover:bg-white/10"
+                        )}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase opacity-40">Modelo de Paleta</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {['Carbono', 'Pro', 'Control', 'Híbrida'].map(modelo => (
+                      <button
+                        key={modelo}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, paleta_modelo: modelo })}
+                        className={clsx(
+                          "py-3 px-4 text-[10px] font-black uppercase tracking-widest rounded-xl border transition-all",
+                          formData.paleta_modelo === modelo 
+                            ? "bg-primary text-black border-primary" 
+                            : "bg-white/5 border-white/10 text-white/40 hover:text-white"
+                        )}
+                      >
+                        {modelo}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
