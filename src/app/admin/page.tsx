@@ -208,11 +208,18 @@ export default function AdminPage() {
         .order('created_at', { ascending: false })
         .limit(100);
 
+      const { data: profileData } = await supabase
+        .from('perfiles')
+        .select('*')
+        .order('last_seen', { ascending: false })
+        .limit(100);
+
       const combined = [
         ...(resData || []).map(r => ({ ...r, category: 'reserva' })),
         ...(inscData || []).map(i => ({ ...i, category: 'torneo' })),
         ...(joinData || []).map(j => ({ ...j, category: 'partido', nombre: j.nombre_interesado, telefono: j.whatsapp_interesado, fecha: j.partidos_abiertos?.fecha, hora: j.partidos_abiertos?.hora })),
-        ...(matchData || []).map(m => ({ ...m, category: 'partido', nombre: m.nombre_creador, telefono: m.contacto_whatsapp, isCreation: true, fecha: m.fecha, hora: m.hora }))
+        ...(matchData || []).map(m => ({ ...m, category: 'partido', nombre: m.nombre_creador, telefono: m.contacto_whatsapp, isCreation: true, fecha: m.fecha, hora: m.hora })),
+        ...(profileData || []).map(p => ({ ...p, category: 'registro', created_at: p.last_seen, nombre: `${p.nombre} ${p.apellido}` }))
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setHistory(combined);
@@ -240,6 +247,9 @@ export default function AdminPage() {
     if (item.category === 'partido') {
       table = 'uniones_partidos';
       msg = `Tu unión al partido del ${item.partidos_abiertos?.fecha} ha sido cancelada por el administrador.`;
+    }
+    if (item.category === 'registro') {
+      table = 'perfiles';
     }
 
     try {
@@ -269,6 +279,7 @@ export default function AdminPage() {
         if (item.category === 'reserva') table = 'reservas';
         if (item.category === 'torneo') table = 'inscripciones_torneos';
         if (item.category === 'partido') table = 'uniones_partidos';
+        if (item.category === 'registro') table = 'perfiles';
 
         if (table) {
           await supabase.from(table).delete().eq('id', item.id);
@@ -358,10 +369,15 @@ export default function AdminPage() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
         .subscribe();
 
+      const pChannel = supabase.channel('admin_perfiles')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
+        .subscribe();
+
       return () => {
         supabase.removeChannel(tChannel);
         supabase.removeChannel(iChannel);
         supabase.removeChannel(rChannel);
+        supabase.removeChannel(pChannel);
       };
     }
   }, [isLoggedIn, selectedDate, activeTab]);
@@ -1269,6 +1285,7 @@ export default function AdminPage() {
                     { id: 'reserva', label: 'Reservas', color: 'bg-primary/20 text-primary' },
                     { id: 'torneo', label: 'Torneos', color: 'bg-purple-500/20 text-purple-400' },
                     { id: 'partido', label: 'Partidos', color: 'bg-blue-500/20 text-blue-400' },
+                    { id: 'registro', label: 'Registros', color: 'bg-emerald-500/20 text-emerald-400' },
                   ].map(f => (
                     <button
                       key={f.id}
@@ -1407,11 +1424,13 @@ export default function AdminPage() {
                               "w-12 h-12 rounded-2xl flex items-center justify-center text-xl",
                               item.category === 'reserva' ? "bg-primary/10 text-primary" :
                                 item.category === 'torneo' ? "bg-purple-500/10 text-purple-400" :
-                                  "bg-blue-500/10 text-blue-400"
+                                  item.category === 'registro' ? "bg-emerald-500/10 text-emerald-400" :
+                                    "bg-blue-500/10 text-blue-400"
                             )}>
                               {item.category === 'reserva' ? <CalendarIcon size={20} /> :
                                 item.category === 'torneo' ? <Trophy size={20} /> :
-                                  <Users size={20} />}
+                                  item.category === 'registro' ? <Sparkles size={20} /> :
+                                    <Users size={20} />}
                             </div>
                             <div>
                               <div className="flex items-center gap-3">
@@ -1422,7 +1441,8 @@ export default function AdminPage() {
                                   "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
                                   item.category === 'reserva' ? "bg-primary/20 text-primary" :
                                     item.category === 'torneo' ? "bg-purple-500/20 text-purple-400" :
-                                      "bg-blue-500/20 text-blue-400"
+                                      item.category === 'registro' ? "bg-emerald-500/20 text-emerald-400" :
+                                        "bg-blue-500/20 text-blue-400"
                                 )}>
                                   {item.category}
                                 </span>
@@ -1432,7 +1452,9 @@ export default function AdminPage() {
                                   ? `${item.fecha} · ${item.hora} hs`
                                   : item.category === 'torneo'
                                     ? `Torneo: ${item.torneos?.nombre}`
-                                    : `Partido: ${item.fecha || item.partidos_abiertos?.fecha} ${item.hora || item.partidos_abiertos?.hora} hs`}
+                                    : item.category === 'registro'
+                                      ? `Actualizó su perfil FUT`
+                                      : `Partido: ${item.fecha || item.partidos_abiertos?.fecha} ${item.hora || item.partidos_abiertos?.hora} hs`}
                               </p>
                             </div>
                           </div>
@@ -1497,6 +1519,22 @@ export default function AdminPage() {
                                           <span className="opacity-40">Torneo:</span>
                                           <span className="text-purple-400">{item.torneos?.nombre}</span>
                                         </p>
+                                      )}
+                                      {item.category === 'registro' && (
+                                        <>
+                                          <p className="text-xs font-bold flex justify-between">
+                                            <span className="opacity-40">Categoría:</span>
+                                            <span>{item.categoria}</span>
+                                          </p>
+                                          <p className="text-xs font-bold flex justify-between">
+                                            <span className="opacity-40">Posición:</span>
+                                            <span>{item.posicion}</span>
+                                          </p>
+                                          <p className="text-xs font-bold flex justify-between">
+                                            <span className="opacity-40">Localidad:</span>
+                                            <span>{item.localidad}</span>
+                                          </p>
+                                        </>
                                       )}
                                     </div>
                                   </div>

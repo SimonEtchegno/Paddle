@@ -47,13 +47,31 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const saveProfile = (newProfile: UserProfile) => {
+  const saveProfile = async (newProfile: UserProfile) => {
     const profileWithUid = {
       ...newProfile,
       uid: newProfile.uid || profile?.uid || generateUUID()
     };
     setProfile(profileWithUid);
     localStorage.setItem('paddle_guest_info', JSON.stringify(profileWithUid));
+
+    // Sincronizar con Supabase para que el admin pueda verlo
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      await supabase.from('perfiles').upsert({
+        id: profileWithUid.uid,
+        nombre: profileWithUid.nombre,
+        apellido: profileWithUid.apellido,
+        telefono: profileWithUid.telefono,
+        localidad: profileWithUid.localidad,
+        categoria: profileWithUid.categoria,
+        posicion: profileWithUid.posicion,
+        avatar_url: profileWithUid.avatar_url,
+        last_seen: new Date().toISOString()
+      }, { onConflict: 'id' });
+    } catch (e) {
+      console.error('Error syncing profile:', e);
+    }
   };
 
   const logout = () => {

@@ -78,7 +78,7 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
       // Auto-save profile if new
       if (!profile) {
         const [n, ...a] = nombre.split(' ');
-        saveProfile({
+        await saveProfile({
           nombre: n,
           apellido: a.join(' '),
           telefono,
