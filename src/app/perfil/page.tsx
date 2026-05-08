@@ -2,23 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
+import { UserProfile } from '@/types';
 import { toast } from 'react-hot-toast';
 import { Save, User, MapPin, Phone, Zap, Trophy, Share2, Camera, Trash2 } from 'lucide-react';
 import { PageWrapper } from '@/components/PageWrapper';
 import { motion } from 'framer-motion';
 import { PlayerCard } from '@/components/PlayerCard';
 import { clsx } from 'clsx';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '@/lib/cropImage';
+import { toPng } from 'html-to-image';
 
 export default function PerfilPage() {
   const { profile, saveProfile, realPoints } = useGuestProfile();
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState('');
+
+  const [formData, setFormData] = useState<UserProfile>({
     nombre: '',
     apellido: '',
     localidad: '',
     telefono: '',
-    nivel: 1.0,
     posicion: 'Drive',
     categoria: '7ma',
     paleta: '',
@@ -33,7 +42,6 @@ export default function PerfilPage() {
         apellido: profile.apellido || '',
         localidad: profile.localidad || '',
         telefono: profile.telefono || '',
-        nivel: profile.nivel || 1.0,
         posicion: profile.posicion || 'Drive',
         categoria: profile.categoria || '7ma',
         paleta: profile.paleta || '',
@@ -52,9 +60,28 @@ export default function PerfilPage() {
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ ...formData, avatar_url: reader.result as string });
+        setImageToCrop(reader.result as string);
+        setCropModalOpen(true);
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+  };
+
+  const onCropComplete = (_: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropImage = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return;
+    try {
+      const croppedImage = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      setFormData({ ...formData, avatar_url: croppedImage });
+      setCropModalOpen(false);
+      setImageToCrop('');
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al recortar la imagen');
     }
   };
 
@@ -62,7 +89,7 @@ export default function PerfilPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await saveProfile(formData as any);
+      await saveProfile(formData);
       toast.success('¡Perfil actualizado!');
     } catch (e) {
       toast.error('Error al guardar');
@@ -71,17 +98,55 @@ export default function PerfilPage() {
     }
   };
 
+  const handleDownloadCard = async () => {
+    const el = document.getElementById('player-card-download');
+    if (!el) return;
+
+    const t = toast.loading('Preparando tu carta profesional...');
+
+    try {
+      // Pequeño delay para asegurar renderizado final
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const dataUrl = await toPng(el, {
+        cacheBust: true,
+        pixelRatio: 3, // Calidad super alta
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left'
+        }
+      });
+
+      const link = document.createElement('a');
+      link.download = `Ficha-FUT-${formData.apellido || 'Jugador'}.png`;
+      link.href = dataUrl;
+      link.click();
+
+      toast.success('¡Carta descargada con éxito!', { id: t });
+    } catch (err) {
+      console.error(err);
+      toast.error('Hubo un problema al generar la imagen', { id: t });
+    }
+  };
+
   // Lógica de Prestigio para el Ambiente
-  const isTOTY = formData.nivel >= 6.0;
-  const isGold = formData.nivel >= 5.0 && formData.nivel < 6.0;
-  const isSilver = formData.nivel >= 3.5 && formData.nivel < 5.0;
+  const points = realPoints || 0;
+  const isTOTY = points >= 1000;
+  const isDiamond = points >= 500 && points < 1000;
+  const isGold = points >= 200 && points < 500;
+  const isSilver = points >= 100 && points < 200;
 
-  const themeColor = isTOTY ? "rgba(30, 58, 138, 0.3)" :
-    isGold ? "rgba(250, 204, 21, 0.15)" :
-      isSilver ? "rgba(161, 161, 170, 0.1)" :
-        "rgba(154, 52, 18, 0.1)";
+  const themeColor = isTOTY ? "rgba(30, 58, 138, 0.4)" :
+    isDiamond ? "rgba(34, 211, 238, 0.2)" :
+      isGold ? "rgba(250, 204, 21, 0.15)" :
+        isSilver ? "rgba(161, 161, 170, 0.1)" :
+          "rgba(154, 52, 18, 0.1)";
 
-  const accentColor = isTOTY ? "#fbbf24" : isGold ? "#facc15" : isSilver ? "#a1a1aa" : "#c2410c";
+  const accentColor = isTOTY ? "#fbbf24" :
+    isDiamond ? "#22d3ee" :
+      isGold ? "#facc15" :
+        isSilver ? "#a1a1aa" :
+          "#c2410c";
 
   const getNivelLabel = (n: number, cat: string) => {
     if (cat === '1ra') return 'Elite Profesional';
@@ -116,9 +181,9 @@ export default function PerfilPage() {
             <div className="lg:sticky lg:top-24 flex flex-col items-center gap-6 pb-12">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-center opacity-30 italic">Previsualización de Carta</h3>
 
-              <div className="relative flex justify-center" style={{ overflow: 'visible' }}>
+              <div id="player-card-download" className="relative flex justify-center" style={{ overflow: 'visible', padding: '20px' }}>
                 <div className="absolute inset-0 blur-[120px] opacity-25 transition-colors duration-1000" style={{ backgroundColor: accentColor }} />
-                <PlayerCard profile={formData as any} realPoints={realPoints} />
+                <PlayerCard profile={formData} realPoints={realPoints} />
               </div>
 
               <div className="w-full max-w-[320px] space-y-5 pt-2">
@@ -139,12 +204,12 @@ export default function PerfilPage() {
 
                 <button
                   type="button"
-                  onClick={() => toast.success('¡Ficha lista para compartir!')}
-                  className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:scale-105 active:scale-95 shadow-xl"
-                  style={{ backgroundColor: `${accentColor}15`, color: accentColor, border: `1px solid ${accentColor}40` }}
+                  onClick={handleDownloadCard}
+                  className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:scale-105 active:scale-95 shadow-xl group"
+                  style={{ backgroundColor: accentColor, color: '#000' }}
                 >
-                  <Share2 size={16} />
-                  Descargar Carta
+                  <Share2 size={16} className="group-hover:rotate-12 transition-transform" />
+                  Descargar Carta HD
                 </button>
               </div>
             </div>
@@ -181,8 +246,8 @@ export default function PerfilPage() {
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value.replace(/\D/g, '') })}
                     className={`w-full bg-white/5 border rounded-xl py-4 px-5 pr-12 text-sm outline-none font-bold transition-all ${formData.telefono.length === 0 ? 'border-white/10 focus:border-primary' :
-                        isPhoneValid ? 'border-emerald-500/50 focus:border-emerald-400' :
-                          'border-red-500/50 focus:border-red-400'
+                      isPhoneValid ? 'border-emerald-500/50 focus:border-emerald-400' :
+                        'border-red-500/50 focus:border-red-400'
                       }`}
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -213,11 +278,11 @@ export default function PerfilPage() {
                       <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Ranking Peñarol</p>
                     </div>
                   </div>
-                  
+
                   {/* Barra visual bloqueada */}
                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary" 
+                    <div
+                      className="h-full bg-primary"
                       style={{ width: `${Math.min(100, ((realPoints || 0) / 1000) * 100)}%` }}
                     />
                   </div>
@@ -230,7 +295,7 @@ export default function PerfilPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <select
                     value={formData.posicion}
-                    onChange={(e) => setFormData({ ...formData, posicion: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, posicion: e.target.value as 'Drive' | 'Revés' | 'Ambos' })}
                     className="bg-zinc-900 border border-white/10 rounded-xl py-4 px-5 text-sm outline-none font-bold text-white focus:border-primary"
                   >
                     <option value="Drive" className="bg-zinc-900">Drive</option>
@@ -310,6 +375,64 @@ export default function PerfilPage() {
 
         </div>
       </div>
+
+      {/* Cropper Modal */}
+      {cropModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4">
+          <div className="bg-zinc-900 border border-white/10 rounded-3xl p-6 w-full max-w-md flex flex-col gap-6 shadow-2xl relative">
+            <h3 className="text-sm font-black uppercase tracking-widest text-center text-white">Ajustar Foto</h3>
+
+            <div className="relative w-full h-[300px] rounded-xl overflow-hidden bg-black">
+              <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-50 text-white">Zoom</label>
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                aria-labelledby="Zoom"
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+            </div>
+
+            <div className="flex gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCropModalOpen(false);
+                  setImageToCrop('');
+                }}
+                className="flex-1 py-3 rounded-xl border border-white/10 text-xs text-white font-black uppercase tracking-widest hover:bg-white/5"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCropImage}
+                className="flex-1 py-3 rounded-xl bg-primary text-black text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+              >
+                Recortar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </PageWrapper>
   );
 }

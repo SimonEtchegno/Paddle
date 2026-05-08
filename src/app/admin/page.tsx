@@ -354,9 +354,14 @@ export default function AdminPage() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'inscripciones_torneos' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
         .subscribe();
 
+      const rChannel = supabase.channel('admin_reservas')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
+        .subscribe();
+
       return () => {
         supabase.removeChannel(tChannel);
         supabase.removeChannel(iChannel);
+        supabase.removeChannel(rChannel);
       };
     }
   }, [isLoggedIn, selectedDate, activeTab]);
@@ -538,21 +543,18 @@ export default function AdminPage() {
   };
 
   const startEditingZones = (t: any) => {
-    setEditingZonesTourney(null);
-    setTimeout(() => {
-      setEditingZonesTourney(t);
-      // Restauramos las variables que el sistema necesita internamente
-      setTempZones(t.zonas || []);
-      setActiveZoneIdx(0);
+    setEditingZonesTourney(t);
+    setTempZones(t.zonas || []);
+    setActiveZoneIdx(0);
 
-      setTimeout(() => {
-        const el = document.getElementById('zone-editor');
-        if (el) {
-          const y = el.getBoundingClientRect().top + window.pageYOffset - 100;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        }
-      }, 50);
-    }, 10);
+    // Scroll suave al editor
+    setTimeout(() => {
+      const el = document.getElementById('zone-editor');
+      if (el) {
+        const y = el.getBoundingClientRect().top + window.pageYOffset - 100;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   const addZone = () => {
@@ -596,15 +598,7 @@ export default function AdminPage() {
         .from('torneos')
         .upsert(payload, { onConflict: 'id' });
 
-      if (upsertError) {
-        // Si el upsert falla, intentamos un update directo como refuerzo
-        const { error: updateError } = await supabase
-          .from('torneos')
-          .update(payload)
-          .eq('id', searchId);
-
-        if (updateError) throw updateError;
-      }
+      if (upsertError) throw upsertError;
 
       // --- ACTUALIZAR RANKING PUNTOS AUTOMÁTICAMENTE ---
       if (payload.champions_data?.champions) {
@@ -646,8 +640,8 @@ export default function AdminPage() {
           // 5. Separar nombres individuales e insertar
           const individualsToInsert: any[] = [];
           pairPointsMap.forEach((pts, pairName) => {
-            // Dividir por "/" o "-"
-            const playerNames = pairName.split(/[\/-]/).map(s => s.trim().toUpperCase());
+            // Dividir solo por "/" (soporta apellidos compuestos con guion)
+            const playerNames = pairName.split(/\s*[\/]\s*/).map(s => s.trim().toUpperCase());
             playerNames.forEach(playerName => {
               if (playerName.length > 2 && playerName !== '??' && !playerName.includes('1º') && !playerName.includes('2º')) {
                 individualsToInsert.push({
@@ -743,7 +737,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div id="tutorial-admin-actions" className="flex items-center gap-4">
+          <div id="tutorial-admin-tabs" className="flex items-center gap-4">
             <button
               onClick={startAdminTour}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-black transition-all text-xs font-black uppercase tracking-widest"
@@ -1234,6 +1228,7 @@ export default function AdminPage() {
               <div id="zone-editor" className="pt-10">
                 <TournamentManager
                   tournament={editingZonesTourney}
+                  key={editingZonesTourney.id}
                   inscripciones={inscripciones}
                   onSave={saveTournamentData}
                   onClose={() => setEditingZonesTourney(null)}

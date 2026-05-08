@@ -2,11 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { PageWrapper } from '@/components/PageWrapper';
-import { Trophy, Crown, Search, Clock, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Search, ChevronRight, TrendingUp, Medal, Star, Loader2, Crown } from 'lucide-react';
+import { motion, AnimatePresence, TargetAndTransition } from 'framer-motion';
 import { clsx } from 'clsx';
 import { rankingData } from '@/lib/rankingData';
 import { supabase } from '@/lib/supabase';
+
+const trophyAnimation: TargetAndTransition = {
+  y: [0, -10, 0],
+  rotate: [0, 5, -5, 0],
+  transition: {
+    duration: 3,
+    repeat: Infinity,
+    ease: "easeInOut"
+  }
+};
 
 export default function RankingPage() {
   const [activeCategory, setActiveCategory] = useState('6ta');
@@ -25,9 +35,9 @@ export default function RankingPage() {
         setLoading(false);
         return;
       }
-      
+
       const dynamicPoints: Record<string, Record<string, number>> = {};
-      
+
       data?.forEach(row => {
         const cat = row.categoria;
         const name = row.nombre.toUpperCase();
@@ -36,7 +46,7 @@ export default function RankingPage() {
       });
 
       const combinedRanking: Record<string, any[]> = {};
-      
+
       // Combinar con base estática
       Object.keys(rankingData).forEach(cat => {
         if (!combinedRanking[cat]) combinedRanking[cat] = [];
@@ -69,34 +79,44 @@ export default function RankingPage() {
       setLoading(false);
     }
     fetchRanking();
+
+    const channel = supabase.channel('ranking_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ranking_historial' }, () => {
+        fetchRanking();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const currentPlayers = liveRanking[activeCategory] || [];
-  const filteredRanking = currentPlayers.filter(p => 
+  const filteredRanking = currentPlayers.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <PageWrapper>
       <div className="max-w-4xl mx-auto px-4 py-12 mb-24 relative">
-        
+
         {/* Luces de fondo decorativas */}
         <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-[120px] -z-10" />
         <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[150px] -z-10" />
 
         {/* Header */}
         <div className="flex flex-col items-center mb-8 text-center">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="mb-8 relative"
           >
             <motion.div
-              animate={{ 
+              animate={{
                 y: [0, -10, 0],
                 rotate: [0, 5, -5, 0]
               }}
-              transition={{ 
+              transition={{
                 duration: 4,
                 repeat: Infinity,
                 ease: "easeInOut"
@@ -107,8 +127,8 @@ export default function RankingPage() {
             </motion.div>
             <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
           </motion.div>
-          
-          <motion.h1 
+
+          <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="text-5xl md:text-7xl font-black tracking-tighter uppercase mb-2 bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent leading-none"
@@ -129,8 +149,8 @@ export default function RankingPage() {
                 }}
                 className={clsx(
                   "px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-                  activeCategory === cat 
-                    ? "bg-primary text-[#050505] shadow-[0_0_20px_rgba(136,130,220,0.4)]" 
+                  activeCategory === cat
+                    ? "bg-primary text-[#050505] shadow-[0_0_20px_rgba(136,130,220,0.4)]"
                     : "text-white/40 hover:text-white/80"
                 )}
               >
@@ -162,7 +182,7 @@ export default function RankingPage() {
               {/* Search Bar */}
               <div className="max-w-md mx-auto mb-16 relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                <input 
+                <input
                   type="text"
                   placeholder="Buscar jugador..."
                   value={searchQuery}
@@ -175,84 +195,82 @@ export default function RankingPage() {
               {!searchQuery && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end mb-16 px-2">
                   {/* Segundo Puesto */}
-                  <motion.div 
-                    initial={{ y: 60, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-                    className="order-2 md:order-1 relative group"
-                  >
-                    <div className="absolute inset-0 bg-white/5 blur-xl rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col items-center text-center relative h-[280px] justify-end overflow-hidden group-hover:border-white/20 transition-all">
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-400 to-transparent" />
-                      <div className="absolute top-8 w-20 h-20 rounded-full bg-slate-400/10 flex items-center justify-center border border-slate-400/20 text-4xl font-black text-slate-400 shadow-inner">
-                        2
-                      </div>
-                      <div className="z-10 mt-auto">
-                        <h3 className="text-xl font-black text-white mb-1 uppercase tracking-tight">{filteredRanking[1]?.name}</h3>
-                        <div className="bg-slate-400/10 px-4 py-1 rounded-full mb-2">
-                          <p className="text-slate-400 font-black text-xl">{filteredRanking[1]?.pts} <span className="text-[8px] uppercase tracking-widest">pts</span></p>
+                  {filteredRanking[1] && (
+                    <motion.div 
+                      initial={{ y: 60, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+                      className="order-2 md:order-1 relative group"
+                    >
+                      <div className="absolute inset-0 bg-white/5 blur-xl rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col items-center text-center relative h-[280px] justify-end overflow-hidden group-hover:border-white/20 transition-all">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-400 to-transparent" />
+                        <div className="absolute top-8 w-20 h-20 rounded-full bg-slate-400/10 flex items-center justify-center border border-slate-400/20 text-4xl font-black text-slate-400 shadow-inner">
+                          2
+                        </div>
+                        <div className="z-10 mt-auto">
+                          <h3 className="text-xl font-black text-white mb-1 uppercase tracking-tight">{filteredRanking[1].name}</h3>
+                          <div className="bg-slate-400/10 px-4 py-1 rounded-full mb-2">
+                            <p className="text-slate-400 font-black text-xl">{filteredRanking[1].pts} <span className="text-[8px] uppercase tracking-widest">pts</span></p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  )}
 
                   {/* Primer Puesto - EL REY */}
-                  <motion.div 
-                    initial={{ y: 60, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
-                    className="order-1 md:order-2 relative group z-10"
-                  >
-                    <div className="absolute -inset-1 bg-gradient-to-b from-primary/50 to-transparent blur-2xl opacity-30 group-hover:opacity-50 transition-opacity" />
-                    <div className="glass p-10 rounded-[3rem] border-2 border-primary/20 flex flex-col items-center text-center relative h-[360px] justify-end overflow-hidden bg-gradient-to-b from-primary/5 to-transparent group-hover:border-primary/40 transition-all shadow-2xl">
-                      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary to-transparent" />
-                      <motion.div 
-                        animate={{ 
-                          y: [0, -8, 0],
-                          rotate: [0, 5, -5, 0]
-                        }}
-                        transition={{ 
-                          duration: 4, 
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute top-0 z-20 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]"
-                      >
-                        <Crown size={40} fill="currentColor" />
-                      </motion.div>
-                      <div className="absolute top-12 w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_30px_rgba(136,130,220,0.4)] text-5xl font-black text-primary z-10">
-                        1
-                      </div>
-                      <div className="z-10 mt-auto">
-                        <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">{filteredRanking[0]?.name}</h3>
-                        <div className="bg-primary px-6 py-2 rounded-2xl mb-3 shadow-[0_0_20px_rgba(136,130,220,0.3)]">
-                          <p className="text-[#050505] font-black text-3xl">{filteredRanking[0]?.pts} <span className="text-[10px] uppercase tracking-widest opacity-60">pts</span></p>
+                  {filteredRanking[0] && (
+                    <motion.div 
+                      initial={{ y: 60, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
+                      className="order-1 md:order-2 relative group z-10"
+                    >
+                      <div className="absolute -inset-1 bg-gradient-to-b from-primary/50 to-transparent blur-2xl opacity-30 group-hover:opacity-50 transition-opacity" />
+                      <div className="glass p-10 rounded-[3rem] border-2 border-primary/20 flex flex-col items-center text-center relative h-[360px] justify-end overflow-hidden bg-gradient-to-b from-primary/5 to-transparent group-hover:border-primary/40 transition-all shadow-2xl">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary to-transparent" />
+                        <motion.div 
+                          animate={trophyAnimation}
+                          className="absolute top-0 z-20 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]"
+                        >
+                          <Crown size={40} fill="currentColor" />
+                        </motion.div>
+                        <div className="absolute top-12 w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_30px_rgba(136,130,220,0.4)] text-5xl font-black text-primary z-10">
+                          1
+                        </div>
+                        <div className="z-10 mt-auto">
+                          <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">{filteredRanking[0].name}</h3>
+                          <div className="bg-primary px-6 py-2 rounded-2xl mb-3 shadow-[0_0_20px_rgba(136,130,220,0.3)]">
+                            <p className="text-[#050505] font-black text-3xl">{filteredRanking[0].pts} <span className="text-[10px] uppercase tracking-widest opacity-60">pts</span></p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  )}
 
                   {/* Tercer Puesto */}
-                  <motion.div 
-                    initial={{ y: 60, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-                    className="order-3 relative group"
-                  >
-                    <div className="absolute inset-0 bg-white/5 blur-xl rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col items-center text-center relative h-[250px] justify-end overflow-hidden group-hover:border-white/20 transition-all">
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-700 to-transparent" />
-                      <div className="absolute top-8 w-16 h-16 rounded-full bg-amber-700/10 flex items-center justify-center border border-amber-700/20 text-3xl font-black text-amber-700 shadow-inner">
-                        3
-                      </div>
-                      <div className="z-10 mt-auto">
-                        <h3 className="text-lg font-black text-white mb-1 uppercase tracking-tight">{filteredRanking[2]?.name}</h3>
-                        <div className="bg-amber-700/10 px-4 py-1 rounded-full mb-2">
-                          <p className="text-amber-700 font-black text-xl">{filteredRanking[2]?.pts} <span className="text-[8px] uppercase tracking-widest">pts</span></p>
+                  {filteredRanking[2] && (
+                    <motion.div 
+                      initial={{ y: 60, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
+                      className="order-3 relative group"
+                    >
+                      <div className="absolute inset-0 bg-white/5 blur-xl rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col items-center text-center relative h-[250px] justify-end overflow-hidden group-hover:border-white/20 transition-all">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-700 to-transparent" />
+                        <div className="absolute top-8 w-16 h-16 rounded-full bg-amber-700/10 flex items-center justify-center border border-amber-700/20 text-3xl font-black text-amber-700 shadow-inner">
+                          3
+                        </div>
+                        <div className="z-10 mt-auto">
+                          <h3 className="text-lg font-black text-white mb-1 uppercase tracking-tight">{filteredRanking[2].name}</h3>
+                          <div className="bg-amber-700/10 px-4 py-1 rounded-full mb-2">
+                            <p className="text-amber-700 font-black text-xl">{filteredRanking[2].pts} <span className="text-[8px] uppercase tracking-widest">pts</span></p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  )}
                 </div>
               )}
 
@@ -263,10 +281,10 @@ export default function RankingPage() {
                   <span className="flex-1">Jugador</span>
                   <span className="w-28 text-right">Puntos</span>
                 </div>
-                
+
                 <AnimatePresence mode="popLayout">
                   {(searchQuery ? filteredRanking : filteredRanking.slice(3)).map((player, i) => (
-                    <motion.div 
+                    <motion.div
                       key={player.pos}
                       layout
                       initial={{ x: -30, opacity: 0 }}
@@ -305,11 +323,11 @@ export default function RankingPage() {
             >
               <div className="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center mb-8 relative">
                 <motion.div
-                  animate={{ 
+                  animate={{
                     y: [0, -8, 0],
                     rotate: [0, 5, -5, 0]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 4,
                     repeat: Infinity,
                     ease: "easeInOut"

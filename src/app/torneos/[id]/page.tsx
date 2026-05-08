@@ -16,8 +16,6 @@ import {
   MapPin,
   Share2,
   CheckCircle2,
-  Camera,
-  Star,
   Crown
 } from 'lucide-react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
@@ -62,8 +60,18 @@ export default function TournamentDetailPage() {
     };
   }, [torneo?.cuadro_data]);
 
-  // For compatibility with other parts of the UI
-  const champion = autoChampions?.winner;
+  // Final Source of Truth for Champions
+  const finalChampions = useMemo(() => {
+    return {
+      winner: torneo?.champions_data?.winner || autoChampions?.winner,
+      runnerUp: torneo?.champions_data?.runnerUp || autoChampions?.runnerUp,
+      score: torneo?.champions_data?.score || autoChampions?.score,
+      photoUrl: (torneo?.champions_data?.photoUrl && !torneo.champions_data.photoUrl.includes('random')) ? torneo.champions_data.photoUrl : null,
+      runnerUpPhotoUrl: (torneo?.champions_data?.runnerUpPhotoUrl && !torneo.champions_data.runnerUpPhotoUrl.includes('random')) ? torneo.champions_data.runnerUpPhotoUrl : null,
+    };
+  }, [torneo?.champions_data, autoChampions]);
+
+  const champion = finalChampions.winner;
 
 
   useEffect(() => {
@@ -148,9 +156,10 @@ export default function TournamentDetailPage() {
     toast.success('¡Link del torneo copiado!');
   };
 
-  // Lógica de Prestigio para el Ambiente
-  const isDiamante = profile?.nivel && profile.nivel >= 6.5;
-  const isOro = profile?.nivel && profile.nivel >= 5.5;
+  // Lógica de Prestigio para el Ambiente (Basada en puntos reales)
+  const userPoints = torneo?.ranking_puntos_data?.[profile?.nombre + ' ' + profile?.apellido] || 0;
+  const isDiamante = userPoints >= 600; // Diamante en este torneo
+  const isOro = userPoints >= 300; // Oro en este torneo
   const accentColor = isDiamante ? "#22d3ee" : isOro ? "#facc15" : "#8882dc";
 
   return (
@@ -207,7 +216,7 @@ export default function TournamentDetailPage() {
               </div>
             ) : (
               <div className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest opacity-40 cursor-default">
-                {torneo.parejas_data?.length > 0 ? '⚡ Torneo En Curso' : 'Modo Informativo'}
+                {torneo.zonas_data?.length > 0 ? '⚡ Torneo En Curso' : 'Modo Informativo'}
               </div>
             )}
           </div>
@@ -453,11 +462,16 @@ export default function TournamentDetailPage() {
                       {/* CAMPEÓN CARD */}
                       <div className="space-y-6">
                         <div className="relative rounded-[3rem] overflow-hidden border border-white/10 bg-zinc-900 aspect-video shadow-2xl group">
-                          <img 
-                            src={(torneo.champions_data?.photoUrl && !torneo.champions_data.photoUrl.includes('random')) ? torneo.champions_data.photoUrl : "https://images.unsplash.com/photo-1592709823125-a191f07a2a5e?q=80&w=2013&auto=format&fit=crop"} 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1592709823125-a191f07a2a5e?q=80&w=2013&auto=format&fit=crop"; }}
-                          />
+                          {finalChampions.photoUrl ? (
+                            <img 
+                              src={finalChampions.photoUrl} 
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-white/5">
+                              <Trophy size={48} className="text-white/10" />
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
                           <div className="absolute top-6 right-6">
                             <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-black shadow-lg">
@@ -468,7 +482,7 @@ export default function TournamentDetailPage() {
                         <div className="px-4 space-y-1">
                           <p className="text-[10px] font-black uppercase tracking-widest text-primary">Pareja Campeona</p>
                           <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">
-                            {torneo.champions_data?.winner || "A. GALÁN / J. LEBRÓN"}
+                            {finalChampions.winner || "Por definir"}
                           </h3>
                         </div>
                       </div>
@@ -476,11 +490,16 @@ export default function TournamentDetailPage() {
                       {/* SUBCAMPEÓN CARD */}
                       <div className="space-y-6">
                         <div className="relative rounded-[3rem] overflow-hidden border border-white/10 bg-zinc-900 aspect-video opacity-80 group hover:opacity-100 transition-opacity shadow-xl">
-                          <img 
-                            src={(torneo.champions_data?.runnerUpPhotoUrl && !torneo.champions_data.runnerUpPhotoUrl.includes('random')) ? torneo.champions_data.runnerUpPhotoUrl : "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?q=80&w=2070&auto=format&fit=crop"} 
-                            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?q=80&w=2070&auto=format&fit=crop"; }}
-                          />
+                          {finalChampions.runnerUpPhotoUrl ? (
+                            <img 
+                              src={finalChampions.runnerUpPhotoUrl} 
+                              className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-white/5">
+                              <Users size={40} className="text-white/10" />
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
                           <div className="absolute top-6 right-6">
                             <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white/40">
@@ -491,7 +510,7 @@ export default function TournamentDetailPage() {
                         <div className="px-4 space-y-1">
                           <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Subcampeones</p>
                           <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter opacity-60">
-                            {torneo.champions_data?.runnerUp || "F. BELASTEGUÍN / A. COELLO"}
+                            {finalChampions.runnerUp || "Por definir"}
                           </h3>
                         </div>
                       </div>
@@ -501,7 +520,7 @@ export default function TournamentDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-10">
                        <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] text-center">
                           <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">Resultado Final</p>
-                          <p className="text-3xl font-black text-primary italic tracking-tighter">{torneo.champions_data?.score || autoChampions?.score || "-- / --"}</p>
+                          <p className="text-3xl font-black text-primary italic tracking-tighter">{finalChampions.score || "-- / --"}</p>
                        </div>
                        <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] text-center">
                           <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">Categoría</p>
