@@ -258,11 +258,17 @@ export default function AdminPage() {
       }
 
       const { error } = await supabase.from(table).delete().eq('id', item.id);
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Delete Error:', error);
+        throw new Error(error.message);
+      }
+
       toast.success('Registro eliminado');
       fetchHistory();
-    } catch (e) {
-      toast.error('Error al eliminar');
+    } catch (e: any) {
+      console.error('Error al eliminar:', e);
+      toast.error(`Error: ${e.message || 'No se pudo eliminar'}`);
     }
   };
 
