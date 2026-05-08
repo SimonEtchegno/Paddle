@@ -11,6 +11,7 @@ import { PageWrapper } from '@/components/PageWrapper';
 import { Calendar } from '@/components/ui/Calendar';
 import { parseISO } from 'date-fns';
 import { WeatherWidget } from '@/components/WeatherWidget';
+import { WelcomeModal } from '@/components/WelcomeModal';
 import { motion } from 'framer-motion';
 
 export default function Home() {
@@ -110,6 +111,8 @@ export default function Home() {
           hora={selectedSlot?.hora || ''}
           cancha={selectedSlot?.cancha || 0}
         />
+        
+        <WelcomeModal />
       </div>
     </PageWrapper>
   );
