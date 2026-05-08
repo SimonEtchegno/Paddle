@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
-import { Trophy, Star, UserPlus, X, ChevronRight, Zap, Camera } from 'lucide-react';
+import { Trophy, Star, UserPlus, X, ChevronRight, Zap, Camera, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function WelcomeModal() {
@@ -88,7 +88,7 @@ export function WelcomeModal() {
               <div className="grid grid-cols-1 gap-4 py-4">
                 {[
                   { icon: Camera, title: "Foto Profesional", desc: "Subí y recortá tu foto para tu carta de jugador.", color: "text-blue-400" },
-                  { icon: Zap, title: "Stats Reales", desc: "Tu nivel y puntos se sincronizan con los torneos.", color: "text-primary" },
+                  { icon: Calendar, title: "Reservas Rápidas", desc: "Gestioná tus turnos y recibí recordatorios.", color: "text-primary" },
                   { icon: Trophy, title: "Ranking Oficial", desc: "Participá en el ranking del club y subí de categoría.", color: "text-yellow-400" },
                 ].map((f, i) => (
                   <motion.div 
