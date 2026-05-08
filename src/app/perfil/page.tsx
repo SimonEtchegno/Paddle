@@ -118,7 +118,7 @@ export default function PerfilPage() {
       });
 
       const link = document.createElement('a');
-      link.download = `Ficha-FUT-${formData.apellido || 'Jugador'}.png`;
+      link.download = `Ficha-PRO-${formData.apellido || 'Jugador'}.png`;
       link.href = dataUrl;
       link.click();
 
@@ -171,7 +171,7 @@ export default function PerfilPage() {
 
       <div className="max-w-6xl mx-auto pb-20 relative z-10">
         <header className="mb-12">
-          <h2 className="text-5xl font-black uppercase tracking-tighter italic">Tu Ficha <span className="text-primary">FUT</span></h2>
+          <h2 className="text-5xl font-black uppercase tracking-tighter italic">Tu Ficha <span className="text-primary">PRO</span></h2>
           <p className="text-xs font-bold opacity-30 uppercase tracking-[0.3em] mt-2">Personalizá tu tarjeta de jugador profesional</p>
         </header>
 

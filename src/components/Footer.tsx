@@ -15,7 +15,7 @@ export function Footer() {
     { name: 'Reservar Turno', href: '/', icon: Calendar },
     { name: 'Torneos Activos', href: '/torneos', icon: Trophy },
     { name: 'Ranking General', href: '/ranking', icon: TrendingUp },
-    { name: 'Mi Perfil FUT', href: '/perfil', icon: User },
+    { name: 'Mi Perfil PRO', href: '/perfil', icon: User },
   ];
 
   // Configuración de redes sociales (se podrían pasar por props)

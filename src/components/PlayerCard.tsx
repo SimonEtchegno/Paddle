@@ -292,7 +292,7 @@ export function PlayerCard({ profile, compact = false, realPoints = null }: Prop
 
         {/* Branding */}
         <div style={{ position: 'absolute', bottom: 8 * sc, left: 0, right: 0, textAlign: 'center', zIndex: 10, fontSize: 5.5 * sc, fontWeight: 700, letterSpacing: 3, color: 'rgba(255,255,255,0.2)', fontFamily: 'Arial,sans-serif' }}>
-          PADEL PEÑAROL · FUT CARDS
+          PADEL PEÑAROL · PRO CARDS
         </div>
 
         {/* Inner border */}
