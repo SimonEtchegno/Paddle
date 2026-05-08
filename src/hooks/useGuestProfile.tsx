@@ -40,6 +40,9 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('paddle_guest_info', JSON.stringify(parsed));
         }
         setProfile(parsed);
+        // Sincronización automática en segundo plano para usuarios que ya tenían perfil local
+        // Esto hace que aparezcan en el admin sin tener que volver a guardar manualmente
+        setTimeout(() => saveProfile(parsed), 1000);
       } catch (e) {
         console.error('Error parsing profile', e);
       }
