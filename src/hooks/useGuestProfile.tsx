@@ -83,46 +83,53 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    if (profile?.nombre && profile?.apellido) {
+    if (profile?.uid) {
       const fetchRealPoints = async () => {
         let pts = 0;
         const nUpper = profile.nombre.toUpperCase();
         const aUpper = profile.apellido.toUpperCase();
 
-        // 1. Buscar en data estática
+        // 1. Verificar si el perfil aún existe en Supabase (por si el admin lo borró)
+        const { supabase } = await import('@/lib/supabase');
+        const { data: exists } = await supabase.from('perfiles').select('id').eq('id', profile.uid).single();
+        
+        if (!exists && !loading) {
+          console.log('El perfil fue eliminado por administración.');
+          logout();
+          return;
+        }
+
+        // 2. Buscar en data estática
         import('@/lib/rankingData').then(({ rankingData }) => {
           Object.values(rankingData).forEach(cat => {
             cat.forEach(p => {
               const pName = p.name.toUpperCase();
-              // A veces los anotan "APELLIDO NOMBRE" o "NOMBRE APELLIDO"
               if (pName.includes(nUpper) && pName.includes(aUpper)) {
                 pts += p.pts;
               }
             });
           });
 
-          // 2. Buscar en Supabase
-          import('@/lib/supabase').then(({ supabase }) => {
-            supabase.from('ranking_historial')
-              .select('puntos')
-              .ilike('nombre', `%${profile.nombre}%`)
-              .ilike('nombre', `%${profile.apellido}%`)
-              .then(({ data, error }) => {
-                if (!error && data) {
-                  data.forEach(row => {
-                    pts += row.puntos;
-                  });
-                }
-                setRealPoints(pts > 0 ? pts : null);
-              });
-          });
+          // 3. Buscar en Supabase
+          supabase.from('ranking_historial')
+            .select('puntos')
+            .ilike('nombre', `%${profile.nombre}%`)
+            .ilike('nombre', `%${profile.apellido}%`)
+            .then(({ data, error }) => {
+              if (!error && data) {
+                data.forEach(row => {
+                  pts += row.puntos;
+                });
+              }
+              setRealPoints(pts > 0 ? pts : null);
+            });
         });
       };
       fetchRealPoints();
     } else {
       setRealPoints(null);
     }
-  }, [profile?.nombre, profile?.apellido]);
+  }, [profile?.uid, profile?.nombre, profile?.apellido]);
 
   return (
     <ProfileContext.Provider value={{ profile, saveProfile, logout, loading, realPoints }}>
