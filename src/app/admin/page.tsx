@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
 import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
-import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, Camera, Calendar as CalendarIcon, Home } from 'lucide-react';
+import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, UserPlus, Camera, Calendar as CalendarIcon, Home } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
@@ -212,7 +212,7 @@ export default function AdminPage() {
         .from('perfiles')
         .select('*')
         .order('last_seen', { ascending: false })
-        .limit(100);
+        .limit(1000);
 
       const combined = [
         ...(resData || []).map(r => ({ ...r, category: 'reserva' })),
@@ -1421,16 +1421,23 @@ export default function AdminPage() {
                             </div>
 
                             <div className={clsx(
-                              "w-12 h-12 rounded-2xl flex items-center justify-center text-xl",
+                              "w-12 h-12 rounded-2xl flex items-center justify-center text-xl overflow-hidden",
                               item.category === 'reserva' ? "bg-primary/10 text-primary" :
                                 item.category === 'torneo' ? "bg-purple-500/10 text-purple-400" :
                                   item.category === 'registro' ? "bg-emerald-500/10 text-emerald-400" :
                                     "bg-blue-500/10 text-blue-400"
                             )}>
-                              {item.category === 'reserva' ? <CalendarIcon size={20} /> :
-                                item.category === 'torneo' ? <Trophy size={20} /> :
-                                  item.category === 'registro' ? <Sparkles size={20} /> :
-                                    <Users size={20} />}
+                              {item.category === 'registro' && item.avatar_url ? (
+                                <img src={item.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : item.category === 'reserva' ? (
+                                <CalendarIcon size={20} />
+                              ) : item.category === 'torneo' ? (
+                                <Trophy size={20} />
+                              ) : item.category === 'registro' ? (
+                                <UserPlus size={20} />
+                              ) : (
+                                <Users size={20} />
+                              )}
                             </div>
                             <div>
                               <div className="flex items-center gap-3">
@@ -1453,7 +1460,7 @@ export default function AdminPage() {
                                   : item.category === 'torneo'
                                     ? `Torneo: ${item.torneos?.nombre}`
                                     : item.category === 'registro'
-                                      ? `Actualizó su perfil FUT`
+                                      ? `Usuario Registrado`
                                       : `Partido: ${item.fecha || item.partidos_abiertos?.fecha} ${item.hora || item.partidos_abiertos?.hora} hs`}
                               </p>
                             </div>
