@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
-import { Trophy, Star, UserPlus, X, ChevronRight, Zap } from 'lucide-react';
+import { Trophy, Star, UserPlus, X, ChevronRight, Zap, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function WelcomeModal() {
@@ -87,9 +87,9 @@ export function WelcomeModal() {
               {/* Features List */}
               <div className="grid grid-cols-1 gap-4 py-4">
                 {[
-                  { icon: Trophy, title: "Ranking Oficial", desc: "Sumá puntos en cada torneo y subí de categoría.", color: "text-yellow-400" },
-                  { icon: Zap, title: "Reservas Rápidas", desc: "Tus datos se autocompletan al reservar turnos.", color: "text-primary" },
-                  { icon: Star, title: "Personalización", desc: "Elegí tu avatar emoji y tu paleta favorita.", color: "text-blue-400" },
+                  { icon: Camera, title: "Foto Profesional", desc: "Subí y recortá tu foto para tu carta de jugador.", color: "text-blue-400" },
+                  { icon: Zap, title: "Stats Reales", desc: "Tu nivel y puntos se sincronizan con los torneos.", color: "text-primary" },
+                  { icon: Trophy, title: "Ranking Oficial", desc: "Participá en el ranking del club y subí de categoría.", color: "text-yellow-400" },
                 ].map((f, i) => (
                   <motion.div 
                     key={i}

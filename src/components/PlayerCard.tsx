@@ -207,18 +207,14 @@ export function PlayerCard({ profile, compact = false, realPoints = null }: Prop
           {/* Separator */}
           <div style={{ width: '80%', height: 1, background: `${s.accent}66`, marginBottom: 6 * sc }} />
 
-          {/* Club / Identity */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 * sc }}>
-            <div style={{
-              width: 28 * sc, height: 28 * sc, borderRadius: '50%',
-              background: 'rgba(0,0,0,0.6)', border: `1px solid ${s.border}88`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 * sc,
-              boxShadow: `0 0 8px ${s.glow}`,
-            }}>{profile.paleta_emoji || '🎾'}</div>
-            <span style={{ fontSize: 6 * sc, fontWeight: 900, color: s.accent, opacity: 0.8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {profile.paleta_modelo || 'CARBON'}
-            </span>
-          </div>
+          {/* Club / Chemistry */}
+          <div style={{
+            width: 28 * sc, height: 28 * sc, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.6)', border: `1px solid ${s.border}88`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 * sc,
+            boxShadow: `0 0 8px ${s.glow}`,
+            marginBottom: 4 * sc
+          }}>🎾</div>
 
           {/* POS */}
           <div style={{
