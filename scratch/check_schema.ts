@@ -1,4 +1,4 @@
-import { supabase } from './src/lib/supabase';
+import { supabase } from '../src/lib/supabase';
 
 async function checkSchema() {
   const { data, error } = await supabase.from('torneos').select('*').limit(1);
