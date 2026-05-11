@@ -26,7 +26,7 @@ export const rankingData: Record<string, {pos: number, name: string, pts: number
     { pos: 2, name: 'DISTEL FABIAN', pts: 200 },
     { pos: 3, name: 'COTARELO GONZALO', pts: 200 },
     { pos: 4, name: 'MOYANO GUIDO', pts: 150 },
-    { pos: 5, name: 'VILLALBA LAUTARO', pts: 150 },
+    { pos: 5, name: 'LAUTARO VILLALBA', pts: 150 },
     { pos: 6, name: 'MIGLIAVACA PABLO', pts: 100 },
     { pos: 7, name: 'GARCIA ARIEL', pts: 100 },
     { pos: 8, name: 'CELAYA MARCELO', pts: 100 },
@@ -93,43 +93,21 @@ export const rankingData: Record<string, {pos: number, name: string, pts: number
 };
 
 export const getPairScore = (p: { player1: string, player2: string }) => {
-  const getPlayerScore = (playerName: string) => {
-    const name = (playerName || '').toUpperCase().trim();
-    if (name.length < 3) return 0;
-    
-    const parts = name.split(' ').filter(p => p.trim().length > 0);
-    let bestScore = 0;
-
-    Object.values(rankingData).forEach(category => {
-      category.forEach(rank => {
-        const rankName = rank.name.toUpperCase();
-        const rankParts = rankName.split(' ').filter(p => p.trim().length > 0);
-        
-        let isMatch = false;
-        if (parts.length === 1) {
-          // Si puso solo una palabra (ej: Apellido), tiene que coincidir exactamente con el APELLIDO en el ranking (1ra palabra)
-          // Esto evita que poner solo "JUAN" le asigne puntos de otra persona.
-          if (rankParts[0] === parts[0]) isMatch = true;
-        } else {
-          // Si puso varias, chequeamos si coinciden todas las partes en cualquier orden
-          const allPartsMatch = parts.every(part => rankName.includes(part));
-          if (allPartsMatch) {
-            isMatch = true;
-          } else {
-            // O si al menos 2 palabras coinciden exactamente
-            const exactMatches = parts.filter(part => rankParts.includes(part)).length;
-            if (exactMatches >= 2) isMatch = true;
-          }
-        }
-
-        if (isMatch && rank.pts > bestScore) {
-          bestScore = rank.pts;
-        }
-      });
-    });
-
-    return bestScore;
+  let score = 0;
+  const p1 = (p.player1 || '').toUpperCase().trim();
+  const p2 = (p.player2 || '').toUpperCase().trim();
+  
+  const checkMatch = (playerName: string, rankName: string) => {
+    if (playerName.length < 3) return false;
+    const parts = playerName.split(' ');
+    return parts.every(part => rankName.includes(part));
   };
 
-  return getPlayerScore(p.player1) + getPlayerScore(p.player2);
+  Object.values(rankingData).forEach(category => {
+    category.forEach(rank => {
+      if (checkMatch(p1, rank.name)) score += rank.pts;
+      if (checkMatch(p2, rank.name)) score += rank.pts;
+    });
+  });
+  return score;
 };

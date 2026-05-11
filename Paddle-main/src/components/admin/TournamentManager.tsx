@@ -538,104 +538,33 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     const sortedUnassigned = [...unassigned].sort((a, b) => getPairScore(b) - getPairScore(a));
 
     const newZones = [...currentZones];
-    
-    // Calculamos capacidad máxima para asegurar un balance estricto en la cantidad
-    const maxCapacity = Math.ceil(pairs.length / newZones.length);
-
-    // 1. Proporciones de días para asignar un "día objetivo" a cada zona
-    const dayCounts: Record<string, number> = {};
-    pairs.forEach(p => {
-      const d = p.dayRange || 'Cualquiera';
-      dayCounts[d] = (dayCounts[d] || 0) + 1;
-    });
-
-    const zoneTargetDays: string[] = new Array(newZones.length).fill('');
-    const unassignedCounts = { ...dayCounts };
-    const avgPerZone = pairs.length / newZones.length;
-
-    // Respetar zonas que ya tienen parejas (si el usuario hizo cambios manuales)
-    newZones.forEach((z, i) => {
-        if (z.pairs.length > 0) {
-            const zDays = z.pairs.map(pId => pairs.find(p => p.id === pId)).filter(Boolean) as Pair[];
-            const dominantDay = zDays.map(p => p.dayRange || 'Cualquiera').sort((a,b) =>
-                 zDays.filter(v => (v.dayRange||'Cualquiera') === a).length - zDays.filter(v => (v.dayRange||'Cualquiera') === b).length
-            ).pop() || 'Cualquiera';
-            
-            zoneTargetDays[i] = dominantDay;
-            if (dominantDay !== 'Cualquiera') unassignedCounts[dominantDay] -= z.pairs.length;
-        }
-    });
-
-    // Llenar los target days de las zonas vacías iterativamente con el día que más sobra
-    for (let i = 0; i < newZones.length; i++) {
-        if (zoneTargetDays[i] !== '') continue;
-        
-        let maxDay = 'Cualquiera';
-        let maxCount = -Infinity;
-        Object.entries(unassignedCounts).forEach(([day, count]) => {
-            if (count > maxCount) {
-                maxCount = count;
-                maxDay = day;
-            }
-        });
-        zoneTargetDays[i] = maxDay;
-        if (maxDay !== 'Cualquiera') unassignedCounts[maxDay] -= avgPerZone;
-    }
-
     sortedUnassigned.forEach((pair) => {
-      // Solo consideramos zonas que no hayan llegado a su límite de capacidad
-      const candidateZones = newZones.filter(z => z.pairs.length < maxCapacity);
-      const validZones = candidateZones.length > 0 ? candidateZones : newZones;
+      // 1. Encontrar las zonas con la menor cantidad de parejas para mantener el balance
+      const minPairsCount = Math.min(...newZones.map(z => z.pairs.length));
+      const candidateZones = newZones.filter(z => z.pairs.length === minPairsCount);
 
-      const pairDay = pair.dayRange || 'Cualquiera';
       const pairMins = timeToMinutes(pair.timeRange, pair.dayRange);
+      let bestZone = candidateZones[0];
 
-      let bestZone = validZones[0];
-      let bestScore = -Infinity;
-
-      validZones.forEach(z => {
-        let score = 0;
-        const zonePairs = z.pairs.map(pId => pairs.find(p => p.id === pId)).filter(Boolean) as Pair[];
-        
-        // 1. Balance de cantidad de jugadores
-        score -= z.pairs.length * 10000;
-        
-        // 2. Balance de nivel (Separar cabezas de serie equitativamente)
-        const zonePoints = zonePairs.reduce((sum, p) => sum + getPairScore(p), 0);
-        score -= zonePoints * 5;
-        
-        // 3. Afinidad con el día objetivo de la zona
-        const targetDay = zoneTargetDays[newZones.indexOf(z)];
-        if (pairDay !== 'Cualquiera') {
-           if (targetDay === pairDay) {
-               score += 50000; // Va a su zona asignada
-           } else if (targetDay === 'Cualquiera') {
-               score += 10000; // Zona comodín
-           } else {
-               score -= 50000; // Gran penalidad por ir a zona de otro día
-           }
-        } else {
-           if (targetDay === 'Cualquiera') {
-               score += 10000;
-           }
-        }
-
-        if (zonePairs.length > 0) {
-          if (pairMins > 0) {
-            const zoneTimes = zonePairs.map(p => timeToMinutes(p.timeRange, p.dayRange)).filter(m => m > 0);
-            if (zoneTimes.length > 0) {
-              const avgTime = zoneTimes.reduce((a, b) => a + b, 0) / zoneTimes.length;
-              const distance = Math.abs(avgTime - pairMins);
-              score -= distance;
-            }
+      // 2. Si la pareja tiene horario/dia, buscar la zona candidata con el promedio más cercano
+      if (pairMins > 0) {
+        let minDistance = Infinity;
+        for (const z of candidateZones) {
+          const zonePairs = z.pairs.map(pId => pairs.find(p => p.id === pId)).filter(Boolean) as Pair[];
+          const zoneTimes = zonePairs.map(p => timeToMinutes(p.timeRange, p.dayRange)).filter(m => m > 0);
+          
+          let distance = 0;
+          if (zoneTimes.length > 0) {
+            const avgTime = zoneTimes.reduce((a, b) => a + b, 0) / zoneTimes.length;
+            distance = Math.abs(avgTime - pairMins);
+          }
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            bestZone = z;
           }
         }
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestZone = z;
-        }
-      });
+      }
 
       if (bestZone) {
         bestZone.pairs.push(pair.id);
