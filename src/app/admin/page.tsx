@@ -788,6 +788,7 @@ export default function AdminPage() {
             { label: 'TOTAL HOY', value: reservas.length, color: 'text-primary' },
             { label: 'CANCHA 1', value: reservas.filter(r => r.cancha === 1).length, color: 'text-white' },
             { label: 'CANCHA 2', value: reservas.filter(r => r.cancha === 2).length, color: 'text-white' },
+            { label: 'CANCHA F5', value: reservas.filter(r => r.cancha === 10).length, color: 'text-white' },
             { label: 'TURNOS LIBRES', value: (HORAS.length * 2) - reservas.length, color: 'text-primary' },
           ].map((stat, i) => (
             <div key={i} className="glass p-8 rounded-3xl text-center flex flex-col items-center justify-center border border-white/5 shadow-xl">
@@ -875,19 +876,6 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Filtrar Cancha</label>
-                  <select
-                    value={selectedCancha}
-                    onChange={(e) => setSelectedCancha(e.target.value)}
-                    className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-5 px-6 font-bold focus:outline-none focus:border-primary appearance-none cursor-pointer"
-                  >
-                    <option value="Todas">Todas</option>
-                    <option value="1">Cancha 1</option>
-                    <option value="2">Cancha 2</option>
-                  </select>
-                </div>
-
                 <button className="w-full bg-white/5 border border-white/10 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white/10 transition-all group">
                   <span className="text-2xl group-hover:scale-110 transition-transform">📊</span>
                   Exportar a Excel
@@ -904,14 +892,48 @@ export default function AdminPage() {
 
             {/* Reservations List */}
             <div className="space-y-4 pt-6">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 ml-4 mb-2">Listado de Reservas</h3>
-              {reservas.filter(r => selectedCancha === 'Todas' || r.cancha.toString() === selectedCancha).length === 0 ? (
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 sm:px-4 mb-2">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 shrink-0">Listado de Reservas</h3>
+                
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'Todas', label: 'Todas' },
+                    { id: 'padel', label: 'Pádel' },
+                    { id: '10', label: 'Fútbol 5' },
+                    { id: '1', label: 'Cancha 1' },
+                    { id: '2', label: 'Cancha 2' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setSelectedCancha(f.id)}
+                      className={clsx(
+                        "px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border",
+                        selectedCancha === f.id 
+                          ? "bg-primary text-black border-primary shadow-[0_0_15px_rgba(200,255,0,0.3)]" 
+                          : "bg-white/5 border-white/10 opacity-50 hover:opacity-100 hover:bg-white/10"
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {reservas.filter(r => {
+                if (selectedCancha === 'Todas') return true;
+                if (selectedCancha === 'padel') return r.cancha === 1 || r.cancha === 2;
+                return r.cancha.toString() === selectedCancha;
+              }).length === 0 ? (
                 <div className="glass p-20 rounded-[3rem] text-center opacity-30 font-bold uppercase tracking-widest text-xs">
                   No hay turnos registrados
                 </div>
               ) : (
                 reservas
-                  .filter(r => selectedCancha === 'Todas' || r.cancha.toString() === selectedCancha)
+                  .filter(r => {
+                    if (selectedCancha === 'Todas') return true;
+                    if (selectedCancha === 'padel') return r.cancha === 1 || r.cancha === 2;
+                    return r.cancha.toString() === selectedCancha;
+                  })
                   .map((r, i) => (
                     <motion.div
                       layout
@@ -920,7 +942,7 @@ export default function AdminPage() {
                     >
                       <div>
                         <h4 className="text-xl font-bold text-white mb-1">
-                          {r.hora} hs <span className="opacity-30">·</span> Cancha {r.cancha}
+                          {r.hora} hs <span className="opacity-30">·</span> {r.cancha === 10 ? 'Cancha F5' : `Cancha ${r.cancha}`}
                         </h4>
                         <p className="text-sm font-medium opacity-50">
                           {r.nombre} <span className="opacity-30">|</span> {r.telefono}
@@ -1511,7 +1533,7 @@ export default function AdminPage() {
                                       {item.category === 'reserva' && (
                                         <p className="text-xs font-bold flex justify-between">
                                           <span className="opacity-40">Cancha:</span>
-                                          <span>Cancha {item.cancha}</span>
+                                          <span>{item.cancha === 10 ? 'Cancha F5' : `Cancha ${item.cancha}`}</span>
                                         </p>
                                       )}
                                     </div>

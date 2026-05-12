@@ -10,37 +10,47 @@ interface BookingGridProps {
   reservas: Reserva[];
   onSelectSlot: (hora: string, cancha: number) => void;
   selectedDate: string;
+  sport: 'padel' | 'futbol' | null;
 }
 
-export function BookingGrid({ reservas, onSelectSlot, selectedDate }: BookingGridProps) {
+export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: BookingGridProps) {
   const date = new Date(selectedDate + 'T00:00:00');
   const dayOfWeek = date.getDay();
   const fixedTurns = TURNOS_FIJOS[dayOfWeek] || {};
   const { profile } = useGuestProfile();
 
+  const canchas = sport === 'futbol' ? [10] : [1, 2];
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* Grid Headers */}
-      <div className="grid grid-cols-[70px_1fr_1fr] sm:grid-cols-[100px_1fr_1fr] gap-2 sm:gap-4 px-1 sm:px-4 text-center">
+      <div className={clsx(
+        "grid gap-2 sm:gap-4 px-1 sm:px-4 text-center",
+        sport === 'futbol' ? "grid-cols-[70px_1fr] sm:grid-cols-[100px_1fr]" : "grid-cols-[70px_1fr_1fr] sm:grid-cols-[100px_1fr_1fr]"
+      )}>
         <div />
-        <div className="glass py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-white/5 flex items-center justify-center">
-          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">Cancha 1</span>
-        </div>
-        <div className="glass py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-white/5 flex items-center justify-center">
-          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">Cancha 2</span>
-        </div>
+        {canchas.map(c => (
+          <div key={c} className="glass py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-white/5 flex items-center justify-center">
+            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">
+              {sport === 'futbol' ? 'Cancha de Futbol' : `Cancha ${c}`}
+            </span>
+          </div>
+        ))}
       </div>
 
       {/* Grid Body */}
       <div className="space-y-3">
         {HORAS.map((hora) => (
-          <div key={hora} className="grid grid-cols-[70px_1fr_1fr] sm:grid-cols-[100px_1fr_1fr] gap-2 sm:gap-4 items-stretch">
+          <div key={hora} className={clsx(
+            "grid gap-2 sm:gap-4 items-stretch",
+            sport === 'futbol' ? "grid-cols-[70px_1fr] sm:grid-cols-[100px_1fr]" : "grid-cols-[70px_1fr_1fr] sm:grid-cols-[100px_1fr_1fr]"
+          )}>
             {/* Time Column */}
             <div className="flex items-center justify-center glass rounded-xl sm:rounded-2xl border border-white/5 font-mono text-sm sm:text-lg font-black text-white/40 py-2">
               {hora}
             </div>
             
-            {[1, 2].map((cancha) => {
+            {canchas.map((cancha) => {
               // Normalizar hora para la comparación (por si viene con segundos de la DB)
               const reserva = reservas.find(r => {
                 const h1 = r.hora.split(':').slice(0, 2).join(':'); // '14:30:00' -> '14:30'

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
+import { useSport } from '@/hooks/useSport';
 import { UserProfile } from '@/types';
 import { toast } from 'react-hot-toast';
 import { Save, User, MapPin, Phone, Zap, Trophy, Share2, Camera, Trash2 } from 'lucide-react';
@@ -15,6 +16,7 @@ import { toPng } from 'html-to-image';
 
 export default function PerfilPage() {
   const { profile, saveProfile, realPoints } = useGuestProfile();
+  const { sport } = useSport();
   const [loading, setLoading] = useState(false);
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -295,21 +297,38 @@ export default function PerfilPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <select
                     value={formData.posicion}
-                    onChange={(e) => setFormData({ ...formData, posicion: e.target.value as 'Drive' | 'Revés' | 'Ambos' })}
+                    onChange={(e) => setFormData({ ...formData, posicion: e.target.value as any })}
                     className="bg-zinc-900 border border-white/10 rounded-xl py-4 px-5 text-sm outline-none font-bold text-white focus:border-primary"
                   >
-                    <option value="Drive" className="bg-zinc-900">Drive</option>
-                    <option value="Revés" className="bg-zinc-900">Revés</option>
-                    <option value="Ambos" className="bg-zinc-900">Ambos</option>
+                    {sport === 'futbol' ? (
+                      <>
+                        <option value="Delantero" className="bg-zinc-900">Delantero</option>
+                        <option value="Medio" className="bg-zinc-900">Mediocampista</option>
+                        <option value="Defensor" className="bg-zinc-900">Defensor</option>
+                        <option value="Arquero" className="bg-zinc-900">Arquero</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Drive" className="bg-zinc-900">Drive</option>
+                        <option value="Revés" className="bg-zinc-900">Revés</option>
+                        <option value="Ambos" className="bg-zinc-900">Ambos</option>
+                      </>
+                    )}
                   </select>
                   <select
                     value={formData.categoria}
                     onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
                     className="bg-zinc-900 border border-white/10 rounded-xl py-4 px-5 text-sm outline-none font-bold text-white focus:border-primary"
                   >
-                    {['7ma', '6ta', '5ta', '4ta', '3ra', '2da', '1ra'].map(c => (
-                      <option key={c} value={c} className="bg-zinc-900">{c} Categoría</option>
-                    ))}
+                    {sport === 'futbol' ? (
+                      ['Amateur', 'Intermedio', 'Avanzado'].map(c => (
+                        <option key={c} value={c} className="bg-zinc-900">{c}</option>
+                      ))
+                    ) : (
+                      ['7ma', '6ta', '5ta', '4ta', '3ra', '2da', '1ra'].map(c => (
+                        <option key={c} value={c} className="bg-zinc-900">{c} Categoría</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

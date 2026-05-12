@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useSport } from '@/hooks/useSport';
 import { Calendar, Users, History, User, Trophy, Bell, X, Check, Crown, ShoppingBag, Menu } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -15,6 +16,7 @@ import { InstallAppButton } from '@/components/InstallAppButton';
 export function Navbar({ club }: { club?: any }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { sport } = useSport();
   const { profile, realPoints } = useGuestProfile();
   const [showNotifs, setShowNotifs] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,12 +63,12 @@ export function Navbar({ club }: { club?: any }) {
   const navItems = [
     { name: 'Reservar', href: '/', icon: Calendar },
     { name: 'Partidos', href: '/partidos', icon: Users },
-    { name: 'Torneos', href: '/torneos', icon: Trophy },
-    { name: 'Ranking', href: '/ranking', icon: Crown },
+    { name: 'Torneos', href: '/torneos', icon: Trophy, hide: sport === 'futbol' },
+    { name: 'Ranking', href: '/ranking', icon: Crown, hide: sport === 'futbol' },
     { name: 'Tienda', href: '/tienda', icon: ShoppingBag },
     { name: 'Mis Turnos', href: '/mis-turnos', icon: History },
     { name: 'Perfil', href: '/perfil', icon: User },
-  ];
+  ].filter(item => !item.hide);
 
   return (
     <>

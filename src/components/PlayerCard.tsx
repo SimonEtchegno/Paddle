@@ -1,6 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import { UserProfile } from '@/types';
+import { useSport } from '@/hooks/useSport';
 
 interface Props { profile: UserProfile & { paleta_modelo?: string }; compact?: boolean; realPoints?: number | null; }
 
@@ -38,6 +39,7 @@ function getStyles(l: number, cat: string) {
 }
 
 export function PlayerCard({ profile, compact = false, realPoints = null }: Props) {
+  const { sport } = useSport();
   const displayPoints = realPoints !== null ? realPoints : 0;
 
   let calculatedLevel = 1.0;
@@ -52,7 +54,7 @@ export function PlayerCard({ profile, compact = false, realPoints = null }: Prop
   // OVR Calculation (Points)
   const ovr = displayPoints === 0 ? 0 : Math.min(99, 45 + Math.round(displayPoints / 15));
 
-  const pos = profile.posicion === 'Drive' ? 'DRV' : profile.posicion === 'Revés' ? 'REV' : 'MID';
+  const pos = profile.posicion === 'Drive' ? 'DRV' : profile.posicion === 'Revés' ? 'REV' : profile.posicion === 'Delantero' ? 'DEL' : profile.posicion === 'Medio' ? 'MED' : profile.posicion === 'Defensor' ? 'DEF' : profile.posicion === 'Arquero' ? 'ARQ' : 'MID';
   const name = (profile.apellido || profile.nombre || 'JUGADOR').toUpperCase().slice(0, 13);
 
   const stats = [
@@ -214,7 +216,7 @@ export function PlayerCard({ profile, compact = false, realPoints = null }: Prop
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 * sc,
             boxShadow: `0 0 8px ${s.glow}`,
             marginBottom: 4 * sc
-          }}>🎾</div>
+          }}>{sport === 'futbol' ? '⚽' : '🎾'}</div>
 
           {/* POS */}
           <div style={{
@@ -231,7 +233,7 @@ export function PlayerCard({ profile, compact = false, realPoints = null }: Prop
           gap: 4 * sc, zIndex: 10,
         }}>
           <span style={{ fontSize: 9 * sc, fontWeight: 700, letterSpacing: 4, color: s.accent, fontFamily: 'Arial,sans-serif', opacity: 0.85 }}>
-            {profile.categoria || '7ma'} CATEGORÍA
+            {sport === 'futbol' ? (profile.categoria || 'Amateur').toUpperCase() : `${profile.categoria || '7ma'} CATEGORÍA`}
           </span>
           <span style={{
             fontSize: 24 * sc, fontWeight: 900, letterSpacing: 3,
@@ -292,7 +294,7 @@ export function PlayerCard({ profile, compact = false, realPoints = null }: Prop
 
         {/* Branding */}
         <div style={{ position: 'absolute', bottom: 8 * sc, left: 0, right: 0, textAlign: 'center', zIndex: 10, fontSize: 5.5 * sc, fontWeight: 700, letterSpacing: 3, color: 'rgba(255,255,255,0.2)', fontFamily: 'Arial,sans-serif' }}>
-          PADEL PEÑAROL · PRO CARDS
+          {sport === 'futbol' ? 'FÚTBOL PEÑAROL · PRO CARDS' : 'PADEL PEÑAROL · PRO CARDS'}
         </div>
 
         {/* Inner border */}

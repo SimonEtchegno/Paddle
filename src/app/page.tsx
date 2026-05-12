@@ -12,9 +12,12 @@ import { Calendar } from '@/components/ui/Calendar';
 import { parseISO } from 'date-fns';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { WelcomeModal } from '@/components/WelcomeModal';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSport } from '@/hooks/useSport';
+import { SportSelection } from '@/components/SportSelection';
 
 export default function Home() {
+  const { sport, setSport, isLoading } = useSport();
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   useEffect(() => {
@@ -31,89 +34,106 @@ export default function Home() {
     setSelectedDate(format(date, 'yyyy-MM-dd'));
   };
 
+  if (isLoading) return null;
+
   return (
-    <PageWrapper>
-      <div className="space-y-12 pb-20">
-        {/* Header / Info */}
-        <section id="tutorial-header" className="text-center space-y-4 pt-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-tight italic">
-              Reservá tu <span className="text-primary relative inline-block">
-                Turno
-                <motion.div
-                  className="absolute -inset-x-2 -bottom-1 h-2 bg-primary/20 blur-lg rounded-full"
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                />
-              </span>
-            </h2>
-          </motion.div>
-          <div className="flex flex-wrap justify-center gap-6 text-[10px] font-black uppercase tracking-[0.3em]">
-            <div className="flex items-center gap-3 bg-primary text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(136,130,220,0.3)] transform hover:scale-105 transition-all cursor-default">
-              <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span>Disponible</span>
-            </div>
-            <div className="flex items-center gap-3 bg-secondary/10 text-secondary px-6 py-3 rounded-full border border-secondary/20 shadow-[0_0_15px_rgba(255,215,0,0.05)] transform hover:scale-105 transition-all cursor-default">
-              <Info size={14} className="text-secondary" />
-              <span>Precio: $34.000</span>
-            </div>
-          </div>
-        </section>
+    <>
+      <AnimatePresence mode="wait">
+        {!sport && <SportSelection key="selection" />}
+      </AnimatePresence>
 
-        {/* Date Selector & Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-12 items-start">
-          <aside id="tutorial-calendar" className="space-y-6 lg:sticky lg:top-24">
-            <div id="tutorial-date-picker" className="px-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-4 ml-1">Seleccionar Fecha</h3>
-              <Calendar
-                selectedDate={selectedDate ? parseISO(selectedDate + 'T00:00:00') : new Date()}
-                onChange={handleDateChange}
-              />
-            </div>
-
-            <div className="glass p-6 rounded-3xl border border-white/5 mx-4">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-2">Fecha Seleccionada</p>
-              <p className="text-xl font-black text-primary capitalize">
-                {selectedDate ? format(parseISO(selectedDate + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es }) : 'Cargando...'}
-              </p>
-            </div>
-
-            <WeatherWidget date={selectedDate} />
-          </aside>
-
-          <main id="tutorial-grid" className="space-y-6">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 ml-4 mb-2">Horarios Disponibles</h3>
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-40 space-y-4">
-                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Actualizando canchas...</p>
+      <PageWrapper>
+        <div className="space-y-12 pb-20">
+          {/* Header / Info */}
+          <section id="tutorial-header" className="text-center space-y-4 pt-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-tight italic">
+                Reservá tu <span className="text-primary relative inline-block">
+                  {sport === 'futbol' ? 'Cancha de Futbol' : 'Turno de Padel'}
+                  <motion.div
+                    className="absolute -inset-x-2 -bottom-1 h-2 bg-primary/20 blur-lg rounded-full"
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                </span>
+              </h2>
+            </motion.div>
+            <div className="flex flex-wrap justify-center gap-6 text-[10px] font-black uppercase tracking-[0.3em]">
+              <div className="flex items-center gap-3 bg-primary text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(136,130,220,0.3)] transform hover:scale-105 transition-all cursor-default">
+                <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                <span>Disponible</span>
               </div>
-            ) : (
-              <BookingGrid
-                reservas={reservas}
-                selectedDate={selectedDate}
-                onSelectSlot={handleSelectSlot}
-              />
-            )}
-          </main>
-        </div>
+              <div className="flex items-center gap-3 bg-secondary/10 text-secondary px-6 py-3 rounded-full border border-secondary/20 shadow-[0_0_15px_rgba(255,215,0,0.05)] transform hover:scale-105 transition-all cursor-default">
+                <Info size={14} className="text-secondary" />
+                <span>Precio: {sport === 'futbol' ? '$45.000' : '$34.000'}</span>
+              </div>
+            </div>
+          </section>
 
-        {/* Modal */}
-        <BookingModal
-          isOpen={!!selectedSlot}
-          onClose={() => setSelectedSlot(null)}
-          onSuccess={refresh}
-          fecha={selectedDate}
-          hora={selectedSlot?.hora || ''}
-          cancha={selectedSlot?.cancha || 0}
-        />
-        
-        <WelcomeModal />
-      </div>
-    </PageWrapper>
+          {/* Date Selector & Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-12 items-start">
+            <aside id="tutorial-calendar" className="space-y-6 lg:sticky lg:top-24">
+              <div id="tutorial-date-picker" className="px-4">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-4 ml-1">Seleccionar Fecha</h3>
+                <Calendar
+                  selectedDate={selectedDate ? parseISO(selectedDate + 'T00:00:00') : new Date()}
+                  onChange={handleDateChange}
+                />
+              </div>
+
+              <div className="glass p-6 rounded-3xl border border-white/5 mx-4">
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-2">Fecha Seleccionada</p>
+                <p className="text-xl font-black text-primary capitalize">
+                  {selectedDate ? format(parseISO(selectedDate + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es }) : 'Cargando...'}
+                </p>
+              </div>
+
+              <WeatherWidget date={selectedDate} />
+            </aside>
+
+            <main id="tutorial-grid" className="space-y-6">
+              <div className="flex items-center justify-between px-4">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-2">Horarios Disponibles</h3>
+                <button 
+                  onClick={() => setSport(null)}
+                  className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:underline"
+                >
+                  Cambiar Deporte
+                </button>
+              </div>
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-40 space-y-4">
+                  <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Actualizando canchas...</p>
+                </div>
+              ) : (
+                <BookingGrid
+                  reservas={reservas.filter(r => (sport === 'futbol' ? r.cancha >= 10 : r.cancha < 10))}
+                  selectedDate={selectedDate}
+                  onSelectSlot={handleSelectSlot}
+                  sport={sport}
+                />
+              )}
+            </main>
+          </div>
+
+          {/* Modal */}
+          <BookingModal
+            isOpen={!!selectedSlot}
+            onClose={() => setSelectedSlot(null)}
+            onSuccess={refresh}
+            fecha={selectedDate}
+            hora={selectedSlot?.hora || ''}
+            cancha={selectedSlot?.cancha || 0}
+          />
+          
+          <WelcomeModal />
+        </div>
+      </PageWrapper>
+    </>
   );
 }

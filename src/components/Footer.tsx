@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { Crown, Instagram, MapPin, Phone, MessageSquare, Trophy, User, Calendar, ExternalLink, TrendingUp, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useSport } from '@/hooks/useSport';
 
 export function Footer() {
   const pathname = usePathname();
+  const { sport } = useSport();
 
   if (pathname?.startsWith('/admin') || pathname?.startsWith('/super-admin')) {
     return null;
@@ -13,10 +15,10 @@ export function Footer() {
 
   const quickLinks = [
     { name: 'Reservar Turno', href: '/', icon: Calendar },
-    { name: 'Torneos Activos', href: '/torneos', icon: Trophy },
-    { name: 'Ranking General', href: '/ranking', icon: TrendingUp },
+    { name: 'Torneos Activos', href: '/torneos', icon: Trophy, hide: sport === 'futbol' },
+    { name: 'Ranking General', href: '/ranking', icon: TrendingUp, hide: sport === 'futbol' },
     { name: 'Mi Perfil PRO', href: '/perfil', icon: User },
-  ];
+  ].filter(link => !link.hide);
 
   // Configuración de redes sociales (se podrían pasar por props)
   const socialLinks = {

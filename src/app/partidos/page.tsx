@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PartidoAbierto, UnionPartido } from '@/types';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
+import { useSport } from '@/hooks/useSport';
 import { Users, Calendar, Clock, Trophy, Send, Trash2, Check, X, User, AlertTriangle, Share2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { clsx } from 'clsx';
@@ -25,7 +26,10 @@ export default function PartidosPage() {
   const [hasActiveReservation, setHasActiveReservation] = useState(false);
   const [filterLevel, setFilterLevel] = useState('Todos');
 
-  const CATEGORIES = ['Todos', '7ma', '6ta', '5ta', '4ta', '3ra', '2da', '1ra', 'Pro'];
+  const { sport } = useSport();
+  const CATEGORIES = sport === 'futbol' 
+    ? ['Todos', 'Amateur', 'Intermedio', 'Avanzado'] 
+    : ['Todos', '7ma', '6ta', '5ta', '4ta', '3ra', '2da', '1ra', 'Pro'];
 
   const fetchData = async (isBackground = false) => {
     if (!profile) {
@@ -50,11 +54,32 @@ export default function PartidosPage() {
           )
         `)
         .gte('fecha', hoy)
+        .eq('deporte', sport || 'padel')
         .order('fecha', { ascending: true })
         .order('hora', { ascending: true });
 
-      if (pError) throw pError;
-      setPartidos(pData || []);
+      // If 'deporte' column is missing, it will throw an error. We fallback to old behavior:
+      if (pError && pError.message.includes('column')) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('partidos_abiertos')
+          .select(`*, uniones_partidos (user_id, nombre_interesado, estado, whatsapp_interesado)`)
+          .gte('fecha', hoy)
+          .order('fecha', { ascending: true })
+          .order('hora', { ascending: true });
+        
+        if (fallbackError) throw fallbackError;
+        
+        // Local filter based on nivel
+        const isFutbolNivel = (n: string) => ['Amateur', 'Intermedio', 'Avanzado'].includes(n);
+        const filtered = (fallbackData || []).filter((p: any) => 
+          sport === 'futbol' ? isFutbolNivel(p.nivel) : !isFutbolNivel(p.nivel)
+        );
+        setPartidos(filtered);
+      } else if (pError) {
+        throw pError;
+      } else {
+        setPartidos(pData || []);
+      }
 
       // 2. Cargar Solicitudes (Simplificado)
       const { data: uData, error: uError } = await supabase
@@ -138,7 +163,7 @@ export default function PartidosPage() {
 
       toast.success('¡Solicitud enviada!');
       fetchData(true);
-      const msg = encodeURIComponent(`¡Hola! Me gustaría sumarme a tu partido de Pádel del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`);
+      const msg = encodeURIComponent(`¡Hola! Me gustaría sumarme a tu partido de ${sport === 'futbol' ? 'Fútbol 5' : 'Pádel'} del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`);
       window.open(`https://wa.me/${p.contacto_whatsapp}?text=${msg}`, '_blank');
     } catch (e) {
       toast.error('Error al unirse');
@@ -163,7 +188,7 @@ export default function PartidosPage() {
   };
 
   const handleShare = (p: PartidoAbierto) => {
-    const text = encodeURIComponent(`🎾 ¡Faltan ${p.jugadores_faltantes} para jugar al Pádel!
+    const text = encodeURIComponent(`${sport === 'futbol' ? '⚽' : '🎾'} ¡Faltan ${p.jugadores_faltantes} para jugar al ${sport === 'futbol' ? 'Fútbol 5' : 'Pádel'}!
 📅 Fecha: ${format(parseISO(p.fecha), 'EEEE d/MM', { locale: es })}
 ⏰ Hora: ${p.hora} hs
 🏆 Nivel: ${p.nivel}
@@ -182,7 +207,7 @@ export default function PartidosPage() {
       toast.success('Jugador confirmado');
       
       // Aviso por WhatsApp al interesado
-      const msg = encodeURIComponent(`¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! 🎾`);
+      const msg = encodeURIComponent(`¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! ${sport === 'futbol' ? '⚽' : '🎾'}`);
       window.open(`https://wa.me/${u.whatsapp_interesado}?text=${msg}`, '_blank');
 
       fetchData();
@@ -327,18 +352,25 @@ export default function PartidosPage() {
                 .map((p) => {
                   const esMio = profile && p.contacto_whatsapp === profile.telefono;
                   const completo = p.jugadores_faltantes <= 0;
-                  const cat = (esMio ? profile?.categoria : p.nivel) || '7ma';
+                  const cat = p.nivel || (sport === 'futbol' ? 'Intermedio' : '7ma');
                   const levelNum = esMio ? (profile?.nivel || 1.0) : (p.nivel_num || 1.0);
 
-                  // Sync with PlayerCard logic
-                  const isDiamond = cat === '2da' || (cat === '1ra' && levelNum >= 6.8);
-                  const isGold = cat === '1ra' && levelNum < 6.8;
-                  const isRed = cat === '3ra';
-                  const isPurple = cat === '5ta';
-                  const isGreen = cat === '6ta';
+                  // Visuals based on sport
+                  let isDiamond = false, isGold = false, isRed = false, isPurple = false, isGreen = false;
+                  if (sport === 'futbol') {
+                    isDiamond = cat === 'Avanzado';
+                    isGold = cat === 'Intermedio';
+                    isGreen = cat === 'Amateur';
+                  } else {
+                    isDiamond = cat === '2da' || (cat === '1ra' && levelNum >= 6.8);
+                    isGold = cat === '1ra' && levelNum < 6.8;
+                    isRed = cat === '3ra';
+                    isPurple = cat === '5ta';
+                    isGreen = cat === '6ta';
+                  }
                   
-                  const auraColor = isDiamond ? "bg-cyan-400" : isGold ? "bg-yellow-400" : isRed ? "bg-red-500" : isPurple ? "bg-purple-500" : "bg-zinc-400";
-                  const ringBorder = isDiamond ? "border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]" : isGold ? "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)]" : "border-white/20";
+                  const auraColor = isDiamond ? "bg-cyan-400" : isGold ? "bg-yellow-400" : isRed ? "bg-red-500" : isPurple ? "bg-purple-500" : isGreen ? "bg-emerald-500" : "bg-zinc-400";
+                  const ringBorder = isDiamond ? "border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]" : isGold ? "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)]" : isGreen ? "border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]" : "border-white/20";
                   const categoryLabel = cat.toUpperCase();
 
                   const miUnion = p.uniones_partidos?.find(u => u.user_id === profile?.telefono || u.whatsapp_interesado === profile?.telefono);
@@ -368,9 +400,10 @@ export default function PartidosPage() {
                           isGold ? "bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]" :
                           isRed ? "bg-red-500 text-white" :
                           isPurple ? "bg-purple-500 text-white" :
+                          isGreen ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
                           "bg-white/10 text-white/60"
                         )}>
-                          <Trophy size={10} />
+                          {sport === 'futbol' ? <Users size={10} /> : <Trophy size={10} />}
                           {categoryLabel}
                         </div>
                       </div>
@@ -412,7 +445,12 @@ export default function PartidosPage() {
                             <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.1em] opacity-50">
                               <span className="flex items-center gap-1.5"><Calendar size={12} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {format(parseISO(p.fecha), 'd MMM', { locale: es })}</span>
                               <span className="flex items-center gap-1.5"><Clock size={12} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {p.hora} hs</span>
-                              <span className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-md border border-white/10"><Trophy size={10} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {p.nivel}</span>
+                              <span className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-md border border-white/10">
+                                {sport === 'futbol' 
+                                  ? <Users size={10} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} />
+                                  : <Trophy size={10} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} />
+                                } {p.nivel}
+                              </span>
                             </div>
                           </div>
                         </div>

@@ -19,6 +19,7 @@ import { SupportButton } from "@/components/SupportButton";
 import { supabase } from "@/lib/supabase";
 import { cookies, headers } from "next/headers";
 import { ProfileProvider } from "@/hooks/useGuestProfile";
+import { SportProvider } from "@/hooks/useSport";
 
 export const metadata: Metadata = {
   title: "Peñarol Pádel",
@@ -84,24 +85,26 @@ export default async function RootLayout({
           '--border': `${primaryColor}40`, // 25% de opacidad para bordes
         }}
       >
-        <ProfileProvider>
-          <Navbar club={club} />
-          <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-            {children}
-          </main>
-          <Footer />
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: '#1a2235',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.1)',
-              },
-            }}
-          />
-          <SupportButton />
-        </ProfileProvider>
+        <SportProvider>
+          <ProfileProvider>
+            <Navbar club={club} />
+            <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+              {children}
+            </main>
+            <Footer />
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                style: {
+                  background: '#1a2235',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                },
+              }}
+            />
+            <SupportButton />
+          </ProfileProvider>
+        </SportProvider>
 
       </body>
     </html>

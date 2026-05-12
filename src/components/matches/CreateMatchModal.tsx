@@ -7,6 +7,7 @@ import { X, Calendar, Clock, Trophy, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useSport } from '@/hooks/useSport';
 
 interface CreateMatchModalProps {
   isOpen: boolean;
@@ -16,11 +17,12 @@ interface CreateMatchModalProps {
 }
 
 export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: CreateMatchModalProps) {
+  const { sport } = useSport();
   const [loading, setLoading] = useState(false);
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [hora, setHora] = useState('18:00');
-  const [nivel, setNivel] = useState('4ta');
-  const [faltan, setFaltan] = useState(3);
+  const [nivel, setNivel] = useState(sport === 'futbol' ? 'Intermedio' : '4ta');
+  const [faltan, setFaltan] = useState(sport === 'futbol' ? 5 : 3);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +45,8 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
         avatar_url: profile.avatar_url || '',
         nivel_num: profile.nivel || 1.0,
         paleta_emoji: profile.paleta_emoji || '⚡️',
-        paleta_modelo: profile.paleta_modelo || 'carbono'
+        paleta_modelo: profile.paleta_modelo || 'carbono',
+        deporte: sport || 'padel'
       });
 
       // Si falla por columnas faltantes, intentamos el fallback (solo campos básicos)
@@ -139,15 +142,25 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                       onChange={(e) => setNivel(e.target.value)}
                       className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
                     >
-                      <option className="bg-[#1a1d23]" value="Principiante">Principiante</option>
-                      <option className="bg-[#1a1d23]" value="7ma">7ma Categoría</option>
-                      <option className="bg-[#1a1d23]" value="6ta">6ta Categoría</option>
-                      <option className="bg-[#1a1d23]" value="5ta">5ta Categoría</option>
-                      <option className="bg-[#1a1d23]" value="4ta">4ta Categoría</option>
-                      <option className="bg-[#1a1d23]" value="3ra">3ra Categoría</option>
-                      <option className="bg-[#1a1d23]" value="2da">2da Categoría</option>
-                      <option className="bg-[#1a1d23]" value="1ra">1ra Categoría</option>
-                      <option className="bg-[#1a1d23]" value="Pro">Profesional / Open</option>
+                      {sport === 'futbol' ? (
+                        <>
+                          <option className="bg-[#1a1d23]" value="Amateur">Amateur</option>
+                          <option className="bg-[#1a1d23]" value="Intermedio">Intermedio</option>
+                          <option className="bg-[#1a1d23]" value="Avanzado">Avanzado</option>
+                        </>
+                      ) : (
+                        <>
+                          <option className="bg-[#1a1d23]" value="Principiante">Principiante</option>
+                          <option className="bg-[#1a1d23]" value="7ma">7ma Categoría</option>
+                          <option className="bg-[#1a1d23]" value="6ta">6ta Categoría</option>
+                          <option className="bg-[#1a1d23]" value="5ta">5ta Categoría</option>
+                          <option className="bg-[#1a1d23]" value="4ta">4ta Categoría</option>
+                          <option className="bg-[#1a1d23]" value="3ra">3ra Categoría</option>
+                          <option className="bg-[#1a1d23]" value="2da">2da Categoría</option>
+                          <option className="bg-[#1a1d23]" value="1ra">1ra Categoría</option>
+                          <option className="bg-[#1a1d23]" value="Pro">Profesional / Open</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -161,9 +174,17 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                       onChange={(e) => setFaltan(Number(e.target.value))}
                       className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
                     >
-                      <option className="bg-[#1a1d23]" value={1}>Falta 1 jugador</option>
-                      <option className="bg-[#1a1d23]" value={2}>Faltan 2 jugadores</option>
-                      <option className="bg-[#1a1d23]" value={3}>Faltan 3 jugadores (Busco Pareja + Rival)</option>
+                      {sport === 'futbol' ? (
+                        Array.from({length: 9}, (_, i) => i + 1).map(n => (
+                          <option key={n} className="bg-[#1a1d23]" value={n}>Falta{n === 1 ? '' : 'n'} {n} jugador{n === 1 ? '' : 'es'}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option className="bg-[#1a1d23]" value={1}>Falta 1 jugador</option>
+                          <option className="bg-[#1a1d23]" value={2}>Faltan 2 jugadores</option>
+                          <option className="bg-[#1a1d23]" value={3}>Faltan 3 jugadores (Busco Pareja + Rival)</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
