@@ -16,7 +16,7 @@ import { InstallAppButton } from '@/components/InstallAppButton';
 export function Navbar({ club }: { club?: any }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { sport } = useSport();
+  const { sport, setSport } = useSport();
   const { profile, realPoints } = useGuestProfile();
   const [showNotifs, setShowNotifs] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -115,6 +115,8 @@ export function Navbar({ club }: { club?: any }) {
 
           {/* Profile & Notifications Section */}
           <div className="flex items-center gap-2 sm:gap-4">
+            
+
             
             {/* Install App Button (Desktop) */}
             <InstallAppButton className="hidden sm:flex" />
@@ -302,6 +304,8 @@ export function Navbar({ club }: { club?: any }) {
                   );
                 })}
               </div>
+
+
 
               <div className="p-4 border-t border-white/5">
                 <InstallAppButton className="w-full justify-center py-3" />

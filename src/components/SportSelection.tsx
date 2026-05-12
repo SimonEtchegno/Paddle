@@ -43,7 +43,7 @@ export function SportSelection() {
               transition={{ delay: 1 }}
               className="text-7xl md:text-9xl font-black text-white uppercase italic tracking-tighter leading-none"
             >
-              Padel
+              Pádel
             </motion.h2>
             <motion.div
               initial={{ opacity: 0, width: 0 }}
@@ -59,6 +59,15 @@ export function SportSelection() {
             >
               Dominá la jaula
             </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.6 }}
+              className="pt-4 inline-flex items-center gap-2 text-white/50 text-[10px] font-black uppercase tracking-widest group-hover:text-primary transition-colors"
+            >
+              Reservar cancha <span className="text-lg leading-none transition-transform group-hover:translate-x-1">→</span>
+            </motion.div>
           </div>
         </div>
 
@@ -98,7 +107,7 @@ export function SportSelection() {
               transition={{ delay: 1 }}
               className="text-7xl md:text-9xl font-black text-white uppercase italic tracking-tighter leading-none"
             >
-              Futbol 5
+              Fútbol 5
             </motion.h2>
             <motion.div
               initial={{ opacity: 0, width: 0 }}
@@ -114,6 +123,15 @@ export function SportSelection() {
             >
               Armá el picadito
             </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.6 }}
+              className="pt-4 inline-flex items-center gap-2 text-white/50 text-[10px] font-black uppercase tracking-widest group-hover:text-green-500 transition-colors"
+            >
+              Armar partido <span className="text-lg leading-none transition-transform group-hover:translate-x-1">→</span>
+            </motion.div>
           </div>
         </div>
 
@@ -121,23 +139,8 @@ export function SportSelection() {
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] opacity-20" />
       </motion.div>
 
-      {/* VS / OR Divider */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
-        <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 1.5, type: 'spring', damping: 15 }}
-          className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.5)] border-4 border-black/10 group"
-        >
-          <div className="flex flex-col items-center">
-            <span className="text-black font-black italic text-3xl md:text-4xl leading-none">O</span>
-          </div>
-          
-          {/* Pulsing rings */}
-          <div className="absolute inset-0 rounded-full border-2 border-white animate-ping opacity-20" />
-          <div className="absolute -inset-4 rounded-full border border-white/30 animate-pulse" />
-        </motion.div>
-      </div>
+      {/* Divider */}
+      <div className="absolute left-0 right-0 top-1/2 md:top-0 md:bottom-0 md:left-1/2 w-full h-[1px] md:w-[1px] md:h-full bg-white/10 z-50 pointer-events-none" />
 
       {/* Admin Access */}
       <motion.div

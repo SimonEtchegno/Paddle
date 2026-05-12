@@ -743,6 +743,30 @@ export default function AdminPage() {
     );
   }
 
+  const handleExportExcel = () => {
+    const headers = ['Hora', 'Cancha', 'Nombre', 'Teléfono'];
+    const csvRows = [headers.join(',')];
+
+    const sortedReservas = [...reservas].sort((a, b) => a.hora.localeCompare(b.hora));
+
+    sortedReservas.forEach(r => {
+      const canchaLabel = r.cancha === 10 ? 'Cancha F5' : `Cancha ${r.cancha}`;
+      csvRows.push(`"${r.hora}","${canchaLabel}","${r.nombre}","${r.telefono || ''}"`);
+    });
+
+    // Add BOM for Excel UTF-8 support
+    const csvString = '\uFEFF' + csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Reservas_${selectedDate || 'Todas'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('¡Planilla exportada!');
+  };
+
   return (
     <PageWrapper>
       <div className="max-w-7xl mx-auto space-y-8 pb-20">
@@ -876,7 +900,10 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-6">
-                <button className="w-full bg-white/5 border border-white/10 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white/10 transition-all group">
+                <button 
+                  onClick={handleExportExcel}
+                  className="w-full bg-white/5 border border-white/10 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white/10 transition-all group"
+                >
                   <span className="text-2xl group-hover:scale-110 transition-transform">📊</span>
                   Exportar a Excel
                 </button>

@@ -46,7 +46,7 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: Boo
             sport === 'futbol' ? "grid-cols-[70px_1fr] sm:grid-cols-[100px_1fr]" : "grid-cols-[70px_1fr_1fr] sm:grid-cols-[100px_1fr_1fr]"
           )}>
             {/* Time Column */}
-            <div className="flex items-center justify-center glass rounded-xl sm:rounded-2xl border border-white/5 font-mono text-sm sm:text-lg font-black text-white/40 py-2">
+            <div className="flex items-center justify-center bg-white/[0.08] rounded-xl sm:rounded-2xl border border-white/20 font-mono text-sm sm:text-xl font-bold text-white shadow-inner py-2 backdrop-blur-md">
               {hora}
             </div>
             
