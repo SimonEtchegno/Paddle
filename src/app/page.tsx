@@ -136,7 +136,7 @@ export default function Home() {
             cancha={selectedSlot?.cancha || 0}
           />
           
-          <WelcomeModal />
+          {sport && <WelcomeModal />}
         </div>
       </PageWrapper>
     </>

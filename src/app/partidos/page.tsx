@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CreateMatchModal } from '@/components/matches/CreateMatchModal';
+import { MatchTutorial } from '@/components/matches/MatchTutorial';
 import { LoadingPro } from '@/components/ui/LoadingPro';
 
 export default function PartidosPage() {
@@ -22,6 +23,7 @@ export default function PartidosPage() {
   const [confirmaciones, setConfirmaciones] = useState<UnionPartido[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
   const [hasActiveReservation, setHasActiveReservation] = useState(false);
   const [filterLevel, setFilterLevel] = useState('Todos');
@@ -220,9 +222,21 @@ export default function PartidosPage() {
     <PageWrapper>
       <div className="max-w-4xl mx-auto space-y-10 pb-20">
         <header className="text-center space-y-2">
-          <h2 className="text-4xl font-bold uppercase tracking-tight italic">Busco <span className="text-primary">Jugadores</span></h2>
-          <p className="text-sm opacity-50 font-black uppercase tracking-[0.2em]">Armá tu partido o sumate a uno</p>
+          <h1 className="text-3xl font-black uppercase tracking-tighter italic">Partidos <span className="text-primary">Abiertos</span></h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Unite a jugar o armá tu equipo</p>
         </header>
+
+        <div className="flex justify-center">
+            <button 
+              onClick={() => setIsTutorialOpen(true)}
+              className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline flex items-center gap-2"
+            >
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                ?
+              </div>
+              ¿Cómo funciona?
+            </button>
+        </div>
 
         {/* Solicitudes Pendientes (Alerta / Popup integrado) */}
         {solicitudes.length > 0 && (
@@ -574,6 +588,11 @@ export default function PartidosPage() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleCreateSuccess}
         profile={profile}
+      />
+
+      <MatchTutorial 
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
       />
     </PageWrapper>
   );

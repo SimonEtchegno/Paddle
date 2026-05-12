@@ -12,20 +12,20 @@ export function SportSelection() {
   return (
     <div className="fixed inset-0 z-[200] flex flex-col md:flex-row bg-[#0a0b0e] overflow-hidden">
       {/* Padel Option */}
-      <motion.div 
+      <motion.div
         initial={{ x: '-100%' }}
         animate={{ x: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="relative flex-1 group cursor-pointer overflow-hidden"
         onClick={() => setSport('padel')}
       >
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
           style={{ backgroundImage: 'url("/images/padel_bg.png")' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent group-hover:via-black/20 transition-all duration-700" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] mix-blend-overlay" />
-        
+
         <div className="relative h-full flex flex-col items-center justify-center p-12 text-center z-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
@@ -35,9 +35,9 @@ export function SportSelection() {
           >
             <Trophy className="w-10 h-10 text-primary group-hover:scale-110 transition-transform" />
           </motion.div>
-          
+
           <div className="space-y-4">
-            <motion.h2 
+            <motion.h2
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 }}
@@ -59,7 +59,7 @@ export function SportSelection() {
             >
               Dominá la jaula
             </motion.p>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -76,20 +76,20 @@ export function SportSelection() {
       </motion.div>
 
       {/* Futbol Option */}
-      <motion.div 
+      <motion.div
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="relative flex-1 group cursor-pointer overflow-hidden border-t md:border-t-0 md:border-l border-white/10"
         onClick={() => setSport('futbol')}
       >
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:-rotate-1"
           style={{ backgroundImage: 'url("/images/futbol_bg.png")' }}
         />
         <div className="absolute inset-0 bg-gradient-to-l from-black/90 via-black/40 to-transparent group-hover:via-black/20 transition-all duration-700" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,#22c55e_0%,transparent_70%)] mix-blend-overlay" />
-        
+
         <div className="relative h-full flex flex-col items-center justify-center p-12 text-center z-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
@@ -99,9 +99,9 @@ export function SportSelection() {
           >
             <Activity className="w-10 h-10 text-green-500 group-hover:scale-110 transition-transform" />
           </motion.div>
-          
+
           <div className="space-y-4">
-            <motion.h2 
+            <motion.h2
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 }}
@@ -123,7 +123,7 @@ export function SportSelection() {
             >
               Armá el picadito
             </motion.p>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -149,8 +149,8 @@ export function SportSelection() {
         transition={{ delay: 2 }}
         className="absolute bottom-6 right-6 z-[250]"
       >
-        <Link 
-          href="/admin" 
+        <Link
+          href="/admin"
           className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all backdrop-blur-md flex items-center gap-2 shadow-xl"
         >
           <Settings size={12} />
