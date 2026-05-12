@@ -54,7 +54,7 @@ export interface UserProfile {
   telefono: string;
   localidad: string;
   nivel?: number; // 1.0 to 7.0
-  posicion?: 'Drive' | 'Revés' | 'Ambos';
+  posicion?: 'Drive' | 'Revés' | 'Ambos' | 'Delantero' | 'Medio' | 'Defensor' | 'Arquero' | string;
   categoria?: string;
   paleta?: string;
   avatar_emoji?: string;
