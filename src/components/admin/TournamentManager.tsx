@@ -2412,7 +2412,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
           p1Wins ? "bg-primary/20 border-primary" : "bg-primary/10 border-transparent",
           p2Wins ? "opacity-40" : ""
         )}>
-          <p className="text-xs md:text-sm font-black uppercase truncate tracking-tight text-white leading-tight">{p1?.name || '??'}</p>
+          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p1?.name || '??'}</p>
           {(p1?.dayRange || p1?.timeRange) && (
             <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
               Disp: {p1.dayRange} {p1.timeRange}{p1.endTimeRange ? ` - ${p1.endTimeRange}` : ''}
@@ -2449,7 +2449,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
           p2Wins ? "bg-primary/20 border-primary" : "bg-primary/5 border-transparent",
           p1Wins ? "opacity-40" : ""
         )}>
-          <p className="text-xs md:text-sm font-black uppercase truncate tracking-tight text-white leading-tight">{p2?.name || '??'}</p>
+          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p2?.name || '??'}</p>
           {(p2?.dayRange || p2?.timeRange) && (
             <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
               Disp: {p2.dayRange} {p2.timeRange}{p2.endTimeRange ? ` - ${p2.endTimeRange}` : ''}

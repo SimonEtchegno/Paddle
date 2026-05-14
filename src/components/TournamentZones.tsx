@@ -137,7 +137,7 @@ export const TournamentZones: React.FC<TournamentZonesProps> = ({ zones, allPair
                             <div className="flex-1 space-y-2">
                               <div className="flex items-center gap-3">
                                 <span className={clsx(
-                                  "text-[11px] md:text-sm font-black uppercase italic tracking-tight truncate",
+                                  "text-[11px] md:text-sm font-black uppercase italic tracking-tight",
                                   highlightName && p1?.name.toLowerCase().includes(highlightName.toLowerCase()) ? "text-primary" : "text-white/90"
                                 )}>
                                   {p1?.name || '??'}
@@ -145,7 +145,7 @@ export const TournamentZones: React.FC<TournamentZonesProps> = ({ zones, allPair
                               </div>
                               <div className="flex items-center gap-3">
                                 <span className={clsx(
-                                  "text-[11px] md:text-sm font-black uppercase italic tracking-tight truncate",
+                                  "text-[11px] md:text-sm font-black uppercase italic tracking-tight",
                                   highlightName && p2?.name.toLowerCase().includes(highlightName.toLowerCase()) ? "text-primary" : "text-white/90"
                                 )}>
                                   {p2?.name || '??'}
