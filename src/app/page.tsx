@@ -69,7 +69,7 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-3 bg-secondary/10 text-secondary px-6 py-3 rounded-full border border-secondary/20 shadow-[0_0_15px_rgba(255,215,0,0.05)] transform hover:scale-105 transition-all cursor-default">
                 <Info size={14} className="text-secondary" />
-                <span>Precio: {sport === 'futbol' ? '$45.000' : '$34.000'}</span>
+                <span>Precio: {sport === 'futbol' ? '$20.000' : '$34.000'}</span>
               </div>
             </div>
           </section>
@@ -134,6 +134,7 @@ export default function Home() {
             fecha={selectedDate}
             hora={selectedSlot?.hora || ''}
             cancha={selectedSlot?.cancha || 0}
+            sport={sport}
           />
           
           {sport && <WelcomeModal />}

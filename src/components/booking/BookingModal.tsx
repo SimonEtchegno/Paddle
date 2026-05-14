@@ -14,9 +14,10 @@ interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  sport: 'padel' | 'futbol' | null;
 }
 
-export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }: BookingModalProps) {
+export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess, sport }: BookingModalProps) {
   const { profile, saveProfile } = useGuestProfile();
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -89,7 +90,8 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
       toast.success('¡Turno reservado correctamente!');
       
       // Notify WhatsApp (Optional, usually better to let user click)
-      const msg = encodeURIComponent(`¡Hola! Reservé el ${fecha} a las ${hora} hs (Cancha ${cancha}). Nombre: ${nombre}.`);
+      const canchaName = sport === 'futbol' ? 'Cancha F5' : `Cancha ${cancha}`;
+      const msg = encodeURIComponent(`¡Hola! Reservé el ${fecha} a las ${hora} hs (${canchaName}). Nombre: ${nombre}.`);
       window.open(`https://wa.me/2923460902?text=${msg}`, '_blank');
       
       onSuccess();
@@ -129,7 +131,7 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess }
               Confirmar Turno
             </span>
             <h2 className="text-2xl font-black mt-3">
-              {hora} hs <span className="text-white/40">·</span> Cancha {cancha}
+              {hora} hs <span className="text-white/40">·</span> {sport === 'futbol' ? 'Cancha F5' : `Cancha ${cancha}`}
             </h2>
             <p className="text-sm text-white/50 mt-1">{fecha}</p>
           </div>

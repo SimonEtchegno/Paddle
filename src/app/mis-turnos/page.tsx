@@ -114,7 +114,7 @@ export default function MisTurnosPage() {
                     </div>
                     <div>
                       <p className="font-black text-lg uppercase tracking-tight italic flex items-center gap-2">
-                        Cancha {t.cancha}
+                        {t.cancha >= 10 ? 'Cancha F5' : `Cancha ${t.cancha}`}
                         {!isUpcoming && <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded opacity-40">PASADO</span>}
                       </p>
                       <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest opacity-50">

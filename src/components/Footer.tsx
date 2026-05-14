@@ -48,7 +48,9 @@ export function Footer() {
               </div>
             </div>
             <p className="text-xs text-white/50 leading-relaxed max-w-xs">
-              La plataforma definitiva para el jugador de pádel profesional. Gestión de turnos, ranking en tiempo real y torneos competitivos.
+              {sport === 'futbol' 
+                ? "La plataforma definitiva para el jugador de fútbol. Gestión de turnos, reserva de canchas y partidos en tiempo real."
+                : "La plataforma definitiva para el jugador de pádel profesional. Gestión de turnos, ranking en tiempo real y torneos competitivos."}
             </p>
             <div className="flex items-center gap-4">
               {socialLinks.instagram && (

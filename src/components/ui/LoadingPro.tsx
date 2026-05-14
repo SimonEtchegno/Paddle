@@ -1,8 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useSport } from '@/hooks/useSport';
 
 export function LoadingPro() {
+  const { sport } = useSport();
   return (
     <div className="flex flex-col items-center justify-center py-20 space-y-6">
       <div className="relative w-20 h-20">
@@ -55,7 +57,7 @@ export function LoadingPro() {
           Cargando Experiencia
         </motion.p>
         <p className="text-[8px] font-bold uppercase tracking-[0.2em] opacity-30">
-          Peñarol Pádel v2.0
+          {sport === 'futbol' ? "Complejo F5 Peñarol" : "Peñarol Pádel"} v2.0
         </p>
       </div>
     </div>
