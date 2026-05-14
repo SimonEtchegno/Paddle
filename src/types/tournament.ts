@@ -20,6 +20,7 @@ export interface Match {
   date?: string;
   status: 'pending' | 'finished';
   winner?: string;
+  matchNumber?: number;
 }
 
 export interface Zone {

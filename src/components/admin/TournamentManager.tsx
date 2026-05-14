@@ -15,16 +15,16 @@ const getTimeOptions = (day?: string) => {
     return [
       '',
       '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', 
-      '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', 
-      '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', 
+      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+      '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+      '20:00', '20:30', '21:00', '21:30', '22:00', '22:30',
       '23:00', '23:30'
     ];
   }
   return [
     '',
-    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', 
-    '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', 
+    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+    '19:00', '19:30', '20:00', '20:30', '21:00', '21:30',
     '22:00', '22:30', '23:00', '23:30'
   ];
 };
@@ -509,7 +509,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
   const autoAssignPairs = () => {
     let currentZones = [...zones];
-    
+
     // Si no hay zonas (por ejemplo, si el usuario las borró), las creamos automáticamente
     if (currentZones.length === 0) {
       currentZones = Array.from({ length: config.numZones }).map((_, i) => ({
@@ -527,7 +527,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       let dayMins = 0;
       if (day === 'Sábado') dayMins = 24 * 60;
       else if (day === 'Domingo') dayMins = 48 * 60;
-      
+
       const parseSingle = (t?: string) => {
         if (!t) return null;
         const match = t.match(/(\d+):(\d+)/);
@@ -547,7 +547,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     const sortedUnassigned = [...unassigned].sort((a, b) => getPairScore(b, tournament.nombre) - getPairScore(a, tournament.nombre));
 
     const newZones = [...currentZones];
-    
+
     // Calculamos capacidad máxima para asegurar un balance estricto en la cantidad
     const maxCapacity = Math.ceil(pairs.length / newZones.length);
 
@@ -564,31 +564,31 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
     // Respetar zonas que ya tienen parejas (si el usuario hizo cambios manuales)
     newZones.forEach((z, i) => {
-        if (z.pairs.length > 0) {
-            const zDays = z.pairs.map(pId => pairs.find(p => p.id === pId)).filter(Boolean) as Pair[];
-            const dominantDay = zDays.map(p => p.dayRange || 'Cualquiera').sort((a,b) =>
-                 zDays.filter(v => (v.dayRange||'Cualquiera') === a).length - zDays.filter(v => (v.dayRange||'Cualquiera') === b).length
-            ).pop() || 'Cualquiera';
-            
-            zoneTargetDays[i] = dominantDay;
-            if (dominantDay !== 'Cualquiera') unassignedCounts[dominantDay] -= z.pairs.length;
-        }
+      if (z.pairs.length > 0) {
+        const zDays = z.pairs.map(pId => pairs.find(p => p.id === pId)).filter(Boolean) as Pair[];
+        const dominantDay = zDays.map(p => p.dayRange || 'Cualquiera').sort((a, b) =>
+          zDays.filter(v => (v.dayRange || 'Cualquiera') === a).length - zDays.filter(v => (v.dayRange || 'Cualquiera') === b).length
+        ).pop() || 'Cualquiera';
+
+        zoneTargetDays[i] = dominantDay;
+        if (dominantDay !== 'Cualquiera') unassignedCounts[dominantDay] -= z.pairs.length;
+      }
     });
 
     // Llenar los target days de las zonas vacías iterativamente con el día que más sobra
     for (let i = 0; i < newZones.length; i++) {
-        if (zoneTargetDays[i] !== '') continue;
-        
-        let maxDay = 'Cualquiera';
-        let maxCount = -Infinity;
-        Object.entries(unassignedCounts).forEach(([day, count]) => {
-            if (count > maxCount) {
-                maxCount = count;
-                maxDay = day;
-            }
-        });
-        zoneTargetDays[i] = maxDay;
-        if (maxDay !== 'Cualquiera') unassignedCounts[maxDay] -= avgPerZone;
+      if (zoneTargetDays[i] !== '') continue;
+
+      let maxDay = 'Cualquiera';
+      let maxCount = -Infinity;
+      Object.entries(unassignedCounts).forEach(([day, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          maxDay = day;
+        }
+      });
+      zoneTargetDays[i] = maxDay;
+      if (maxDay !== 'Cualquiera') unassignedCounts[maxDay] -= avgPerZone;
     }
 
     sortedUnassigned.forEach((pair) => {
@@ -605,28 +605,28 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       validZones.forEach(z => {
         let score = 0;
         const zonePairs = z.pairs.map(pId => pairs.find(p => p.id === pId)).filter(Boolean) as Pair[];
-        
+
         // 1. Balance de cantidad de jugadores
         score -= z.pairs.length * 10000;
-        
+
         // 2. Balance de nivel (Separar cabezas de serie equitativamente)
         const zonePoints = zonePairs.reduce((sum, p) => sum + getPairScore(p, tournament.nombre), 0);
         score -= zonePoints * 5;
-        
+
         // 3. Afinidad con el día objetivo de la zona
         const targetDay = zoneTargetDays[newZones.indexOf(z)];
         if (pairDay !== 'Cualquiera') {
-           if (targetDay === pairDay) {
-               score += 100000; // Va a su zona asignada (Prioridad ALTA)
-           } else if (targetDay === 'Cualquiera') {
-               score += 20000; // Zona comodín
-           } else {
-               score -= 100000; // Gran penalidad por ir a zona de otro día
-           }
+          if (targetDay === pairDay) {
+            score += 100000; // Va a su zona asignada (Prioridad ALTA)
+          } else if (targetDay === 'Cualquiera') {
+            score += 20000; // Zona comodín
+          } else {
+            score -= 100000; // Gran penalidad por ir a zona de otro día
+          }
         } else {
-           if (targetDay === 'Cualquiera') {
-               score += 20000;
-           }
+          if (targetDay === 'Cualquiera') {
+            score += 20000;
+          }
         }
 
         if (zonePairs.length > 0) {
@@ -1231,255 +1231,173 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 <button
                   id="tutorial-gen-fixtures"
                   onClick={async () => {
-                    if (zones.some(z => z.pairs.length < 2)) {
-                      return toast.error('Todas las zonas deben tener al menos 2 parejas');
-                    }
-
+                    const loadingToast = toast.loading('Generando fixture y programando horarios...');
                     setIsSyncing(true);
-                    const loadingToast = toast.loading('Consultando disponibilidad de canchas...');
 
-                    // 1. Obtener todos los torneos para ver partidos de otros torneos
-                    const { data: allTournaments } = await supabase
-                      .from('torneos')
-                      .select('id, zonas_data, cuadro_data')
-                      .neq('id', tournament.id);
+                    try {
+                      // 1. Obtener ocupación de otros torneos para no chocar
+                      const { data: allTournaments } = await supabase
+                        .from('torneos')
+                        .select('id, zonas_data, cuadro_data')
+                        .neq('id', tournament.id);
 
-                    const occupiedSlots: { date: string, time: string, court: string }[] = [];
-                    
-                    allTournaments?.forEach(t => {
-                      const zData = (t.zonas_data || []) as Zone[];
-                      const cData = (t.cuadro_data || []) as BracketNode[];
-                      
-                      zData.forEach(z => z.matches?.forEach(m => {
-                        if (m.date && m.time && m.court) occupiedSlots.push({ date: m.date, time: m.time, court: m.court });
-                      }));
-                      cData.forEach(m => {
-                        if (m.date && m.time && m.court) occupiedSlots.push({ date: m.date, time: m.time, court: m.court });
-                      });
-                    });
-
-                    const timeToMinutes = (time?: string, day?: string, endTime?: string) => {
-                      let dayMins = 0;
-                      if (day === 'Sábado') dayMins = 24 * 60;
-                      else if (day === 'Domingo') dayMins = 48 * 60;
-                      
-                      const parseSingle = (t?: string) => {
-                        if (!t) return null;
-                        const match = t.match(/(\d+):(\d+)/);
-                        if (match) return parseInt(match[1]) * 60 + parseInt(match[2]);
-                        return null;
+                      const courtFreeSlots: Record<string, Record<string, number[]>> = {
+                        'Viernes': { '1': [], '2': [] },
+                        'Sábado': { '1': [], '2': [] },
+                        'Domingo': { '1': [], '2': [] }
                       };
 
-                      const start = parseSingle(time);
-                      const end = parseSingle(endTime);
-
-                      if (start !== null) return dayMins + start;
-                      return dayMins + 16 * 60;
-                    };
-
-                    const minutesToTimeAndDay = (mins: number) => {
-                      let day = 'Viernes';
-                      if (mins >= 48 * 60) { day = 'Domingo'; mins -= 48 * 60; }
-                      else if (mins >= 24 * 60) { day = 'Sábado'; mins -= 24 * 60; }
-                      
-                      const h = Math.floor(mins / 60);
-                      const m = mins % 60;
-                      return {
-                        time: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`,
-                        date: day
-                      };
-                    };
-
-                    let allMatches: any[] = [];
-                    
-                    zones.forEach(zone => {
-                      const existingMatches = [...zone.matches];
-                      const pairsInMatches = new Set();
-                      existingMatches.forEach(m => {
-                        pairsInMatches.add(m.p1);
-                        pairsInMatches.add(m.p2);
+                      allTournaments?.forEach(t => {
+                        const zData = (t.zonas_data || []) as Zone[];
+                        const cData = (t.cuadro_data || []) as BracketNode[];
+                        [...zData.flatMap(z => z.matches || []), ...cData].forEach(m => {
+                          if (m.date && m.time && m.court && courtFreeSlots[m.date]?.[m.court]) {
+                            const match = m.time.match(/(\d+):(\d+)/);
+                            if (match) courtFreeSlots[m.date][m.court].push(parseInt(match[1]) * 60 + parseInt(match[2]));
+                          }
+                        });
                       });
 
-                      const missingPairs = zone.pairs.filter(pId => !pairsInMatches.has(pId));
-                      
-                      // Si no falta ninguna pareja y ya hay partidos, mantenemos tal cual
-                      if (missingPairs.length === 0 && existingMatches.length > 0) {
-                        allMatches.push(...existingMatches.map(m => ({ ...m, zoneId: zone.id, earliestStart: timeToMinutes(m.time, m.date) })));
-                        return;
-                      }
+                      // 2. Normalización de funciones de tiempo
+                      const timeToMinutes = (time?: string, day?: string) => {
+                        let dayMins = 0;
+                        const d = (day || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        if (d.includes('sabado')) dayMins = 1440;
+                        else if (d.includes('domingo')) dayMins = 2880;
+                        else if (d.includes('viernes')) dayMins = 0;
 
-                      // Si la zona es de 4 y está vacía (o le faltan parejas), usamos GSL
-                      if (zone.pairs.length === 4 && existingMatches.length === 0) {
-                        const zPairs = [...zone.pairs];
-                        const sortedPairs = zPairs.sort((a, b) => {
-                           const pA = pairs.find(p => p.id === a);
-                           const pB = pairs.find(p => p.id === b);
-                           if (!pA || !pB) return 0;
-                           // Usamos el nombre del torneo para el ranking si está disponible
-                           return getPairScore(pB, (tournament as any).nombre || '') - getPairScore(pA, (tournament as any).nombre || '');
-                        });
+                        const match = (time || '').match(/(\d+):(\d+)/);
+                        return match ? dayMins + parseInt(match[1]) * 60 + parseInt(match[2]) : dayMins + 480; // Default 08:00
+                      };
 
-                        const m1Id = generateId();
-                        allMatches.push({
-                          id: m1Id, zoneId: zone.id, p1: sortedPairs[0], p2: sortedPairs[3],
-                          earliestStart: timeToMinutes(pairs.find(p => p.id === sortedPairs[0])?.timeRange, pairs.find(p => p.id === sortedPairs[0])?.dayRange),
-                          score: '', status: 'pending', matchNumber: 1
-                        });
+                      const minutesToTimeAndDay = (mins: number) => {
+                        let day = 'Viernes';
+                        let m = mins;
+                        if (m >= 2880) { day = 'Domingo'; m -= 2880; }
+                        else if (m >= 1440) { day = 'Sábado'; m -= 1440; }
+                        const h = Math.floor(m / 60);
+                        const min = m % 60;
+                        return { time: `${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`, date: day };
+                      };
 
-                        const m2Id = generateId();
-                        allMatches.push({
-                          id: m2Id, zoneId: zone.id, p1: sortedPairs[1], p2: sortedPairs[2],
-                          earliestStart: timeToMinutes(pairs.find(p => p.id === sortedPairs[1])?.timeRange, pairs.find(p => p.id === sortedPairs[1])?.dayRange),
-                          score: '', status: 'pending', matchNumber: 2
-                        });
-
-                        allMatches.push({
-                          id: generateId(), zoneId: zone.id, p1: `GANADOR-${m1Id}`, p2: `GANADOR-${m2Id}`,
-                          earliestStart: 0, score: '', status: 'pending', matchNumber: 3
-                        });
-
-                        allMatches.push({
-                          id: generateId(), zoneId: zone.id, p1: `PERDEDOR-${m1Id}`, p2: `PERDEDOR-${m2Id}`,
-                          earliestStart: 0, score: '', status: 'pending', matchNumber: 4
-                        });
-                      } 
-                      else {
-                        // Para cualquier otro caso (zonas de 3, 5 o si estamos añadiendo parejas a una zona con partidos)
-                        // Mantenemos los existentes
-                        allMatches.push(...existingMatches.map(m => ({ ...m, zoneId: zone.id, earliestStart: timeToMinutes(m.time, m.date) })));
-                        
-                        // Y generamos partidos para las parejas que no tienen ninguno
-                        for (const pId of missingPairs) {
-                           const p1 = pairs.find(p => p.id === pId);
-                           if (!p1) continue;
-
-                           // Intentamos emparejarla con alguien que tenga pocos partidos o simplemente con los demás de la zona
-                           const others = zone.pairs.filter(id => id !== pId);
-                           others.forEach(otherId => {
-                              // Evitar duplicados si ya existe el partido en existingMatches
-                              const alreadyExists = existingMatches.some(em => 
-                                (em.p1 === pId && em.p2 === otherId) || (em.p1 === otherId && em.p2 === pId)
-                              );
-                              
-                              if (!alreadyExists) {
-                                const p2 = pairs.find(p => p.id === otherId);
-                                if (p2) {
-                                  allMatches.push({
-                                    id: generateId(),
-                                    zoneId: zone.id,
-                                    p1: p1.id,
-                                    p2: p2.id,
-                                    earliestStart: Math.max(
-                                      timeToMinutes(p1.timeRange, p1.dayRange),
-                                      timeToMinutes(p2.timeRange, p2.dayRange)
-                                    ),
-                                    score: '',
-                                    status: 'pending'
-                                  });
-                                }
-                              }
-                           });
+                      // 3. GENERACIÓN DE FIXTURE (Partidos)
+                      let allMatches: any[] = [];
+                      zones.forEach(zone => {
+                        let zMatches = [...zone.matches];
+                        if (zMatches.length === 0 && zone.pairs.length >= 2) {
+                          if (zone.pairs.length === 4) {
+                            const ps = [...zone.pairs].sort((a,b) => getPairScore(pairs.find(p=>p.id===b)!, tournament.nombre) - getPairScore(pairs.find(p=>p.id===a)!, tournament.nombre));
+                            const m1 = generateId(), m2 = generateId();
+                            zMatches = [
+                              { id: m1, p1: ps[0], p2: ps[3], score: '', status: 'pending', matchNumber: 1 },
+                              { id: m2, p1: ps[1], p2: ps[2], score: '', status: 'pending', matchNumber: 2 },
+                              { id: generateId(), p1: `GANADOR-${m1}`, p2: `GANADOR-${m2}`, score: '', status: 'pending', matchNumber: 3 },
+                              { id: generateId(), p1: `PERDEDOR-${m1}`, p2: `PERDEDOR-${m2}`, score: '', status: 'pending', matchNumber: 4 }
+                            ];
+                          } else {
+                            for (let i=0; i<zone.pairs.length; i++) for (let j=i+1; j<zone.pairs.length; j++) zMatches.push({ id: generateId(), p1: zone.pairs[i], p2: zone.pairs[j], score: '', status: 'pending', matchNumber: 1 });
+                          }
                         }
-                      }
-                    });
+                        zMatches.forEach(m => allMatches.push({ ...m, zoneId: zone.id }));
+                      });
 
-                    const matchesToSchedule = allMatches.filter(m => !m.time);
-                    matchesToSchedule.sort((a, b) => (a.matchNumber || 99) - (b.matchNumber || 99) || a.earliestStart - b.earliestStart);
-
-                    const courtFreeSlots: Record<string, Record<string, number[]>> = {
-                      'Viernes': { '1': [], '2': [] },
-                      'Sábado': { '1': [], '2': [] },
-                      'Domingo': { '1': [], '2': [] }
-                    };
-
-                    // Marcar slots ocupados por otros torneos
-                    occupiedSlots.forEach(slot => {
-                      if (courtFreeSlots[slot.date] && courtFreeSlots[slot.date][slot.court]) {
-                        courtFreeSlots[slot.date][slot.court].push(timeToMinutes(slot.time));
-                      }
-                    });
-                    const pairNextAvail: Record<string, number> = {};
-
-                    allMatches.filter(m => m.time).forEach(m => {
-                      const start = timeToMinutes(m.time);
-                      if (m.date && courtFreeSlots[m.date] && (m.court === '1' || m.court === '2')) {
-                        courtFreeSlots[m.date][m.court as '1'|'2'].push(start);
-                      }
-                      const end = start + 60;
-                      const restTime = 60;
-                      pairNextAvail[m.p1] = Math.max(pairNextAvail[m.p1] || 0, end + restTime);
-                      pairNextAvail[m.p2] = Math.max(pairNextAvail[m.p2] || 0, end + restTime);
-                    });
-
-                    matchesToSchedule.forEach(m => {
-                      const isPlaceholder = m.p1.startsWith('GANADOR') || m.p1.startsWith('PERDEDOR');
-                      const p1Avail = isPlaceholder ? 0 : (pairNextAvail[m.p1] || m.earliestStart);
-                      const p2Avail = isPlaceholder ? 0 : (pairNextAvail[m.p2] || m.earliestStart);
-                      let matchMinStart = Math.max(p1Avail, p2Avail, m.earliestStart);
-
-                      if (m.matchNumber === 3 || m.matchNumber === 4) {
-                         const firstRoundMatches = allMatches.filter(rm => rm.zoneId === m.zoneId && (rm.matchNumber === 1 || rm.matchNumber === 2));
-                         const lastFirstRoundEnd = Math.max(...firstRoundMatches.map(rm => timeToMinutes(rm.time, rm.date) + 60));
-                         matchMinStart = Math.max(matchMinStart, lastFirstRoundEnd + 60);
-                      }
-
-                      let earliestPossible = Infinity;
-                      let bestCourt = '1';
-                      let finalDate = 'Sábado';
-
-                      // Buscar el primer slot libre considerando todos los días disponibles
+                      // 4. Algoritmo de Programación (Scheduling)
+                      const pairNextAvail: Record<string, number> = {};
                       const days = ['Viernes', 'Sábado', 'Domingo'];
                       
-                      for (const day of days) {
-                        if (earliestPossible !== Infinity) break;
-                        
-                        const dayMins = day === 'Sábado' ? 24 * 60 : (day === 'Domingo' ? 48 * 60 : 0);
-                        // Permitir que el torneo empiece desde temprano si es necesario
-                        const dayStart = 8 * 60; 
-                        
-                        for (let t = dayStart; t < 23.5 * 60; t += 30) { // Probar cada 30 min hasta las 23:30
-                          const absoluteT = dayMins + t;
-                          
-                          // Si el partido tiene una restricción de "horario más temprano", respetarla
-                          if (absoluteT < matchMinStart) continue;
+                      // Ordenamos para priorizar los "Partido 1", luego "Partido 2", etc. para respetar la progresión natural
+                      allMatches.sort((a, b) => (a.matchNumber || 99) - (b.matchNumber || 99));
 
-                          for (const court of ['1', '2']) {
-                            const isCourtBusy = courtFreeSlots[day][court].some(start => Math.abs(start - t) < 60);
-                            if (!isCourtBusy) {
-                               earliestPossible = t;
-                               bestCourt = court;
-                               finalDate = day;
-                               break;
-                            }
-                          }
-                          if (earliestPossible !== Infinity) break;
+                      const scheduledMatches = allMatches.map(m => {
+                        const p1 = pairs.find(p => p.id === m.p1);
+                        const p2 = pairs.find(p => p.id === m.p2);
+                        
+                        // Disponibilidad de la pareja (el mayor de los dos inicios)
+                        const p1Start = timeToMinutes(p1?.timeRange, p1?.dayRange);
+                        const p2Start = timeToMinutes(p2?.timeRange, p2?.dayRange);
+                        const p1End = timeToMinutes(p1?.timeRange?.split('-')[1] || '23:59', p1?.dayRange);
+                        const p2End = timeToMinutes(p2?.timeRange?.split('-')[1] || '23:59', p2?.dayRange);
+                        
+                        // El partido puede empezar cuando ambos están disponibles Y ambos han descansado
+                        let matchMinStart = Math.max(p1Start, p2Start, pairNextAvail[m.p1] || 0, pairNextAvail[m.p2] || 0);
+
+                        // Si es un partido de ronda avanzada (3 o 4), debe ser después de que terminen los previos de su zona
+                        if (m.matchNumber > 2) {
+                           const zonePrevMatches = allMatches.filter(pm => pm.zoneId === m.zoneId && pm.matchNumber < m.matchNumber && pm.time);
+                           const lastEnd = Math.max(0, ...zonePrevMatches.map(pm => timeToMinutes(pm.time, pm.date) + 60));
+                           matchMinStart = Math.max(matchMinStart, lastEnd + 60); // +1h de descanso tras el previo
                         }
-                      }
 
-                      const { time } = minutesToTimeAndDay(earliestPossible + (finalDate === 'Sábado' ? 24*60 : (finalDate === 'Domingo' ? 48*60 : 0)));
-                      m.time = time;
-                      m.date = finalDate;
-                      m.court = bestCourt;
+                        let slot = null;
+                        for (const day of days) {
+                          const dayOffset = day === 'Sábado' ? 1440 : (day === 'Domingo' ? 2880 : 0);
+                          for (let t = 480; t <= 1380; t += 30) { // De 08:00 a 23:00
+                            const absT = dayOffset + t;
+                            if (absT < matchMinStart) continue;
 
-                      const endTime = earliestPossible + 60;
-                      const restTime = 60;
-                      courtFreeSlots[finalDate][bestCourt as '1'|'2'].push(earliestPossible);
-                      if (!isPlaceholder) {
-                        const absEnd = (finalDate === 'Sábado' ? 24*60 : (finalDate === 'Domingo' ? 48*60 : 0)) + endTime;
-                        pairNextAvail[m.p1] = absEnd + restTime;
-                        pairNextAvail[m.p2] = absEnd + restTime;
-                      }
-                    });
+                            // Verificar si el partido termina dentro de la disponibilidad de ambos
+                            if (absT + 60 > p1End && absT < p1End) continue; // No entra
+                            if (absT + 60 > p2End && absT < p2End) continue;
 
-                    const newZones = zones.map(z => ({
-                      ...z,
-                      matches: allMatches.filter(m => m.zoneId === z.id).map(({ zoneId, earliestStart, matchNumber, ...matchData }) => matchData as Match)
-                    }));
+                            for (const court of ['1', '2']) {
+                              const busy = courtFreeSlots[day][court].some(s => Math.abs(s - t) < 60);
+                              if (!busy) {
+                                slot = { t, court, day, absT };
+                                break;
+                              }
+                            }
+                            if (slot) break;
+                          }
+                          if (slot) break;
+                        }
 
-                    setZones(newZones);
-                    setIsSyncing(false);
-                    toast.dismiss(loadingToast);
-                    toast.success('Fixtures generados evitando choques con otros torneos');
+                        // Si no encontró slot en disponibilidad, buscamos en cualquier lado (Rescate)
+                        if (!slot) {
+                          const emergencyStart = Math.max(pairNextAvail[m.p1] || 0, pairNextAvail[m.p2] || 0);
+                          for (const day of days) {
+                            const dayOffset = day === 'Sábado' ? 1440 : (day === 'Domingo' ? 2880 : 0);
+                            for (let t = 480; t <= 1380; t += 30) {
+                              const absT = dayOffset + t;
+                              if (absT < emergencyStart) continue;
+                              for (const court of ['1', '2']) {
+                                if (!courtFreeSlots[day][court].some(s => Math.abs(s - t) < 60)) {
+                                  slot = { t, court, day, absT }; break;
+                                }
+                              }
+                              if (slot) break;
+                            }
+                            if (slot) break;
+                          }
+                        }
+
+                        if (slot) {
+                          const { time, date } = minutesToTimeAndDay(slot.absT);
+                          m.time = time;
+                          m.date = date;
+                          m.court = slot.court;
+                          courtFreeSlots[slot.day][slot.court].push(slot.t);
+                          pairNextAvail[m.p1] = slot.absT + 120; // 1h partido + 1h descanso
+                          pairNextAvail[m.p2] = slot.absT + 120;
+                        }
+
+                        return m;
+                      });
+
+                      // 5. Actualizar Estado
+                      const newZones = zones.map(z => ({
+                        ...z,
+                        matches: scheduledMatches.filter(sm => sm.zoneId === z.id).map(({ zoneId, ...matchData }) => matchData as Match)
+                      }));
+
+                      setZones(newZones);
+                      toast.success('Fixture generado y programado correctamente');
+                    } catch (error) {
+                      console.error(error);
+                      toast.error('Error al programar los partidos');
+                    } finally {
+                      setIsSyncing(false);
+                      toast.dismiss(loadingToast);
+                    }
                   }}
                   className="w-full md:w-auto bg-primary/10 text-primary border border-primary/30 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-3"
                 >
@@ -1633,49 +1551,49 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     onClick={() => {
                       const newBracket: BracketNode[] = [];
 
-                    if (config.bracketSize === 'eighth') {
-                      // 8 Octavos -> 4 Cuartos -> 2 Semis -> 1 Final
-                      for (let i = 1; i <= 8; i++) {
-                        newBracket.push({
-                          id: `eighth-${i}`, stage: 'Octavos',
-                          p1: `1º Zona ${String.fromCharCode(64 + i)}`,
-                          p2: `2º Zona ${String.fromCharCode(72 - i + 1)}`,
-                          score: '', time: '', winnerTo: `quarter-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2)
-                        });
+                      if (config.bracketSize === 'eighth') {
+                        // 8 Octavos -> 4 Cuartos -> 2 Semis -> 1 Final
+                        for (let i = 1; i <= 8; i++) {
+                          newBracket.push({
+                            id: `eighth-${i}`, stage: 'Octavos',
+                            p1: `1º Zona ${String.fromCharCode(64 + i)}`,
+                            p2: `2º Zona ${String.fromCharCode(72 - i + 1)}`,
+                            score: '', time: '', winnerTo: `quarter-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2)
+                          });
+                        }
+                        for (let i = 1; i <= 4; i++) {
+                          newBracket.push({ id: `quarter-${i}`, stage: 'Cuartos', p1: '?', p2: '?', score: '', time: '', winnerTo: `semi-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2) });
+                        }
+                        for (let i = 1; i <= 2; i++) {
+                          newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
+                        }
+                        newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                       }
-                      for (let i = 1; i <= 4; i++) {
-                        newBracket.push({ id: `quarter-${i}`, stage: 'Cuartos', p1: '?', p2: '?', score: '', time: '', winnerTo: `semi-${Math.ceil(i / 2)}`, slot: (i % 2 === 1 ? 1 : 2) });
+                      else if (config.bracketSize === 'quarter') {
+                        // 4 Cuartos -> 2 Semis -> 1 Final
+                        newBracket.push({ id: `quarter-1`, stage: 'Cuartos', p1: '1º A', p2: '2º C', score: '', time: '', winnerTo: `semi-1`, slot: 1 });
+                        newBracket.push({ id: `quarter-2`, stage: 'Cuartos', p1: '1º B', p2: '2º D', score: '', time: '', winnerTo: `semi-1`, slot: 2 });
+                        newBracket.push({ id: `quarter-3`, stage: 'Cuartos', p1: '1º C', p2: '2º A', score: '', time: '', winnerTo: `semi-2`, slot: 1 });
+                        newBracket.push({ id: `quarter-4`, stage: 'Cuartos', p1: '1º D', p2: '2º B', score: '', time: '', winnerTo: `semi-2`, slot: 2 });
+                        for (let i = 1; i <= 2; i++) {
+                          newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
+                        }
+                        newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                       }
-                      for (let i = 1; i <= 2; i++) {
-                        newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
+                      else {
+                        // Semifinales (config.bracketSize === 'semi')
+                        newBracket.push({ id: 'semi-1', stage: 'Semifinal', p1: '1º A', p2: '2º B', score: '', time: '', winnerTo: 'final', slot: 1 });
+                        newBracket.push({ id: 'semi-2', stage: 'Semifinal', p1: '1º B', p2: '2º A', score: '', time: '', winnerTo: 'final', slot: 2 });
+                        newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                       }
-                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
-                    }
-                    else if (config.bracketSize === 'quarter') {
-                      // 4 Cuartos -> 2 Semis -> 1 Final
-                      newBracket.push({ id: `quarter-1`, stage: 'Cuartos', p1: '1º A', p2: '2º C', score: '', time: '', winnerTo: `semi-1`, slot: 1 });
-                      newBracket.push({ id: `quarter-2`, stage: 'Cuartos', p1: '1º B', p2: '2º D', score: '', time: '', winnerTo: `semi-1`, slot: 2 });
-                      newBracket.push({ id: `quarter-3`, stage: 'Cuartos', p1: '1º C', p2: '2º A', score: '', time: '', winnerTo: `semi-2`, slot: 1 });
-                      newBracket.push({ id: `quarter-4`, stage: 'Cuartos', p1: '1º D', p2: '2º B', score: '', time: '', winnerTo: `semi-2`, slot: 2 });
-                      for (let i = 1; i <= 2; i++) {
-                        newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
-                      }
-                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
-                    }
-                    else {
-                      // Semifinales (config.bracketSize === 'semi')
-                      newBracket.push({ id: 'semi-1', stage: 'Semifinal', p1: '1º A', p2: '2º B', score: '', time: '', winnerTo: 'final', slot: 1 });
-                      newBracket.push({ id: 'semi-2', stage: 'Semifinal', p1: '1º B', p2: '2º A', score: '', time: '', winnerTo: 'final', slot: 2 });
-                      newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
-                    }
 
-                    setBracket(newBracket);
-                    toast.success(`Cuadro de ${config.bracketSize === 'semi' ? '4' : config.bracketSize === 'quarter' ? '8' : '16'} parejas generado`);
-                  }}
-                  className="bg-primary text-black px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-[0_20px_40px_rgba(136,130,220,0.3)] flex items-center gap-3"
-                >
-                  <Trophy size={18} /> Generar Cuadro
-                </button>
+                      setBracket(newBracket);
+                      toast.success(`Cuadro de ${config.bracketSize === 'semi' ? '4' : config.bracketSize === 'quarter' ? '8' : '16'} parejas generado`);
+                    }}
+                    className="bg-primary text-black px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-[0_20px_40px_rgba(136,130,220,0.3)] flex items-center gap-3"
+                  >
+                    <Trophy size={18} /> Generar Cuadro
+                  </button>
                 </div>
               </div>
 
@@ -1693,28 +1611,28 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       </div>
 
                       <div className="space-y-24">
-                                {bracket.filter(n => n.stage === stage).map((node, nIdx) => {
-                                  const score = parseScore(node.score);
-                                  const winner = score ? (score.p1Sets > score.p2Sets ? 1 : score.p2Sets > score.p1Sets ? 2 : 0) : 0;
-                                  const isFinal = node.stage === 'Final';
+                        {bracket.filter(n => n.stage === stage).map((node, nIdx) => {
+                          const score = parseScore(node.score);
+                          const winner = score ? (score.p1Sets > score.p2Sets ? 1 : score.p2Sets > score.p1Sets ? 2 : 0) : 0;
+                          const isFinal = node.stage === 'Final';
 
-                                  const resolvePairName = (val: string) => {
-                                    if (!val) return 'Por definir';
-                                    const match = val.match(/^([123])º\s*(Zona\s*)?([A-Z])$/i);
-                                    if (match) {
-                                      const pos = parseInt(val[0]) - 1;
-                                      const letter = match[2].toUpperCase();
-                                      const zoneIdx = letter.charCodeAt(0) - 65;
-                                      const zone = zones[zoneIdx];
-                                      if (zone) {
-                                        const standings = calculateStandings(zone, pairs);
-                                        if (standings[pos]) return `${val}: ${standings[pos].name}`;
-                                      }
-                                    }
-                                    return val;
-                                  };
+                          const resolvePairName = (val: string) => {
+                            if (!val) return 'Por definir';
+                            const match = val.match(/^([123])º\s*(Zona\s*)?([A-Z])$/i);
+                            if (match) {
+                              const pos = parseInt(val[0]) - 1;
+                              const letter = match[2].toUpperCase();
+                              const zoneIdx = letter.charCodeAt(0) - 65;
+                              const zone = zones[zoneIdx];
+                              if (zone) {
+                                const standings = calculateStandings(zone, pairs);
+                                if (standings[pos]) return `${val}: ${standings[pos].name}`;
+                              }
+                            }
+                            return val;
+                          };
 
-                                  return (
+                          return (
                             <div key={node.id} className="relative group">
                               <div className="flex justify-between items-center mb-2 ml-4 mr-4">
                                 <p className="text-[8px] font-black uppercase opacity-40 italic tracking-widest">{node.stage} - Partido {nIdx + 1}</p>
@@ -1802,7 +1720,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                         <option value="2º Zona C" />
                                         <option value="3º Zona C" />
                                       </datalist>
-                                      
+
                                       {/* Full Name Preview Tooltip - Only show if different from value (i.e. if it's a placeholder) */}
                                       {resolvePairName(node.p1) !== node.p1 && (
                                         <div className="absolute left-0 -top-12 bg-black/90 text-primary text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-primary/20 opacity-0 group-hover/p1:opacity-100 pointer-events-none transition-all whitespace-nowrap z-[60] shadow-2xl translate-y-2 group-hover/p1:translate-y-0">
@@ -2454,7 +2372,7 @@ function MatchRow({ match, pairs, onUpdate, allMatches }: { match: Match, pairs:
       const type = parts[0];
       const targetMatchId = parts[1];
       const targetMatch = allMatches?.find(m => m.id === targetMatchId);
-      
+
       if (!targetMatch || targetMatch.status !== 'finished' || !targetMatch.score) {
         return `${type === 'GANADOR' ? 'Ganador' : 'Perdedor'} P${(allMatches?.indexOf(targetMatch!) !== -1 ? allMatches!.indexOf(targetMatch!) + 1 : '?')}`;
       }
@@ -2463,7 +2381,7 @@ function MatchRow({ match, pairs, onUpdate, allMatches }: { match: Match, pairs:
       if (!score) return id;
       const winnerId = score.p1Sets > score.p2Sets ? targetMatch.p1 : targetMatch.p2;
       const loserId = score.p1Sets > score.p2Sets ? targetMatch.p2 : targetMatch.p1;
-      
+
       const pair = pairs.find(p => p.id === (type === 'GANADOR' ? winnerId : loserId));
       return pair?.name || '??';
     }
@@ -2659,46 +2577,46 @@ function calculateStandings(zone: Zone, allPairs: Pair[], tournamentCategory?: s
       let actualP2 = m.p2;
 
       if (m.p1.startsWith('GANADOR-') || m.p1.startsWith('PERDEDOR-')) {
-          const parts = m.p1.split('-');
-          const target = zone.matches.find(zm => zm.id === parts[1]);
-          if (target && target.score) {
-              const s = parseScore(target.score);
-              if (s) {
-                  const win = s.p1Sets > s.p2Sets ? target.p1 : target.p2;
-                  const los = s.p1Sets > s.p2Sets ? target.p2 : target.p1;
-                  actualP1 = parts[0] === 'GANADOR' ? win : los;
-              }
+        const parts = m.p1.split('-');
+        const target = zone.matches.find(zm => zm.id === parts[1]);
+        if (target && target.score) {
+          const s = parseScore(target.score);
+          if (s) {
+            const win = s.p1Sets > s.p2Sets ? target.p1 : target.p2;
+            const los = s.p1Sets > s.p2Sets ? target.p2 : target.p1;
+            actualP1 = parts[0] === 'GANADOR' ? win : los;
           }
+        }
       }
       if (m.p2.startsWith('GANADOR-') || m.p2.startsWith('PERDEDOR-')) {
-          const parts = m.p2.split('-');
-          const target = zone.matches.find(zm => zm.id === parts[1]);
-          if (target && target.score) {
-              const s = parseScore(target.score);
-              if (s) {
-                  const win = s.p1Sets > s.p2Sets ? target.p1 : target.p2;
-                  const los = s.p1Sets > s.p2Sets ? target.p2 : target.p1;
-                  actualP2 = parts[0] === 'GANADOR' ? win : los;
-              }
+        const parts = m.p2.split('-');
+        const target = zone.matches.find(zm => zm.id === parts[1]);
+        if (target && target.score) {
+          const s = parseScore(target.score);
+          if (s) {
+            const win = s.p1Sets > s.p2Sets ? target.p1 : target.p2;
+            const los = s.p1Sets > s.p2Sets ? target.p2 : target.p1;
+            actualP2 = parts[0] === 'GANADOR' ? win : los;
           }
+        }
       }
 
       // Solo sumamos si resolvimos a una pareja real de la zona
       if (standingsMap[actualP1] && standingsMap[actualP2]) {
-          standingsMap[actualP1].pj += 1;
-          standingsMap[actualP1].sf += p1Sets;
-          standingsMap[actualP1].sc += p2Sets;
-          standingsMap[actualP1].gf += p1Games;
-          standingsMap[actualP1].gc += p2Games;
+        standingsMap[actualP1].pj += 1;
+        standingsMap[actualP1].sf += p1Sets;
+        standingsMap[actualP1].sc += p2Sets;
+        standingsMap[actualP1].gf += p1Games;
+        standingsMap[actualP1].gc += p2Games;
 
-          standingsMap[actualP2].pj += 1;
-          standingsMap[actualP2].sf += p2Sets;
-          standingsMap[actualP2].sc += p1Sets;
-          standingsMap[actualP2].gf += p2Games;
-          standingsMap[actualP2].gc += p1Games;
+        standingsMap[actualP2].pj += 1;
+        standingsMap[actualP2].sf += p2Sets;
+        standingsMap[actualP2].sc += p1Sets;
+        standingsMap[actualP2].gf += p2Games;
+        standingsMap[actualP2].gc += p1Games;
 
-          if (p1Sets > p2Sets) standingsMap[actualP1].pts += 3;
-          else if (p2Sets > p1Sets) standingsMap[actualP2].pts += 3;
+        if (p1Sets > p2Sets) standingsMap[actualP1].pts += 3;
+        else if (p2Sets > p1Sets) standingsMap[actualP2].pts += 3;
       }
     }
   });
@@ -2713,7 +2631,7 @@ function calculateStandings(zone: Zone, allPairs: Pair[], tournamentCategory?: s
       if (b.pts !== a.pts) return b.pts - a.pts;
       if ((b.sf - b.sc) !== (a.sf - a.sc)) return (b.sf - b.sc) - (a.sf - a.sc);
       if ((b.gf - b.gc) !== (a.gf - a.gc)) return (b.gf - b.gc) - (a.gf - a.gc);
-      
+
       // Desempate final: Puntos de Ranking
       const pairA = allPairs.find(p => p.id === a.id);
       const pairB = allPairs.find(p => p.id === b.id);
