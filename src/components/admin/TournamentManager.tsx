@@ -544,7 +544,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     };
 
     // Ordenar de mayor a menor puntaje (Cabezas de serie)
-    const sortedUnassigned = [...unassigned].sort((a, b) => getPairScore(b) - getPairScore(a));
+    const sortedUnassigned = [...unassigned].sort((a, b) => getPairScore(b, tournament.nombre) - getPairScore(a, tournament.nombre));
 
     const newZones = [...currentZones];
     
@@ -610,7 +610,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         score -= z.pairs.length * 10000;
         
         // 2. Balance de nivel (Separar cabezas de serie equitativamente)
-        const zonePoints = zonePairs.reduce((sum, p) => sum + getPairScore(p), 0);
+        const zonePoints = zonePairs.reduce((sum, p) => sum + getPairScore(p, tournament.nombre), 0);
         score -= zonePoints * 5;
         
         // 3. Afinidad con el día objetivo de la zona
@@ -1384,8 +1384,8 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                       <span className="truncate">{s.name}</span>
                                       {(() => {
                                         const p = pairs.find(pair => pair.name === s.name);
-                                        return p && getPairScore(p) > 0 ? (
-                                          <span title={`Puntos: ${getPairScore(p)}`} className="flex items-center">
+                                        return p && getPairScore(p, tournament.nombre) > 0 ? (
+                                          <span title={`Puntos: ${getPairScore(p, tournament.nombre)}`} className="flex items-center">
                                             <Crown size={10} className="text-yellow-400 shrink-0" />
                                           </span>
                                         ) : null;

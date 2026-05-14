@@ -89,10 +89,28 @@ export const rankingData: Record<string, {pos: number, name: string, pts: number
     { pos: 32, name: 'VAGA JUANSE', pts: 20 },
     { pos: 33, name: 'SITZ MARTIN', pts: 20 },
     { pos: 34, name: 'CAMANDONA AGUSTIN', pts: 20 }
+  ],
+  '7ma': [
+    { pos: 1, name: 'TORRES TOMAS', pts: 150 },
+    { pos: 2, name: 'JUSTEL PATRICIA', pts: 100 },
+    { pos: 3, name: 'SOLAY YESICA', pts: 100 },
+    { pos: 4, name: 'GARAY AGUSTIN', pts: 100 },
+    { pos: 5, name: 'RAMOS NICOLAS', pts: 100 },
+    { pos: 6, name: 'CASTRO ELISEO', pts: 75 },
+    { pos: 7, name: 'SANTICHIA FRANCO', pts: 75 },
+    { pos: 8, name: 'HERRERO MAXIMILIANO', pts: 75 },
+    { pos: 9, name: 'PINILLA LISANDRO', pts: 75 },
+    { pos: 10, name: 'VILLALBA FRANCISCO', pts: 75 },
+    { pos: 11, name: 'GONZALEZ NICOLAS', pts: 75 },
+    { pos: 12, name: 'HOLZMAN ANDRES', pts: 20 },
+    { pos: 13, name: 'RANIERI JOSE LUIS', pts: 20 },
+    { pos: 14, name: 'PATRICIA ARANDA', pts: 20 },
+    { pos: 15, name: 'MACEDO DANIELA', pts: 20 },
+    { pos: 16, name: 'FERRERO CLAUDIA', pts: 20 }
   ]
 };
 
-export const getPairScore = (p: { player1: string, player2: string }) => {
+export const getPairScore = (p: { player1: string, player2: string }, targetCategory?: string) => {
   const getPlayerScore = (playerName: string) => {
     const name = (playerName || '').toUpperCase().trim();
     if (name.length < 3) return 0;
@@ -100,23 +118,31 @@ export const getPairScore = (p: { player1: string, player2: string }) => {
     const parts = name.split(' ').filter(p => p.trim().length > 0);
     let bestScore = 0;
 
-    Object.values(rankingData).forEach(category => {
+    // Normalizamos la categoría buscada (ej: "7MA" -> "7ma")
+    const cleanTargetCategory = targetCategory?.toLowerCase().includes('7ma') ? '7ma' :
+                               targetCategory?.toLowerCase().includes('6ta') ? '6ta' :
+                               targetCategory?.toLowerCase().includes('5ta') ? '5ta' :
+                               targetCategory?.toLowerCase().includes('4ta') ? '4ta' : null;
+
+    // Si tenemos una categoría específica, solo buscamos ahí
+    const categoriesToSearch = cleanTargetCategory ? [cleanTargetCategory] : Object.keys(rankingData);
+
+    categoriesToSearch.forEach(catKey => {
+      const category = rankingData[catKey];
+      if (!category) return;
+      
       category.forEach(rank => {
         const rankName = rank.name.toUpperCase();
         const rankParts = rankName.split(' ').filter(p => p.trim().length > 0);
         
         let isMatch = false;
         if (parts.length === 1) {
-          // Si puso solo una palabra (ej: Apellido), tiene que coincidir exactamente con el APELLIDO en el ranking (1ra palabra)
-          // Esto evita que poner solo "JUAN" le asigne puntos de otra persona.
           if (rankParts[0] === parts[0]) isMatch = true;
         } else {
-          // Si puso varias, chequeamos si coinciden todas las partes en cualquier orden
           const allPartsMatch = parts.every(part => rankName.includes(part));
           if (allPartsMatch) {
             isMatch = true;
           } else {
-            // O si al menos 2 palabras coinciden exactamente
             const exactMatches = parts.filter(part => rankParts.includes(part)).length;
             if (exactMatches >= 2) isMatch = true;
           }
