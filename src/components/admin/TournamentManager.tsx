@@ -523,15 +523,24 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     const unassigned = pairs.filter(p => !currentZones.some(z => z.pairs.includes(p.id)));
     if (unassigned.length === 0) return toast.error('No hay parejas sin asignar');
 
-    const timeToMinutes = (time?: string, day?: string) => {
+    const timeToMinutes = (time?: string, day?: string, endTime?: string) => {
       let dayMins = 0;
       if (day === 'Sábado') dayMins = 24 * 60;
       else if (day === 'Domingo') dayMins = 48 * 60;
       
-      if (!time) return dayMins;
-      const match = time.match(/(\d+):(\d+)/);
-      if (match) return dayMins + parseInt(match[1]) * 60 + parseInt(match[2]);
-      return dayMins;
+      const parseSingle = (t?: string) => {
+        if (!t) return null;
+        const match = t.match(/(\d+):(\d+)/);
+        if (match) return parseInt(match[1]) * 60 + parseInt(match[2]);
+        return null;
+      };
+
+      const start = parseSingle(time);
+      const end = parseSingle(endTime);
+
+      if (start !== null && end !== null) return dayMins + (start + end) / 2;
+      if (start !== null) return dayMins + start;
+      return dayMins + 16 * 60; // Default if no time
     };
 
     // Ordenar de mayor a menor puntaje (Cabezas de serie)
@@ -588,7 +597,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
       const validZones = candidateZones.length > 0 ? candidateZones : newZones;
 
       const pairDay = pair.dayRange || 'Cualquiera';
-      const pairMins = timeToMinutes(pair.timeRange, pair.dayRange);
+      const pairMins = timeToMinutes(pair.timeRange, pair.dayRange, pair.endTimeRange);
 
       let bestZone = validZones[0];
       let bestScore = -Infinity;
@@ -608,27 +617,23 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         const targetDay = zoneTargetDays[newZones.indexOf(z)];
         if (pairDay !== 'Cualquiera') {
            if (targetDay === pairDay) {
-               score += 50000; // Va a su zona asignada
+               score += 100000; // Va a su zona asignada (Prioridad ALTA)
            } else if (targetDay === 'Cualquiera') {
-               score += 10000; // Zona comodín
+               score += 20000; // Zona comodín
            } else {
-               score -= 50000; // Gran penalidad por ir a zona de otro día
+               score -= 100000; // Gran penalidad por ir a zona de otro día
            }
         } else {
            if (targetDay === 'Cualquiera') {
-               score += 10000;
+               score += 20000;
            }
         }
 
         if (zonePairs.length > 0) {
-          if (pairMins > 0) {
-            const zoneTimes = zonePairs.map(p => timeToMinutes(p.timeRange, p.dayRange)).filter(m => m > 0);
-            if (zoneTimes.length > 0) {
-              const avgTime = zoneTimes.reduce((a, b) => a + b, 0) / zoneTimes.length;
-              const distance = Math.abs(avgTime - pairMins);
-              score -= distance;
-            }
-          }
+          const zoneTimes = zonePairs.map(p => timeToMinutes(p.timeRange, p.dayRange, p.endTimeRange));
+          const avgTime = zoneTimes.reduce((a, b) => a + b, 0) / zoneTimes.length;
+          const distance = Math.abs(avgTime - pairMins);
+          score -= (distance * 10); // Más peso a la distancia de tiempo
         }
 
         if (score > bestScore) {
@@ -1019,9 +1024,9 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Disponibilidad</label>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-1 gap-2">
                           <select
-                            className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-black uppercase outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-black uppercase outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
                             value={p.dayRange || ''}
                             onChange={(e) => {
                               const newPairs = [...pairs];
@@ -1034,20 +1039,36 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                               <option key={day} value={day} className="bg-black">{day}</option>
                             ))}
                           </select>
-                          <select
-                            className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-black uppercase outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
-                            value={p.timeRange || ''}
-                            onChange={(e) => {
-                              const newPairs = [...pairs];
-                              newPairs[idx].timeRange = e.target.value;
-                              setPairs(newPairs);
-                            }}
-                          >
-                            <option value="" className="bg-black text-white/50">Hora...</option>
-                            {getTimeOptions(p.dayRange).filter(t => t !== '').map(time => (
-                              <option key={time} value={time} className="bg-black">Desde {time}</option>
-                            ))}
-                          </select>
+                          <div className="flex gap-2">
+                            <select
+                              className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
+                              value={p.timeRange || ''}
+                              onChange={(e) => {
+                                const newPairs = [...pairs];
+                                newPairs[idx].timeRange = e.target.value;
+                                setPairs(newPairs);
+                              }}
+                            >
+                              <option value="" className="bg-black text-white/50">Desde...</option>
+                              {getTimeOptions(p.dayRange).filter(t => t !== '').map(time => (
+                                <option key={time} value={time} className="bg-black">{time}</option>
+                              ))}
+                            </select>
+                            <select
+                              className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
+                              value={p.endTimeRange || ''}
+                              onChange={(e) => {
+                                const newPairs = [...pairs];
+                                newPairs[idx].endTimeRange = e.target.value;
+                                setPairs(newPairs);
+                              }}
+                            >
+                              <option value="" className="bg-black text-white/50">Hasta...</option>
+                              {getTimeOptions(p.dayRange).filter(t => t !== '').map(time => (
+                                <option key={time} value={time} className="bg-black">{time}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1213,14 +1234,22 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       return toast.error('Todas las zonas deben tener al menos 2 parejas');
                     }
 
-                    const timeToMinutes = (time?: string, day?: string) => {
+                    const timeToMinutes = (time?: string, day?: string, endTime?: string) => {
                       let dayMins = 0;
                       if (day === 'Sábado') dayMins = 24 * 60;
                       else if (day === 'Domingo') dayMins = 48 * 60;
                       
-                      if (!time) return dayMins + 16 * 60;
-                      const match = time.match(/(\d+):(\d+)/);
-                      if (match) return dayMins + parseInt(match[1]) * 60 + parseInt(match[2]);
+                      const parseSingle = (t?: string) => {
+                        if (!t) return null;
+                        const match = t.match(/(\d+):(\d+)/);
+                        if (match) return parseInt(match[1]) * 60 + parseInt(match[2]);
+                        return null;
+                      };
+
+                      const start = parseSingle(time);
+                      const end = parseSingle(endTime);
+
+                      if (start !== null) return dayMins + start;
                       return dayMins + 16 * 60;
                     };
 
@@ -1251,8 +1280,8 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                            const p2 = pairs.find(p => p.id === zone.pairs[j]);
                            if (!p1 || !p2) continue;
                            
-                           const p1Mins = timeToMinutes(p1.timeRange, p1.dayRange);
-                           const p2Mins = timeToMinutes(p2.timeRange, p2.dayRange);
+                           const p1Mins = timeToMinutes(p1.timeRange, p1.dayRange, p1.endTimeRange);
+                           const p2Mins = timeToMinutes(p2.timeRange, p2.dayRange, p2.endTimeRange);
                            
                            allMatches.push({
                              id: generateId(),
@@ -2202,7 +2231,7 @@ function DraggablePair({ pair }: { pair: Pair }) {
           <p className="text-sm md:text-base font-black uppercase italic leading-tight truncate">{pair.name || 'Sin Jugadores'}</p>
           {(pair.dayRange || pair.timeRange) && (
             <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
-              Disp: {pair.dayRange} {pair.timeRange}
+              Disp: {pair.dayRange} {pair.timeRange}{pair.endTimeRange ? ` - ${pair.endTimeRange}` : ''}
             </p>
           )}
         </div>
@@ -2256,7 +2285,7 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone }: { zone: Z
                   <p className="text-xs md:text-sm font-black uppercase truncate">{pair.name}</p>
                   {(pair.dayRange || pair.timeRange) && (
                     <p className="text-[8px] font-bold text-primary/60 mt-0.5 uppercase tracking-widest truncate">
-                      Disp: {pair.dayRange} {pair.timeRange}
+                      Disp: {pair.dayRange} {pair.timeRange}{pair.endTimeRange ? ` - ${pair.endTimeRange}` : ''}
                     </p>
                   )}
                 </div>
@@ -2383,7 +2412,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
           <p className="text-xs md:text-sm font-black uppercase truncate tracking-tight text-white leading-tight">{p1?.name || '??'}</p>
           {(p1?.dayRange || p1?.timeRange) && (
             <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
-              Disp: {p1.dayRange} {p1.timeRange}
+              Disp: {p1.dayRange} {p1.timeRange}{p1.endTimeRange ? ` - ${p1.endTimeRange}` : ''}
             </p>
           )}
         </div>
@@ -2420,7 +2449,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
           <p className="text-xs md:text-sm font-black uppercase truncate tracking-tight text-white leading-tight">{p2?.name || '??'}</p>
           {(p2?.dayRange || p2?.timeRange) && (
             <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
-              Disp: {p2.dayRange} {p2.timeRange}
+              Disp: {p2.dayRange} {p2.timeRange}{p2.endTimeRange ? ` - ${p2.endTimeRange}` : ''}
             </p>
           )}
         </div>

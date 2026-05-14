@@ -6,6 +6,7 @@ export interface Pair {
   player1: string;
   player2: string;
   timeRange?: string;
+  endTimeRange?: string;
   dayRange?: string;
 }
 
