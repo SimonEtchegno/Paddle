@@ -511,13 +511,17 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     let currentZones = [...zones];
 
     // Si no hay zonas (por ejemplo, si el usuario las borró), las creamos automáticamente
-    if (currentZones.length === 0) {
-      currentZones = Array.from({ length: config.numZones }).map((_, i) => ({
+    // usando SIEMPRE el número definido en la configuración
+    if (currentZones.length < config.numZones) {
+      const needed = config.numZones - currentZones.length;
+      const startChar = 65 + currentZones.length;
+      const extraZones = Array.from({ length: needed }).map((_, i) => ({
         id: generateId(),
-        name: `Zona ${String.fromCharCode(65 + i)}`,
+        name: `Zona ${String.fromCharCode(startChar + i)}`,
         pairs: [],
         matches: []
       }));
+      currentZones = [...currentZones, ...extraZones];
     }
 
     const unassigned = pairs.filter(p => !currentZones.some(z => z.pairs.includes(p.id)));
@@ -938,7 +942,13 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                 <div className="space-y-2">
-                  <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">Gestión de Parejas</h3>
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">Gestión de Parejas</h3>
+                    <div className="bg-primary/20 text-primary border border-primary/30 px-4 py-2 rounded-2xl flex flex-col items-center justify-center min-w-[80px] backdrop-blur-xl">
+                      <span className="text-[10px] font-black opacity-60 leading-none">TOTAL</span>
+                      <span className="text-xl font-black leading-none mt-1">{pairs.length}</span>
+                    </div>
+                  </div>
                   <p className="text-xs md:text-sm opacity-40 font-bold uppercase tracking-widest">Carga y edita los participantes</p>
                 </div>
                 <div className="flex flex-wrap gap-3 w-full sm:w-auto">
@@ -1184,7 +1194,6 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                             confirmText: 'Sí, Borrar',
                             onConfirm: () => {
                               setZones(prev => prev.filter(zone => zone.id !== z.id));
-                              setConfig(prev => ({ ...prev, numZones: Math.max(1, prev.numZones - 1) }));
                               toast.success(`${z.name} eliminada`);
                             }
                           });
@@ -1339,7 +1348,8 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                             if (absT + 60 > p1End && absT < p1End) continue; // No entra
                             if (absT + 60 > p2End && absT < p2End) continue;
 
-                            for (const court of ['1', '2']) {
+                            const balancedCourts = ['1', '2'].sort((a, b) => courtFreeSlots[day][a].length - courtFreeSlots[day][b].length);
+                            for (const court of balancedCourts) {
                               const busy = courtFreeSlots[day][court].some(s => Math.abs(s - t) < 60);
                               if (!busy) {
                                 slot = { t, court, day, absT };
@@ -1359,7 +1369,8 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                             for (let t = 480; t <= 1380; t += 30) {
                               const absT = dayOffset + t;
                               if (absT < emergencyStart) continue;
-                              for (const court of ['1', '2']) {
+                              const balancedCourts = ['1', '2'].sort((a, b) => courtFreeSlots[day][a].length - courtFreeSlots[day][b].length);
+                              for (const court of balancedCourts) {
                                 if (!courtFreeSlots[day][court].some(s => Math.abs(s - t) < 60)) {
                                   slot = { t, court, day, absT }; break;
                                 }
@@ -1516,16 +1527,29 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                         standingsByZone[letter] = standings.map(s => s.name);
                       });
 
+                      const allThirds: any[] = [];
+                      zones.forEach(z => {
+                        const standings = calculateStandings(z, pairs);
+                        if (standings[2]) allThirds.push(standings[2]);
+                      });
+                      // Ordenar terceros por puntos, luego sets, luego games
+                      const sortedThirds = [...allThirds].sort((a, b) => (b.pts - a.pts) || ((b.sf - b.sc) - (a.sf - a.sc)) || ((b.gf - b.gc) - (a.gf - a.gc)));
+
                       let syncedCount = 0;
                       newBracket.forEach(node => {
                         const syncPos = (val: string) => {
                           const match = val.match(/^([123])º\s*(Zona\s*)?([A-Z])$/i);
                           if (match) {
                             const pos = parseInt(match[1]) - 1;
-                            const letter = match[2].toUpperCase();
+                            const letter = (match[3] || '').toUpperCase();
                             if (standingsByZone[letter] && standingsByZone[letter][pos]) {
                               return standingsByZone[letter][pos];
                             }
+                          }
+                          const m3match = val.match(/Mejor 3º(?:\s*\((\d)\))?/i);
+                          if (m3match || val.toLowerCase().includes('mejor 3º')) {
+                            const idx = m3match && m3match[1] ? parseInt(m3match[1]) - 1 : 0;
+                            if (sortedThirds[idx]) return sortedThirds[idx].name;
                           }
                           return val;
                         };
@@ -1571,14 +1595,27 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       }
                       else if (config.bracketSize === 'quarter') {
                         // 4 Cuartos -> 2 Semis -> 1 Final
-                        newBracket.push({ id: `quarter-1`, stage: 'Cuartos', p1: '1º A', p2: '2º C', score: '', time: '', winnerTo: `semi-1`, slot: 1 });
-                        newBracket.push({ id: `quarter-2`, stage: 'Cuartos', p1: '1º B', p2: '2º D', score: '', time: '', winnerTo: `semi-1`, slot: 2 });
-                        newBracket.push({ id: `quarter-3`, stage: 'Cuartos', p1: '1º C', p2: '2º A', score: '', time: '', winnerTo: `semi-2`, slot: 1 });
-                        newBracket.push({ id: `quarter-4`, stage: 'Cuartos', p1: '1º D', p2: '2º B', score: '', time: '', winnerTo: `semi-2`, slot: 2 });
-                        for (let i = 1; i <= 2; i++) {
-                          newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
+                        if (zones.length === 3) {
+                          // Esquema de la imagen (7 parejas)
+                          newBracket.push({ id: `quarter-1`, stage: 'Cuartos', p1: '2º B', p2: '2º C', score: '', time: '', winnerTo: `semi-1`, slot: 2 });
+                          newBracket.push({ id: `quarter-2`, stage: 'Cuartos', p1: '1º C', p2: '2º A', score: '', time: '', winnerTo: `semi-2`, slot: 1 });
+                          newBracket.push({ id: `quarter-3`, stage: 'Cuartos', p1: '1º B', p2: 'Mejor 3º', score: '', time: '', winnerTo: `semi-2`, slot: 2 });
+                          
+                          // Semifinal 1 (Específica para 3 zonas porque tiene al 1º A)
+                          newBracket.push({ id: `semi-1`, stage: 'Semifinal', p1: '1º A', p2: '?', score: '', time: '', winnerTo: 'final', slot: 1 });
+                          newBracket.push({ id: `semi-2`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: 2 });
+                          newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
+                        } else {
+                          // Standard 4 zones
+                          newBracket.push({ id: `quarter-1`, stage: 'Cuartos', p1: '1º A', p2: '2º C', score: '', time: '', winnerTo: `semi-1`, slot: 1 });
+                          newBracket.push({ id: `quarter-2`, stage: 'Cuartos', p1: '1º B', p2: '2º D', score: '', time: '', winnerTo: `semi-1`, slot: 2 });
+                          newBracket.push({ id: `quarter-3`, stage: 'Cuartos', p1: '1º C', p2: '2º A', score: '', time: '', winnerTo: `semi-2`, slot: 1 });
+                          newBracket.push({ id: `quarter-4`, stage: 'Cuartos', p1: '1º D', p2: '2º B', score: '', time: '', winnerTo: `semi-2`, slot: 2 });
+                          for (let i = 1; i <= 2; i++) {
+                            newBracket.push({ id: `semi-${i}`, stage: 'Semifinal', p1: '?', p2: '?', score: '', time: '', winnerTo: 'final', slot: (i % 2 === 1 ? 1 : 2) });
+                          }
+                          newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                         }
-                        newBracket.push({ id: 'final', stage: 'Final', p1: '?', p2: '?', score: '', time: '' });
                       }
                       else {
                         // Semifinales (config.bracketSize === 'semi')
@@ -1621,13 +1658,24 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                             const match = val.match(/^([123])º\s*(Zona\s*)?([A-Z])$/i);
                             if (match) {
                               const pos = parseInt(val[0]) - 1;
-                              const letter = match[2].toUpperCase();
+                              const letter = (match[3] || '').toUpperCase();
                               const zoneIdx = letter.charCodeAt(0) - 65;
                               const zone = zones[zoneIdx];
                               if (zone) {
                                 const standings = calculateStandings(zone, pairs);
                                 if (standings[pos]) return `${val}: ${standings[pos].name}`;
                               }
+                            }
+                            const m3match = val.match(/Mejor 3º(?:\s*\((\d)\))?/i);
+                            if (m3match || val.toLowerCase().includes('mejor 3º')) {
+                              const idx = m3match && m3match[1] ? parseInt(m3match[1]) - 1 : 0;
+                              const allThirds: any[] = [];
+                              zones.forEach(z => {
+                                const standings = calculateStandings(z, pairs);
+                                if (standings[2]) allThirds.push(standings[2]);
+                              });
+                              const sortedThirds = allThirds.sort((a, b) => (b.pts - a.pts) || ((b.sf - b.sc) - (a.sf - a.sc)));
+                              if (sortedThirds[idx]) return `${val}: ${sortedThirds[idx].name}`;
                             }
                             return val;
                           };
