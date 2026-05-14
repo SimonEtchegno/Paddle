@@ -13,7 +13,19 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  turbopack: {}
+  turbopack: {},
+  async rewrites() {
+    return [
+      {
+        source: '/padel',
+        destination: '/padel',
+      },
+      {
+        source: '/futbol',
+        destination: '/futbol',
+      },
+    ];
+  },
 };
 
 export default withPWA(nextConfig);

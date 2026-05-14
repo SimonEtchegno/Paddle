@@ -1308,8 +1308,10 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       if (m.court === '1' || m.court === '2') {
                         courtFreeTime[m.court as '1'|'2'] = Math.max(courtFreeTime[m.court as '1'|'2'], end);
                       }
-                      pairNextAvail[m.p1] = Math.max(pairNextAvail[m.p1] || 0, end);
-                      pairNextAvail[m.p2] = Math.max(pairNextAvail[m.p2] || 0, end);
+                      // Añadimos 60 minutos de descanso obligatorio después de cada partido programado
+                      const restTime = 60;
+                      pairNextAvail[m.p1] = Math.max(pairNextAvail[m.p1] || 0, end + restTime);
+                      pairNextAvail[m.p2] = Math.max(pairNextAvail[m.p2] || 0, end + restTime);
                     });
 
                     matchesToSchedule.forEach(m => {
@@ -1334,9 +1336,10 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       m.court = bestCourt;
 
                       const endTime = earliestPossible + 60;
+                      const restTime = 60; // 1 hora de descanso
                       courtFreeTime[bestCourt as '1'|'2'] = endTime;
-                      pairNextAvail[m.p1] = endTime;
-                      pairNextAvail[m.p2] = endTime;
+                      pairNextAvail[m.p1] = endTime + restTime;
+                      pairNextAvail[m.p2] = endTime + restTime;
                     });
 
                     const newZones = zones.map(z => ({

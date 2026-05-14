@@ -6,8 +6,16 @@ import { useSport } from '@/hooks/useSport';
 import { Trophy, Activity, Settings } from 'lucide-react';
 import Link from 'next/link';
 
+import { useRouter } from 'next/navigation';
+
 export function SportSelection() {
   const { setSport } = useSport();
+  const router = useRouter();
+
+  const handleSelect = (sport: 'padel' | 'futbol') => {
+    setSport(sport);
+    router.push(`/${sport}`);
+  };
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col md:flex-row bg-[#0a0b0e] overflow-hidden">
@@ -17,7 +25,7 @@ export function SportSelection() {
         animate={{ x: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="relative flex-1 group cursor-pointer overflow-hidden"
-        onClick={() => setSport('padel')}
+        onClick={() => handleSelect('padel')}
       >
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
@@ -81,7 +89,7 @@ export function SportSelection() {
         animate={{ x: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="relative flex-1 group cursor-pointer overflow-hidden border-t md:border-t-0 md:border-l border-white/10"
-        onClick={() => setSport('futbol')}
+        onClick={() => handleSelect('futbol')}
       >
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:-rotate-1"
