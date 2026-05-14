@@ -1159,7 +1159,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   </div>
                   <div className="space-y-2 flex-1 overflow-y-auto pr-3 custom-scrollbar">
                     {pairs.filter(p => !zones.some(z => z.pairs.includes(p.id))).map((p) => (
-                      <DraggablePair key={p.id} pair={p} />
+                      <DraggablePair key={p.id} pair={p} tournamentName={(tournament as any).nombre || ''} />
                     ))}
                   </div>
                 </div>
@@ -1171,6 +1171,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                         key={z.id}
                         zone={z}
                         allPairs={pairs}
+                        tournamentName={(tournament as any).nombre || ''}
                         onRemovePair={(pairId) => {
                           setZones(prev => prev.map(zone => zone.id === z.id ? { ...zone, pairs: zone.pairs.filter(id => id !== pairId) } : zone));
                         }}
@@ -1229,10 +1230,33 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 </div>
                 <button
                   id="tutorial-gen-fixtures"
-                  onClick={() => {
+                  onClick={async () => {
                     if (zones.some(z => z.pairs.length < 2)) {
                       return toast.error('Todas las zonas deben tener al menos 2 parejas');
                     }
+
+                    setIsSyncing(true);
+                    const loadingToast = toast.loading('Consultando disponibilidad de canchas...');
+
+                    // 1. Obtener todos los torneos para ver partidos de otros torneos
+                    const { data: allTournaments } = await supabase
+                      .from('torneos')
+                      .select('id, zonas_data, cuadro_data')
+                      .neq('id', tournament.id);
+
+                    const occupiedSlots: { date: string, time: string, court: string }[] = [];
+                    
+                    allTournaments?.forEach(t => {
+                      const zData = (t.zonas_data || []) as Zone[];
+                      const cData = (t.cuadro_data || []) as BracketNode[];
+                      
+                      zData.forEach(z => z.matches?.forEach(m => {
+                        if (m.date && m.time && m.court) occupiedSlots.push({ date: m.date, time: m.time, court: m.court });
+                      }));
+                      cData.forEach(m => {
+                        if (m.date && m.time && m.court) occupiedSlots.push({ date: m.date, time: m.time, court: m.court });
+                      });
+                    });
 
                     const timeToMinutes = (time?: string, day?: string, endTime?: string) => {
                       let dayMins = 0;
@@ -1269,86 +1293,193 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     let allMatches: any[] = [];
                     
                     zones.forEach(zone => {
-                      if (zone.matches.length > 0) {
-                        allMatches.push(...zone.matches.map(m => ({ ...m, zoneId: zone.id, earliestStart: timeToMinutes(m.time, m.date) })));
+                      const existingMatches = [...zone.matches];
+                      const pairsInMatches = new Set();
+                      existingMatches.forEach(m => {
+                        pairsInMatches.add(m.p1);
+                        pairsInMatches.add(m.p2);
+                      });
+
+                      const missingPairs = zone.pairs.filter(pId => !pairsInMatches.has(pId));
+                      
+                      // Si no falta ninguna pareja y ya hay partidos, mantenemos tal cual
+                      if (missingPairs.length === 0 && existingMatches.length > 0) {
+                        allMatches.push(...existingMatches.map(m => ({ ...m, zoneId: zone.id, earliestStart: timeToMinutes(m.time, m.date) })));
                         return;
                       }
 
-                      for (let i = 0; i < zone.pairs.length; i++) {
-                        for (let j = i + 1; j < zone.pairs.length; j++) {
-                           const p1 = pairs.find(p => p.id === zone.pairs[i]);
-                           const p2 = pairs.find(p => p.id === zone.pairs[j]);
-                           if (!p1 || !p2) continue;
-                           
-                           const p1Mins = timeToMinutes(p1.timeRange, p1.dayRange, p1.endTimeRange);
-                           const p2Mins = timeToMinutes(p2.timeRange, p2.dayRange, p2.endTimeRange);
-                           
-                           allMatches.push({
-                             id: generateId(),
-                             zoneId: zone.id,
-                             p1: p1.id,
-                             p2: p2.id,
-                             earliestStart: Math.max(p1Mins, p2Mins),
-                             score: '',
-                             status: 'pending'
+                      // Si la zona es de 4 y está vacía (o le faltan parejas), usamos GSL
+                      if (zone.pairs.length === 4 && existingMatches.length === 0) {
+                        const zPairs = [...zone.pairs];
+                        const sortedPairs = zPairs.sort((a, b) => {
+                           const pA = pairs.find(p => p.id === a);
+                           const pB = pairs.find(p => p.id === b);
+                           if (!pA || !pB) return 0;
+                           // Usamos el nombre del torneo para el ranking si está disponible
+                           return getPairScore(pB, (tournament as any).nombre || '') - getPairScore(pA, (tournament as any).nombre || '');
+                        });
+
+                        const m1Id = generateId();
+                        allMatches.push({
+                          id: m1Id, zoneId: zone.id, p1: sortedPairs[0], p2: sortedPairs[3],
+                          earliestStart: timeToMinutes(pairs.find(p => p.id === sortedPairs[0])?.timeRange, pairs.find(p => p.id === sortedPairs[0])?.dayRange),
+                          score: '', status: 'pending', matchNumber: 1
+                        });
+
+                        const m2Id = generateId();
+                        allMatches.push({
+                          id: m2Id, zoneId: zone.id, p1: sortedPairs[1], p2: sortedPairs[2],
+                          earliestStart: timeToMinutes(pairs.find(p => p.id === sortedPairs[1])?.timeRange, pairs.find(p => p.id === sortedPairs[1])?.dayRange),
+                          score: '', status: 'pending', matchNumber: 2
+                        });
+
+                        allMatches.push({
+                          id: generateId(), zoneId: zone.id, p1: `GANADOR-${m1Id}`, p2: `GANADOR-${m2Id}`,
+                          earliestStart: 0, score: '', status: 'pending', matchNumber: 3
+                        });
+
+                        allMatches.push({
+                          id: generateId(), zoneId: zone.id, p1: `PERDEDOR-${m1Id}`, p2: `PERDEDOR-${m2Id}`,
+                          earliestStart: 0, score: '', status: 'pending', matchNumber: 4
+                        });
+                      } 
+                      else {
+                        // Para cualquier otro caso (zonas de 3, 5 o si estamos añadiendo parejas a una zona con partidos)
+                        // Mantenemos los existentes
+                        allMatches.push(...existingMatches.map(m => ({ ...m, zoneId: zone.id, earliestStart: timeToMinutes(m.time, m.date) })));
+                        
+                        // Y generamos partidos para las parejas que no tienen ninguno
+                        for (const pId of missingPairs) {
+                           const p1 = pairs.find(p => p.id === pId);
+                           if (!p1) continue;
+
+                           // Intentamos emparejarla con alguien que tenga pocos partidos o simplemente con los demás de la zona
+                           const others = zone.pairs.filter(id => id !== pId);
+                           others.forEach(otherId => {
+                              // Evitar duplicados si ya existe el partido en existingMatches
+                              const alreadyExists = existingMatches.some(em => 
+                                (em.p1 === pId && em.p2 === otherId) || (em.p1 === otherId && em.p2 === pId)
+                              );
+                              
+                              if (!alreadyExists) {
+                                const p2 = pairs.find(p => p.id === otherId);
+                                if (p2) {
+                                  allMatches.push({
+                                    id: generateId(),
+                                    zoneId: zone.id,
+                                    p1: p1.id,
+                                    p2: p2.id,
+                                    earliestStart: Math.max(
+                                      timeToMinutes(p1.timeRange, p1.dayRange),
+                                      timeToMinutes(p2.timeRange, p2.dayRange)
+                                    ),
+                                    score: '',
+                                    status: 'pending'
+                                  });
+                                }
+                              }
                            });
                         }
                       }
                     });
 
                     const matchesToSchedule = allMatches.filter(m => !m.time);
-                    matchesToSchedule.sort((a, b) => a.earliestStart - b.earliestStart);
+                    matchesToSchedule.sort((a, b) => (a.matchNumber || 99) - (b.matchNumber || 99) || a.earliestStart - b.earliestStart);
 
-                    const courtFreeTime = { '1': 16 * 60, '2': 16 * 60 };
+                    const courtFreeSlots: Record<string, Record<string, number[]>> = {
+                      'Viernes': { '1': [], '2': [] },
+                      'Sábado': { '1': [], '2': [] },
+                      'Domingo': { '1': [], '2': [] }
+                    };
+
+                    // Marcar slots ocupados por otros torneos
+                    occupiedSlots.forEach(slot => {
+                      if (courtFreeSlots[slot.date] && courtFreeSlots[slot.date][slot.court]) {
+                        courtFreeSlots[slot.date][slot.court].push(timeToMinutes(slot.time));
+                      }
+                    });
                     const pairNextAvail: Record<string, number> = {};
 
                     allMatches.filter(m => m.time).forEach(m => {
                       const start = timeToMinutes(m.time);
-                      const end = start + 60;
-                      if (m.court === '1' || m.court === '2') {
-                        courtFreeTime[m.court as '1'|'2'] = Math.max(courtFreeTime[m.court as '1'|'2'], end);
+                      if (m.date && courtFreeSlots[m.date] && (m.court === '1' || m.court === '2')) {
+                        courtFreeSlots[m.date][m.court as '1'|'2'].push(start);
                       }
-                      // Añadimos 60 minutos de descanso obligatorio después de cada partido programado
+                      const end = start + 60;
                       const restTime = 60;
                       pairNextAvail[m.p1] = Math.max(pairNextAvail[m.p1] || 0, end + restTime);
                       pairNextAvail[m.p2] = Math.max(pairNextAvail[m.p2] || 0, end + restTime);
                     });
 
                     matchesToSchedule.forEach(m => {
-                      const p1Avail = pairNextAvail[m.p1] || m.earliestStart;
-                      const p2Avail = pairNextAvail[m.p2] || m.earliestStart;
-                      const matchMinStart = Math.max(p1Avail, p2Avail);
+                      const isPlaceholder = m.p1.startsWith('GANADOR') || m.p1.startsWith('PERDEDOR');
+                      const p1Avail = isPlaceholder ? 0 : (pairNextAvail[m.p1] || m.earliestStart);
+                      const p2Avail = isPlaceholder ? 0 : (pairNextAvail[m.p2] || m.earliestStart);
+                      let matchMinStart = Math.max(p1Avail, p2Avail, m.earliestStart);
 
-                      let bestCourt = '1';
+                      if (m.matchNumber === 3 || m.matchNumber === 4) {
+                         const firstRoundMatches = allMatches.filter(rm => rm.zoneId === m.zoneId && (rm.matchNumber === 1 || rm.matchNumber === 2));
+                         const lastFirstRoundEnd = Math.max(...firstRoundMatches.map(rm => timeToMinutes(rm.time, rm.date) + 60));
+                         matchMinStart = Math.max(matchMinStart, lastFirstRoundEnd + 60);
+                      }
+
                       let earliestPossible = Infinity;
+                      let bestCourt = '1';
+                      let finalDate = 'Sábado';
 
-                      for (const court of ['1', '2']) {
-                        const possibleStart = Math.max(matchMinStart, courtFreeTime[court as '1'|'2']);
-                        if (possibleStart < earliestPossible) {
-                          earliestPossible = possibleStart;
-                          bestCourt = court;
+                      // Buscar el primer slot libre considerando todos los días disponibles
+                      const days = ['Viernes', 'Sábado', 'Domingo'];
+                      
+                      for (const day of days) {
+                        if (earliestPossible !== Infinity) break;
+                        
+                        const dayMins = day === 'Sábado' ? 24 * 60 : (day === 'Domingo' ? 48 * 60 : 0);
+                        // Permitir que el torneo empiece desde temprano si es necesario
+                        const dayStart = 8 * 60; 
+                        
+                        for (let t = dayStart; t < 23.5 * 60; t += 30) { // Probar cada 30 min hasta las 23:30
+                          const absoluteT = dayMins + t;
+                          
+                          // Si el partido tiene una restricción de "horario más temprano", respetarla
+                          if (absoluteT < matchMinStart) continue;
+
+                          for (const court of ['1', '2']) {
+                            const isCourtBusy = courtFreeSlots[day][court].some(start => Math.abs(start - t) < 60);
+                            if (!isCourtBusy) {
+                               earliestPossible = t;
+                               bestCourt = court;
+                               finalDate = day;
+                               break;
+                            }
+                          }
+                          if (earliestPossible !== Infinity) break;
                         }
                       }
 
-                      const { time, date } = minutesToTimeAndDay(earliestPossible);
+                      const { time } = minutesToTimeAndDay(earliestPossible + (finalDate === 'Sábado' ? 24*60 : (finalDate === 'Domingo' ? 48*60 : 0)));
                       m.time = time;
-                      m.date = date;
+                      m.date = finalDate;
                       m.court = bestCourt;
 
                       const endTime = earliestPossible + 60;
-                      const restTime = 60; // 1 hora de descanso
-                      courtFreeTime[bestCourt as '1'|'2'] = endTime;
-                      pairNextAvail[m.p1] = endTime + restTime;
-                      pairNextAvail[m.p2] = endTime + restTime;
+                      const restTime = 60;
+                      courtFreeSlots[finalDate][bestCourt as '1'|'2'].push(earliestPossible);
+                      if (!isPlaceholder) {
+                        const absEnd = (finalDate === 'Sábado' ? 24*60 : (finalDate === 'Domingo' ? 48*60 : 0)) + endTime;
+                        pairNextAvail[m.p1] = absEnd + restTime;
+                        pairNextAvail[m.p2] = absEnd + restTime;
+                      }
                     });
 
                     const newZones = zones.map(z => ({
                       ...z,
-                      matches: allMatches.filter(m => m.zoneId === z.id).map(({ zoneId, earliestStart, ...matchData }) => matchData as Match)
+                      matches: allMatches.filter(m => m.zoneId === z.id).map(({ zoneId, earliestStart, matchNumber, ...matchData }) => matchData as Match)
                     }));
 
                     setZones(newZones);
-                    toast.success('Fixtures generados con horarios auto-calculados');
+                    setIsSyncing(false);
+                    toast.dismiss(loadingToast);
+                    toast.success('Fixtures generados evitando choques con otros torneos');
                   }}
                   className="w-full md:w-auto bg-primary/10 text-primary border border-primary/30 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-3"
                 >
@@ -1411,11 +1542,12 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                 <MatchRow
                                   match={m}
                                   pairs={pairs}
+                                  allMatches={z.matches}
                                   onUpdate={(data) => {
                                     const newZones = [...zones];
                                     const zone = newZones.find(x => x.id === z.id)!;
-                                    const match = zone.matches.find(x => x.id === m.id)!;
-                                    Object.assign(match, data);
+                                    const matchIndex = zone.matches.findIndex(x => x.id === m.id);
+                                    zone.matches[matchIndex] = { ...zone.matches[matchIndex], ...data };
                                     setZones(newZones);
                                   }}
                                 />
@@ -1469,9 +1601,9 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                       let syncedCount = 0;
                       newBracket.forEach(node => {
                         const syncPos = (val: string) => {
-                          const match = val.match(/^[12]º\s*(Zona\s*)?([A-Z])$/i);
+                          const match = val.match(/^([123])º\s*(Zona\s*)?([A-Z])$/i);
                           if (match) {
-                            const pos = parseInt(val[0]) - 1;
+                            const pos = parseInt(match[1]) - 1;
                             const letter = match[2].toUpperCase();
                             if (standingsByZone[letter] && standingsByZone[letter][pos]) {
                               return standingsByZone[letter][pos];
@@ -1568,7 +1700,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
                                   const resolvePairName = (val: string) => {
                                     if (!val) return 'Por definir';
-                                    const match = val.match(/^[12]º\s*(Zona\s*)?([A-Z])$/i);
+                                    const match = val.match(/^([123])º\s*(Zona\s*)?([A-Z])$/i);
                                     if (match) {
                                       const pos = parseInt(val[0]) - 1;
                                       const letter = match[2].toUpperCase();
@@ -1662,12 +1794,13 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                                         {pairs.map(p => <option key={p.id} value={p.name} />)}
                                         <option value="1º Zona A" />
                                         <option value="2º Zona A" />
+                                        <option value="3º Zona A" />
                                         <option value="1º Zona B" />
                                         <option value="2º Zona B" />
+                                        <option value="3º Zona B" />
                                         <option value="1º Zona C" />
                                         <option value="2º Zona C" />
-                                        <option value="1º Zona D" />
-                                        <option value="2º Zona D" />
+                                        <option value="3º Zona C" />
                                       </datalist>
                                       
                                       {/* Full Name Preview Tooltip - Only show if different from value (i.e. if it's a placeholder) */}
@@ -2211,7 +2344,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
 // --- HELPER COMPONENTS ---
 
-function DraggablePair({ pair }: { pair: Pair }) {
+function DraggablePair({ pair, tournamentName }: { pair: Pair, tournamentName: string }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
     id: pair.id,
   });
@@ -2238,10 +2371,10 @@ function DraggablePair({ pair }: { pair: Pair }) {
             </p>
           )}
         </div>
-        {getPairScore(pair) > 0 && (
-          <div className="bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-yellow-400/20" title={`Puntos de Ranking: ${getPairScore(pair)}`}>
+        {getPairScore(pair, tournamentName) > 0 && (
+          <div className="bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-yellow-400/20" title={`Puntos de Ranking: ${getPairScore(pair, tournamentName)}`}>
             <Crown size={10} />
-            <span className="text-[8px] font-black">{getPairScore(pair)} pts</span>
+            <span className="text-[8px] font-black">{getPairScore(pair, tournamentName)} pts</span>
           </div>
         )}
       </div>
@@ -2252,7 +2385,7 @@ function DraggablePair({ pair }: { pair: Pair }) {
   );
 }
 
-function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone }: { zone: Zone, allPairs: Pair[], onRemovePair: (id: string) => void, onDeleteZone?: () => void }) {
+function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone, tournamentName }: { zone: Zone, allPairs: Pair[], onRemovePair: (id: string) => void, onDeleteZone?: () => void, tournamentName: string }) {
   const { isOver, setNodeRef } = useDroppable({
     id: zone.id,
   });
@@ -2292,8 +2425,8 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone }: { zone: Z
                     </p>
                   )}
                 </div>
-                {getPairScore(pair) > 0 && (
-                  <span title={`Puntos de Ranking: ${getPairScore(pair)}`} className="flex items-center">
+                {getPairScore(pair, tournamentName) > 0 && (
+                  <span title={`Puntos de Ranking: ${getPairScore(pair, tournamentName)}`} className="flex items-center">
                     <Crown size={10} className="text-yellow-400" />
                   </span>
                 )}
@@ -2313,7 +2446,32 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone }: { zone: Z
     </div>
   );
 }
-function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onUpdate: (data: Partial<Match>) => void }) {
+function MatchRow({ match, pairs, onUpdate, allMatches }: { match: Match, pairs: Pair[], onUpdate: (data: Partial<Match>) => void, allMatches?: Match[] }) {
+  const resolvePlaceholder = (id: string) => {
+    if (!id) return '??';
+    if (id.startsWith('GANADOR-') || id.startsWith('PERDEDOR-')) {
+      const parts = id.split('-');
+      const type = parts[0];
+      const targetMatchId = parts[1];
+      const targetMatch = allMatches?.find(m => m.id === targetMatchId);
+      
+      if (!targetMatch || targetMatch.status !== 'finished' || !targetMatch.score) {
+        return `${type === 'GANADOR' ? 'Ganador' : 'Perdedor'} P${(allMatches?.indexOf(targetMatch!) !== -1 ? allMatches!.indexOf(targetMatch!) + 1 : '?')}`;
+      }
+
+      const score = parseScore(targetMatch.score);
+      if (!score) return id;
+      const winnerId = score.p1Sets > score.p2Sets ? targetMatch.p1 : targetMatch.p2;
+      const loserId = score.p1Sets > score.p2Sets ? targetMatch.p2 : targetMatch.p1;
+      
+      const pair = pairs.find(p => p.id === (type === 'GANADOR' ? winnerId : loserId));
+      return pair?.name || '??';
+    }
+    return pairs.find(p => p.id === id)?.name || id;
+  };
+
+  const p1Name = resolvePlaceholder(match.p1);
+  const p2Name = resolvePlaceholder(match.p2);
   const p1 = pairs.find(p => p.id === match.p1);
   const p2 = pairs.find(p => p.id === match.p2);
 
@@ -2412,7 +2570,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
           p1Wins ? "bg-primary/20 border-primary" : "bg-primary/10 border-transparent",
           p2Wins ? "opacity-40" : ""
         )}>
-          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p1?.name || '??'}</p>
+          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p1Name}</p>
           {(p1?.dayRange || p1?.timeRange) && (
             <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
               Disp: {p1.dayRange} {p1.timeRange}{p1.endTimeRange ? ` - ${p1.endTimeRange}` : ''}
@@ -2449,7 +2607,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
           p2Wins ? "bg-primary/20 border-primary" : "bg-primary/5 border-transparent",
           p1Wins ? "opacity-40" : ""
         )}>
-          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p2?.name || '??'}</p>
+          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p2Name}</p>
           {(p2?.dayRange || p2?.timeRange) && (
             <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
               Disp: {p2.dayRange} {p2.timeRange}{p2.endTimeRange ? ` - ${p2.endTimeRange}` : ''}
@@ -2496,22 +2654,52 @@ function calculateStandings(zone: Zone, allPairs: Pair[], tournamentCategory?: s
 
       const { p1Sets, p2Sets, p1Games, p2Games } = score;
 
-      // Update P1
-      standingsMap[m.p1].pj += 1;
-      standingsMap[m.p1].sf += p1Sets;
-      standingsMap[m.p1].sc += p2Sets;
-      standingsMap[m.p1].gf += p1Games;
-      standingsMap[m.p1].gc += p2Games;
+      // Resolver placeholders para estadísticas
+      let actualP1 = m.p1;
+      let actualP2 = m.p2;
 
-      // Update P2
-      standingsMap[m.p2].pj += 1;
-      standingsMap[m.p2].sf += p2Sets;
-      standingsMap[m.p2].sc += p1Sets;
-      standingsMap[m.p2].gf += p2Games;
-      standingsMap[m.p2].gc += p1Games;
+      if (m.p1.startsWith('GANADOR-') || m.p1.startsWith('PERDEDOR-')) {
+          const parts = m.p1.split('-');
+          const target = zone.matches.find(zm => zm.id === parts[1]);
+          if (target && target.score) {
+              const s = parseScore(target.score);
+              if (s) {
+                  const win = s.p1Sets > s.p2Sets ? target.p1 : target.p2;
+                  const los = s.p1Sets > s.p2Sets ? target.p2 : target.p1;
+                  actualP1 = parts[0] === 'GANADOR' ? win : los;
+              }
+          }
+      }
+      if (m.p2.startsWith('GANADOR-') || m.p2.startsWith('PERDEDOR-')) {
+          const parts = m.p2.split('-');
+          const target = zone.matches.find(zm => zm.id === parts[1]);
+          if (target && target.score) {
+              const s = parseScore(target.score);
+              if (s) {
+                  const win = s.p1Sets > s.p2Sets ? target.p1 : target.p2;
+                  const los = s.p1Sets > s.p2Sets ? target.p2 : target.p1;
+                  actualP2 = parts[0] === 'GANADOR' ? win : los;
+              }
+          }
+      }
 
-      if (p1Sets > p2Sets) standingsMap[m.p1].pts += 3;
-      else if (p2Sets > p1Sets) standingsMap[m.p2].pts += 3;
+      // Solo sumamos si resolvimos a una pareja real de la zona
+      if (standingsMap[actualP1] && standingsMap[actualP2]) {
+          standingsMap[actualP1].pj += 1;
+          standingsMap[actualP1].sf += p1Sets;
+          standingsMap[actualP1].sc += p2Sets;
+          standingsMap[actualP1].gf += p1Games;
+          standingsMap[actualP1].gc += p2Games;
+
+          standingsMap[actualP2].pj += 1;
+          standingsMap[actualP2].sf += p2Sets;
+          standingsMap[actualP2].sc += p1Sets;
+          standingsMap[actualP2].gf += p2Games;
+          standingsMap[actualP2].gc += p1Games;
+
+          if (p1Sets > p2Sets) standingsMap[actualP1].pts += 3;
+          else if (p2Sets > p1Sets) standingsMap[actualP2].pts += 3;
+      }
     }
   });
 
