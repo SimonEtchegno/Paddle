@@ -1358,7 +1358,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-10 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-10">
                 {zones.map((z, zIdx) => {
-                  const standings = calculateStandings(z, pairs);
+                  const standings = calculateStandings(z, pairs, tournament.nombre);
                   return (
                     <div key={z.id} className="space-y-8">
                       <div className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-white/5 space-y-6 md:space-y-8 h-full flex flex-col">
@@ -2482,7 +2482,7 @@ function MatchRow({ match, pairs, onUpdate }: { match: Match, pairs: Pair[], onU
   );
 }
 
-function calculateStandings(zone: Zone, allPairs: Pair[]) {
+function calculateStandings(zone: Zone, allPairs: Pair[], tournamentCategory?: string) {
   const standingsMap: Record<string, { pj: number, pts: number, sf: number, sc: number, gf: number, gc: number }> = {};
 
   zone.pairs.forEach(pId => {
@@ -2524,7 +2524,14 @@ function calculateStandings(zone: Zone, allPairs: Pair[]) {
     .sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
       if ((b.sf - b.sc) !== (a.sf - a.sc)) return (b.sf - b.sc) - (a.sf - a.sc);
-      return (b.gf - b.gc) - (a.gf - a.gc);
+      if ((b.gf - b.gc) !== (a.gf - a.gc)) return (b.gf - b.gc) - (a.gf - a.gc);
+      
+      // Desempate final: Puntos de Ranking
+      const pairA = allPairs.find(p => p.id === a.id);
+      const pairB = allPairs.find(p => p.id === b.id);
+      const scoreA = pairA ? getPairScore(pairA, tournamentCategory) : 0;
+      const scoreB = pairB ? getPairScore(pairB, tournamentCategory) : 0;
+      return scoreB - scoreA;
     });
 }
 
