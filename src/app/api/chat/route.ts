@@ -229,7 +229,7 @@ export async function POST(req: Request) {
   try {
     const { message, history, profile } = await req.json();
 
-    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyByo1ORNbKnj1_XOvyA3A4_GLgS0kK34AE";
+    const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
       return NextResponse.json(
