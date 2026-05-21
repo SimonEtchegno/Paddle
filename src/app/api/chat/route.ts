@@ -230,6 +230,7 @@ export async function POST(req: Request) {
     const { message, history, profile } = await req.json();
 
     const apiKey = process.env.GEMINI_API_KEY;
+    console.log("GEMINI_API_KEY in process.env:", !!apiKey, apiKey ? apiKey.substring(0, 5) : "undefined");
     
     if (!apiKey) {
       return NextResponse.json(
@@ -323,7 +324,7 @@ export async function POST(req: Request) {
 
     console.log("Using API Key starting with:", apiKey.substring(0, 5));
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
