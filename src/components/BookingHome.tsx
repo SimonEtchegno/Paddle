@@ -9,22 +9,29 @@ import { BookingModal } from '@/components/booking/BookingModal';
 import { Info } from 'lucide-react';
 import { PageWrapper } from '@/components/PageWrapper';
 import { Calendar } from '@/components/ui/Calendar';
-import { parseISO } from 'date-fns';
+import { parseISO, isValid } from 'date-fns';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { WelcomeModal } from '@/components/WelcomeModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSport } from '@/hooks/useSport';
 import { SportSelection } from '@/components/SportSelection';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function BookingHome() {
   const { sport, setSport, isLoading } = useSport();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlDate = searchParams.get('date');
+  
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   useEffect(() => {
-    setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
-  }, []);
+    if (urlDate) {
+      setSelectedDate(urlDate);
+    } else {
+      setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+    }
+  }, [urlDate]);
 
   const [selectedSlot, setSelectedSlot] = useState<{ hora: string; cancha: number } | null>(null);
   const { reservas, loading, refresh } = useReservas(selectedDate);
@@ -88,7 +95,7 @@ export default function BookingHome() {
               <div id="tutorial-date-picker" className="px-4">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-4 ml-1">Seleccionar Fecha</h3>
                 <Calendar
-                  selectedDate={selectedDate ? parseISO(selectedDate + 'T00:00:00') : new Date()}
+                  selectedDate={selectedDate && isValid(parseISO(selectedDate + 'T00:00:00')) ? parseISO(selectedDate + 'T00:00:00') : new Date()}
                   onChange={handleDateChange}
                 />
               </div>
@@ -96,7 +103,7 @@ export default function BookingHome() {
               <div className="glass p-6 rounded-3xl border border-white/5 mx-4">
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-2">Fecha Seleccionada</p>
                 <p className="text-xl font-black text-primary capitalize">
-                  {selectedDate ? format(parseISO(selectedDate + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es }) : 'Cargando...'}
+                  {selectedDate && isValid(parseISO(selectedDate + 'T00:00:00')) ? format(parseISO(selectedDate + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es }) : 'Cargando...'}
                 </p>
               </div>
 

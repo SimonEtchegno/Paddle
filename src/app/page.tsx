@@ -16,8 +16,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSport } from '@/hooks/useSport';
 import { SportSelection } from '@/components/SportSelection';
 
+import { Suspense } from 'react';
 import BookingHome from '@/components/BookingHome';
 
 export default function Home() {
-  return <BookingHome />;
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <BookingHome />
+    </Suspense>
+  );
 }
