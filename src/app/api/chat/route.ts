@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { TURNOS_FIJOS } from "@/lib/constants";
+import { TURNOS_FIJOS, HORAS } from "@/lib/constants";
 
-const getSystemPrompt = (ocupadosContext: string, profileContext: string) => {
+const getSystemPrompt = (ocupadosContext: string, profileContext: string, horasContext: string) => {
   const hoy = new Date();
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -121,18 +121,18 @@ Pregunta confirmación.
 Ejemplo:
 "¿Te refieres a este viernes o al próximo?"
 
-4. INTERPRETACIÓN DE HORARIOS
-Debes interpretar formatos como:
+4. INTERPRETACIÓN Y VALIDACIÓN DE HORARIOS
+Los únicos horarios permitidos de reserva en el sistema son:
+${horasContext}
 
-- "8"
-- "8pm"
-- "8 de la noche"
-- "20"
-- "20 hs"
-- "20:00"
-- "tipo 7"
+Debes interpretar los horarios que mencione el usuario (ej: "8", "8pm", "8 de la noche", "20 hs", "tipo 7") y convertirlos al formato de 24 horas (HH:mm).
 
-Convertirlos internamente a formato 24 horas (ej. 20:00).
+REGLA CRÍTICA DE HORARIOS PERMITIDOS:
+- Si el usuario pide un horario que coincide con uno de los permitidos, úsalo directamente.
+- Si el usuario pide un horario aproximado que no es exactamente un bloque permitido (ej: "a las 19 hs" o "a las 7 de la tarde" - el bloque oficial es "19:00"; o si pide "a las 15 hs" - el bloque más cercano es "14:30" o "16:00"), debes ofrecerle y redondear la reserva al bloque oficial más cercano.
+  Por ejemplo: "Las 19 hs" -> usar "19:00". "Las 17 hs" -> ofrecer "16:00" o "17:30".
+- Si el usuario pide un horario que no está en la lista de permitidos y no es aproximable (ej: "a las 10 de la mañana" o "a las 12 del mediodía"), debes informarle amablemente que las reservas solo se pueden realizar en los horarios permitidos e indicarle cuáles son.
+- NUNCA generes una reserva directa (ACCION:CREAR_RESERVA) para un horario que no sea uno de los bloques oficiales de: ${horasContext}.
 
 Si el horario no es claro:
 Pregunta amablemente.
@@ -308,6 +308,9 @@ export async function POST(req: Request) {
   - WhatsApp/Teléfono: ${profile.telefono || "No especificado"}`
       : "El usuario NO está logueado en el sistema.";
 
+    // 3. Formatear lista de horas permitidas
+    const horasContext = HORAS.map(h => `- ${h}`).join('\n');
+
     // Convert history format to Gemini API format
     const formattedHistory = history.map((msg: any) => ({
       role: msg.role === "user" ? "user" : "model",
@@ -321,7 +324,7 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext) }]
+          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext, horasContext) }]
         },
         contents: [
           ...formattedHistory,
