@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "react-hot-toast";
-import { SupportButton } from "@/components/SupportButton";
 import { Chatbot } from "@/components/Chatbot";
 import { supabase } from "@/lib/supabase";
 import { cookies, headers } from "next/headers";
@@ -104,7 +103,6 @@ export default async function RootLayout({
                 },
               }}
             />
-            <SupportButton />
             <Chatbot />
           </ProfileProvider>
         </SportProvider>
