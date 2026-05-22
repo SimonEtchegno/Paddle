@@ -3,14 +3,14 @@ import { supabase } from "@/lib/supabase";
 import { TURNOS_FIJOS, HORAS } from "@/lib/constants";
 
 const getSystemPrompt = (ocupadosContext: string, profileContext: string, horasContext: string, horaActual: string) => {
-  // Obtenemos la fecha en la zona horaria local para evitar problemas en Vercel (UTC)
-  const argTimeStr = new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" });
-  const hoy = new Date(argTimeStr);
+  // Obtenemos la fecha en Argentina (UTC-3) restando 3 horas al timestamp UTC
+  const now = new Date();
+  const argTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
   
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  const fechaLegible = `${dias[hoy.getDay()]} ${hoy.getDate()} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
-  const fechaISO = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, '0') + "-" + String(hoy.getDate()).padStart(2, '0');
+  const fechaLegible = `${dias[argTime.getUTCDay()]} ${argTime.getUTCDate()} de ${meses[argTime.getUTCMonth()]} de ${argTime.getUTCFullYear()}`;
+  const fechaISO = argTime.getUTCFullYear() + "-" + String(argTime.getUTCMonth() + 1).padStart(2, '0') + "-" + String(argTime.getUTCDate()).padStart(2, '0');
 
   return `
 Eres el asistente virtual con IA OFICIAL del sistema de gestión de Pádel y Fútbol.
@@ -259,10 +259,10 @@ export async function POST(req: Request) {
     }
 
     // 1. Obtener reservas ocupadas desde hoy en adelante para inyectar como contexto
-    const argTimeStr = new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" });
-    const hoyArg = new Date(argTimeStr);
-    const hoyISO = hoyArg.getFullYear() + "-" + String(hoyArg.getMonth() + 1).padStart(2, '0') + "-" + String(hoyArg.getDate()).padStart(2, '0');
-    const horaActual = hoyArg.getHours().toString().padStart(2, '0') + ":" + hoyArg.getMinutes().toString().padStart(2, '0');
+    const now = new Date();
+    const argTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    const hoyISO = argTime.getUTCFullYear() + "-" + String(argTime.getUTCMonth() + 1).padStart(2, '0') + "-" + String(argTime.getUTCDate()).padStart(2, '0');
+    const horaActual = String(argTime.getUTCHours()).padStart(2, '0') + ":" + String(argTime.getUTCMinutes()).padStart(2, '0');
 
     const { data: reservas } = await supabase
       .from('reservas')
@@ -288,11 +288,10 @@ export async function POST(req: Request) {
 
     // Agregar turnos fijos semanales correspondientes a los próximos 14 días
     for (let i = 0; i < 14; i++) {
-      const d = new Date(argTimeStr);
-      // Calcular fecha desplazada en base a hoyArg
-      d.setDate(hoyArg.getDate() + i);
-      const fechaStr = d.toISOString().slice(0, 10);
-      const dayOfWeek = d.getDay();
+      // Calcular fecha desplazada en base a argTime sumando días en milisegundos
+      const d = new Date(argTime.getTime() + i * 24 * 60 * 60 * 1000);
+      const fechaStr = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, '0') + "-" + String(d.getUTCDate()).padStart(2, '0');
+      const dayOfWeek = d.getUTCDay();
       
       const dayFixed = TURNOS_FIJOS[dayOfWeek];
       if (dayFixed) {
