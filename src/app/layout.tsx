@@ -74,9 +74,11 @@ export default async function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
       <body
         className="min-h-full flex flex-col pb-20 md:pb-0"
+        suppressHydrationWarning
         style={{
           // @ts-ignore
           '--primary': primaryColor,
