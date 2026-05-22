@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Bot, User, Loader2, Phone, HelpCircle } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Loader2, Phone, HelpCircle, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGuestProfile } from "@/hooks/useGuestProfile";
 import { supabase } from "@/lib/supabase";
@@ -20,9 +20,31 @@ export function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     { role: "model", content: "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?" }
   ]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Cargar historial de chat al montar
+  useEffect(() => {
+    const saved = localStorage.getItem("paddle_chat_history");
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error al cargar historial de chat:", e);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Guardar historial al actualizar mensajes
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("paddle_chat_history", JSON.stringify(messages));
+    }
+    scrollToBottom();
+  }, [messages, isLoaded]);
 
   const whatsappNumber = "2923460902";
 
@@ -34,13 +56,18 @@ export function Chatbot() {
     return activeSlug.charAt(0).toUpperCase() + activeSlug.slice(1);
   };
 
+  const handleClearChat = () => {
+    const defaultMsg: Message[] = [
+      { role: "model", content: "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?" }
+    ];
+    setMessages(defaultMsg);
+    localStorage.setItem("paddle_chat_history", JSON.stringify(defaultMsg));
+    toast.success("Conversación reiniciada 🗑️");
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -228,6 +255,15 @@ export function Chatbot() {
                   title="Guías y Ayuda"
                 >
                   <HelpCircle className="w-4 h-4" />
+                </button>
+                
+                {/* Limpiar chat */}
+                <button 
+                  onClick={handleClearChat}
+                  className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-red-400 hover:text-red-300"
+                  title="Reiniciar chat"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
 
                 <div className="w-[1px] h-4 bg-white/10 mx-1" />
