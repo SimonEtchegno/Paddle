@@ -14,9 +14,13 @@ let nextConfig = {
   },
 };
 
-// En Vercel no necesitamos generar el PWA durante la fase de build si está dando errores de path,
-// o si queremos aislar y asegurar la compilación.
-if (!process.env.VERCEL) {
+console.log("DEBUG VERCEL LOG:", {
+  VERCEL: process.env.VERCEL,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+  NODE_ENV: process.env.NODE_ENV
+});
+
+if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
   try {
     const withPWAInit = (await import("@ducanh2912/next-pwa")).default;
     const withPWA = withPWAInit({
