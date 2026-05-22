@@ -81,18 +81,24 @@ export function Chatbot() {
         router.push(`/?date=${date}${time ? `&time=${time}` : ""}`);
       }
 
-      // Interceptar comando para CREAR RESERVA DIRECTA
-      const matchCrear = replyText.match(/\[ACCION:CREAR_RESERVA\((.*?)\)\]/);
-      if (matchCrear) {
-        try {
-          const resData = JSON.parse(matchCrear[1]);
-          replyText = replyText.replace(matchCrear[0], "").trim();
-          if (replyText === "") {
-            replyText = `Confirmando tu turno del día ${resData.fecha} a las ${resData.hora} hs en la Cancha ${resData.cancha}... 🎾`;
+      // Interceptar comando para CREAR RESERVA DIRECTA (Soporta múltiples)
+      const regexCrear = /\[ACCION:CREAR_RESERVA\((.*?)\)\]/g;
+      const matches = [...replyText.matchAll(regexCrear)];
+      
+      if (matches.length > 0) {
+        let successCount = 0;
+        for (const matchCrear of matches) {
+          try {
+            const resData = JSON.parse(matchCrear[1]);
+            replyText = replyText.replace(matchCrear[0], "").trim();
+            await executeReservation(resData);
+            successCount++;
+          } catch (err) {
+            console.error("Error al parsear JSON de reserva directa:", err);
           }
-          await executeReservation(resData);
-        } catch (err) {
-          console.error("Error al parsear JSON de reserva directa:", err);
+        }
+        if (replyText === "") {
+          replyText = `Confirmando ${successCount > 1 ? successCount + ' turnos' : 'tu turno'}... 🎾`;
         }
       }
 

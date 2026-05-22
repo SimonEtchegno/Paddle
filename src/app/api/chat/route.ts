@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { TURNOS_FIJOS, HORAS } from "@/lib/constants";
 
-const getSystemPrompt = (ocupadosContext: string, profileContext: string, horasContext: string) => {
-  const hoy = new Date();
+const getSystemPrompt = (ocupadosContext: string, profileContext: string, horasContext: string, horaActual: string) => {
+  // Obtenemos la fecha en la zona horaria local para evitar problemas en Vercel (UTC)
+  const argTimeStr = new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" });
+  const hoy = new Date(argTimeStr);
+  
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const fechaLegible = `${dias[hoy.getDay()]} ${hoy.getDate()} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
-  const fechaISO = hoy.toISOString().slice(0, 10);
+  const fechaISO = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, '0') + "-" + String(hoy.getDate()).padStart(2, '0');
 
   return `
 Eres el asistente virtual con IA OFICIAL del sistema de gestión de Pádel y Fútbol.
@@ -17,14 +20,16 @@ Tu función es ayudar a los usuarios de la aplicación web de forma rápida, cla
 CONTEXTO DEL SISTEMA
 La fecha actual del sistema es: ${fechaLegible}
 Formato ISO de referencia: ${fechaISO}
+Hora actual: ${horaActual}
 
 IMPORTANTE:
-Usa SIEMPRE esta fecha como referencia para calcular:
+Usa SIEMPRE esta fecha y hora como referencia para calcular:
 - Hoy
 - Mañana
 - Ayer
 - Próximo lunes, viernes, etc.
 - Fechas relativas mencionadas por el usuario.
+- TURNOS PASADOS: NUNCA ofrezcas ni permitas reservar un turno para "Hoy" (fecha ${fechaISO}) cuya hora sea ANTERIOR a la "Hora actual" (${horaActual}). Si el usuario lo pide o consulta disponibilidad, infórmale que ese horario ya pasó.
 
 DATOS DEL USUARIO ACTUAL (Para reservas):
 ${profileContext}
@@ -144,15 +149,22 @@ Pregunta amablemente.
 Ejemplo:
 "¿A qué horario te gustaría jugar? 🎾"
 
-5. VALIDACIÓN DE DISPONIBILIDAD
+5. VALIDACIÓN DE DISPONIBILIDAD Y CONFLICTOS
 Comparar SIEMPRE contra:
 
 LISTA DE TURNOS OCUPADOS
 
 SI EL TURNO ESTÁ OCUPADO (es decir, no hay canchas disponibles del deporte elegido para esa fecha/hora):
 Responder:
-
 "Ese horario ya está ocupado 😕 ¿Quieres probar otro horario?"
+
+SI EL USUARIO PIDE VARIOS TURNOS (Ej. Reservas recurrentes):
+Debes verificar CADA UNO de los días solicitados en la LISTA DE TURNOS OCUPADOS.
+Si ALGUNOS están libres pero OTROS están ocupados:
+- NO canceles toda la operación automáticamente.
+- Informa exactamente cuáles están ocupados y cuáles están libres.
+- Pregunta: "¿Quieres que te reserve los que sí están libres?"
+- Solo genera la acción de reserva cuando el usuario confirme que desea proceder con los días libres que quedaron.
 
 SI EL TURNO ESTÁ DISPONIBLE:
 Confirma de manera amable y entusiasta.
@@ -173,7 +185,14 @@ Ejemplo:
 MUY IMPORTANTE:
 La acción debe escribirse EXACTAMENTE igual. El objeto JSON debe ir dentro de los paréntesis del comando '[ACCION:CREAR_RESERVA(...)]'. El sistema lo interceptará de fondo para guardar la reserva en base de datos al instante.
 
-7. REGLA ANTI-ERRORES
+7. RESERVAS MÚLTIPLES O RECURRENTES
+Si el usuario solicita reservar el mismo horario varios días (ej: "todos los martes de este mes", "jueves y viernes", "para hoy y mañana"):
+- Puedes generar el comando [ACCION:CREAR_RESERVA(...)] MÚLTIPLES VECES en tu respuesta (una vez por cada día que sí esté libre y confirmado).
+- El límite MÁXIMO es de 4 turnos por solicitud. Si piden más, ofréceles los primeros 4.
+- Debes advertir siempre de forma amigable sobre este límite ("Te reservé los primeros 4 turnos para arrancar...").
+- MUY IMPORTANTE: Antes de generar los comandos, DEBES asegurarte de haber verificado la disponibilidad de CADA FECHA y de haberle preguntado al usuario si desea continuar con los turnos libres en caso de que alguno estuviera ocupado.
+
+8. REGLA ANTI-ERRORES
 NUNCA inventes disponibilidad.
 
 Solo puedes informar si un turno está libre u ocupado basándote en:
@@ -240,8 +259,11 @@ export async function POST(req: Request) {
     }
 
     // 1. Obtener reservas ocupadas desde hoy en adelante para inyectar como contexto
-    const hoy = new Date();
-    const hoyISO = hoy.toISOString().slice(0, 10);
+    const argTimeStr = new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" });
+    const hoyArg = new Date(argTimeStr);
+    const hoyISO = hoyArg.getFullYear() + "-" + String(hoyArg.getMonth() + 1).padStart(2, '0') + "-" + String(hoyArg.getDate()).padStart(2, '0');
+    const horaActual = hoyArg.getHours().toString().padStart(2, '0') + ":" + hoyArg.getMinutes().toString().padStart(2, '0');
+
     const { data: reservas } = await supabase
       .from('reservas')
       .select('fecha, hora, cancha')
@@ -266,9 +288,9 @@ export async function POST(req: Request) {
 
     // Agregar turnos fijos semanales correspondientes a los próximos 14 días
     for (let i = 0; i < 14; i++) {
-      const d = new Date();
-      // Calcular fecha desplazada en base a hoy
-      d.setDate(hoy.getDate() + i);
+      const d = new Date(argTimeStr);
+      // Calcular fecha desplazada en base a hoyArg
+      d.setDate(hoyArg.getDate() + i);
       const fechaStr = d.toISOString().slice(0, 10);
       const dayOfWeek = d.getDay();
       
@@ -329,7 +351,7 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext, horasContext) }]
+          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext, horasContext, horaActual) }]
         },
         contents: [
           ...formattedHistory,
