@@ -59,35 +59,53 @@ export default function BookingHome() {
 
       <PageWrapper>
         <div className="space-y-12 pb-20">
-          {/* Header / Info */}
-          <section id="tutorial-header" className="text-center space-y-4 pt-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-tight italic">
-                Reservá tu <span className="text-primary relative inline-block">
-                  {sport === 'futbol' ? 'Cancha de Futbol' : 'Turno de Padel'}
-                  <motion.div
-                    className="absolute -inset-x-2 -bottom-1 h-2 bg-primary/20 blur-lg rounded-full"
-                    animate={{ opacity: [0.3, 0.6, 0.3] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  />
-                </span>
-              </h2>
-            </motion.div>
-            <div className="flex flex-wrap justify-center gap-6 text-[10px] font-black uppercase tracking-[0.3em]">
-              <div className="flex items-center gap-3 bg-primary text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(136,130,220,0.3)] transform hover:scale-105 transition-all cursor-default">
-                <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                <span>Disponible</span>
-              </div>
-              <div className="flex items-center gap-3 bg-secondary/10 text-secondary px-6 py-3 rounded-full border border-secondary/20 shadow-[0_0_15px_rgba(255,215,0,0.05)] transform hover:scale-105 transition-all cursor-default">
-                <Info size={14} className="text-secondary" />
-                <span>Precio: {sport === 'futbol' ? '$20.000' : '$34.000'}</span>
-              </div>
+          {/* Hero Banner / Header */}
+          <div className="relative w-full h-[200px] sm:h-[280px] md:h-[320px] rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)] group">
+            {/* Background Image */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
+              style={{
+                backgroundImage: sport === 'futbol' ? 'url("/images/futbol_bg.png")' : 'url("/images/padel_bg.png")',
+              }}
+            />
+            {/* Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b0e] via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-black/10" />
+            
+            {/* Content */}
+            <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 md:p-10 space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="space-y-3"
+              >
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 bg-primary text-white font-black uppercase text-[9px] tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
+                  <span>{sport === 'futbol' ? '⚽ Fútbol 5' : '🎾 Pádel'}</span>
+                </div>
+
+                <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase leading-none italic text-white">
+                  Reservá tu <span className="text-primary">
+                    {sport === 'futbol' ? 'Cancha' : 'Turno'}
+                  </span>
+                </h2>
+
+                {/* Subinfo and Stats */}
+                <div className="flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em]">
+                  <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-full border border-white/10">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                    <span>Disponible</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-full border border-white/10">
+                    <Info size={12} className="text-primary" />
+                    <span>Precio: {sport === 'futbol' ? '$20.000' : '$34.000'}</span>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-          </section>
+          </div>
+
 
           {/* Date Selector & Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-12 items-start">

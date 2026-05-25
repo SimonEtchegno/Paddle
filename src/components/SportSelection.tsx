@@ -29,7 +29,7 @@ export function SportSelection() {
       >
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
-          style={{ backgroundImage: 'url("/images/padel_bg.png")' }}
+          style={{ backgroundImage: 'url("/images/padel_bg.jpg")' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent group-hover:via-black/20 transition-all duration-700" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] mix-blend-overlay" />
@@ -93,7 +93,7 @@ export function SportSelection() {
       >
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:-rotate-1"
-          style={{ backgroundImage: 'url("/images/futbol_bg.png")' }}
+          style={{ backgroundImage: 'url("/images/futbol_bg.jpg")' }}
         />
         <div className="absolute inset-0 bg-gradient-to-l from-black/90 via-black/40 to-transparent group-hover:via-black/20 transition-all duration-700" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,#22c55e_0%,transparent_70%)] mix-blend-overlay" />
