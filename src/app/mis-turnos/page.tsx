@@ -41,6 +41,15 @@ export default function MisTurnosPage() {
 
   useEffect(() => {
     fetchMisTurnos();
+
+    const handleLocalUpdate = () => {
+      fetchMisTurnos();
+    };
+    window.addEventListener('reserva_modificada', handleLocalUpdate);
+
+    return () => {
+      window.removeEventListener('reserva_modificada', handleLocalUpdate);
+    };
   }, [profile]);
 
   const handleCancelTrigger = (id: string, fecha: string, hora: string) => {
@@ -62,6 +71,10 @@ export default function MisTurnosPage() {
       if (error) throw error;
       
       toast.success('Turno cancelado');
+      
+      // Dispatch custom event for real-time live updates in the UI
+      window.dispatchEvent(new CustomEvent('reserva_modificada', { detail: { fecha: turnoToCancel.fecha } }));
+      
       setTurnoToCancel(null);
       fetchMisTurnos();
     } catch (e) {

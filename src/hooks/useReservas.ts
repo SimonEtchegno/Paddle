@@ -74,8 +74,18 @@ export function useReservas(selectedDate: string) {
       })
       .subscribe();
 
+    // Listen to local reservation modifications for instant update
+    const handleLocalUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.fecha === selectedDate) {
+        fetchReservas();
+      }
+    };
+    window.addEventListener('reserva_modificada', handleLocalUpdate);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('reserva_modificada', handleLocalUpdate);
     };
   }, [selectedDate]);
 

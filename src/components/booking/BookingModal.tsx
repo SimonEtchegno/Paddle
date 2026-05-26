@@ -89,6 +89,9 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess, 
 
       toast.success('¡Turno reservado correctamente!');
       
+      // Dispatch custom event for real-time live updates in the UI
+      window.dispatchEvent(new CustomEvent('reserva_modificada', { detail: { fecha } }));
+      
       // Notify WhatsApp (Optional, usually better to let user click)
       const canchaName = sport === 'futbol' ? 'Cancha F5' : `Cancha ${cancha}`;
       const msg = encodeURIComponent(`¡Hola! Reservé el ${fecha} a las ${hora} hs (${canchaName}). Nombre: ${nombre}.`);

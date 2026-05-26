@@ -15,7 +15,7 @@ type Message = {
 
 export function Chatbot() {
   const router = useRouter();
-  const { profile } = useGuestProfile();
+  const { profile, saveProfile } = useGuestProfile();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: "model", content: "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?" }
@@ -129,6 +129,46 @@ export function Chatbot() {
         }
       }
 
+      // Interceptar comando para CANCELAR RESERVA (Soporta múltiples)
+      const regexCancelar = /\[ACCION:CANCELAR_RESERVA\((.*?)\)\]/g;
+      const matchesCancelar = [...replyText.matchAll(regexCancelar)];
+      
+      if (matchesCancelar.length > 0) {
+        let successCount = 0;
+        for (const matchCancelar of matchesCancelar) {
+          try {
+            const cancelData = JSON.parse(matchCancelar[1]);
+            replyText = replyText.replace(matchCancelar[0], "").trim();
+            await executeCancellation(cancelData);
+            successCount++;
+          } catch (err) {
+            console.error("Error al parsear JSON de cancelación:", err);
+          }
+        }
+        if (replyText === "") {
+          replyText = `Cancelando ${successCount > 1 ? successCount + ' turnos' : 'tu turno'}... 🗑️`;
+        }
+      }
+
+      // Interceptar comando para ACTUALIZAR PERFIL
+      const regexPerfil = /\[ACCION:ACTUALIZAR_PERFIL\((.*?)\)\]/g;
+      const matchesPerfil = [...replyText.matchAll(regexPerfil)];
+      
+      if (matchesPerfil.length > 0) {
+        for (const matchPerfil of matchesPerfil) {
+          try {
+            const perfilData = JSON.parse(matchPerfil[1]);
+            replyText = replyText.replace(matchPerfil[0], "").trim();
+            await executeSaveProfile(perfilData);
+          } catch (err) {
+            console.error("Error al parsear JSON de actualizar perfil:", err);
+          }
+        }
+        if (replyText === "") {
+          replyText = `¡Perfil guardado con éxito! 👤`;
+        }
+      }
+
       setMessages(prev => [...prev, { role: "model", content: replyText }]);
     } catch (error) {
       console.error(error);
@@ -189,13 +229,86 @@ export function Chatbot() {
 
       toast.success('¡Reserva confirmada con éxito!', { id: loadingToast });
       
-      // Esperar un momento y refrescar para actualizar la grilla y la UI
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // Dispatch custom event for real-time live updates in the UI
+      window.dispatchEvent(new CustomEvent('reserva_modificada', { detail: { fecha: data.fecha } }));
+      router.refresh();
 
     } catch (e: any) {
       toast.error(e.message || 'Error al reservar', { id: loadingToast });
+    }
+  };
+
+  const executeCancellation = async (data: {
+    fecha: string;
+    hora: string;
+    cancha: number;
+  }) => {
+    const loadingToast = toast.loading("Cancelando tu cancha...");
+    try {
+      if (!profile?.telefono) {
+        throw new Error("No pudimos validar tu número de teléfono.");
+      }
+
+      // 1. Buscar la reserva que coincide con la fecha, cancha y teléfono del usuario
+      const { data: existing, error: fetchError } = await supabase
+        .from('reservas')
+        .select('id, hora')
+        .eq('fecha', data.fecha)
+        .eq('cancha', data.cancha)
+        .eq('telefono', profile.telefono);
+
+      if (fetchError) throw fetchError;
+
+      const targetHoraStr = data.hora.substring(0, 5);
+      const bookingToCancel = existing?.find(r => r.hora.substring(0, 5) === targetHoraStr);
+
+      if (!bookingToCancel) {
+        throw new Error("No encontramos ningún turno a tu nombre en esa fecha y hora.");
+      }
+
+      // Guardar cancelación local para trackeo de la app
+      localStorage.setItem(`user_cancelled_${bookingToCancel.id}`, 'true');
+
+      // 2. Eliminar de la base de datos
+      const { error: deleteError } = await supabase
+        .from('reservas')
+        .delete()
+        .eq('id', bookingToCancel.id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success('¡Reserva cancelada con éxito!', { id: loadingToast });
+      
+      // Dispatch custom event for real-time live updates in the UI
+      window.dispatchEvent(new CustomEvent('reserva_modificada', { detail: { fecha: data.fecha } }));
+      router.refresh();
+
+    } catch (e: any) {
+      toast.error(e.message || 'Error al cancelar', { id: loadingToast });
+    }
+  };
+
+  const executeSaveProfile = async (data: {
+    nombre: string;
+    apellido?: string;
+    telefono: string;
+    localidad?: string;
+  }) => {
+    const loadingToast = toast.loading("Guardando tu perfil...");
+    try {
+      await saveProfile({
+        nombre: data.nombre,
+        apellido: data.apellido || "",
+        telefono: data.telefono,
+        localidad: data.localidad || ""
+      });
+      toast.success("¡Perfil guardado con éxito! 🎉", { id: loadingToast });
+      
+      // Dispatch custom event to trigger data/profile refresh across the application
+      window.dispatchEvent(new CustomEvent('reserva_modificada', { detail: { fecha: "" } }));
+      router.refresh();
+    } catch (e: any) {
+      toast.error(e.message || "Error al guardar perfil", { id: loadingToast });
     }
   };
 

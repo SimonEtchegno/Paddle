@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { TURNOS_FIJOS, HORAS } from "@/lib/constants";
 
-const getSystemPrompt = (ocupadosContext: string, profileContext: string, horasContext: string, horaActual: string) => {
+const getSystemPrompt = (ocupadosContext: string, profileContext: string, misTurnosContext: string, horasContext: string, horaActual: string) => {
   // Obtenemos la fecha en Argentina (UTC-3) restando 3 horas al timestamp UTC
   const now = new Date();
   const argTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
@@ -32,9 +32,14 @@ Si el usuario NO está logueado (no hay nombre en los datos de arriba), pídele 
 Nombre completo
 Número de WhatsApp / teléfono
 
-Una vez que tengas sus datos, NO vuelvas a pedirlos en la misma conversación.
+Una vez que tengas sus datos, NO vuelvas a pedirlos en la misma conversación y regístralo inmediatamente usando la acción [ACCION:ACTUALIZAR_PERFIL(...)].
 
-TURNOS OCUPADOS
+MIS TURNOS ACTIVOS (TUS RESERVAS)
+${misTurnosContext}
+
+Si el usuario te pide cancelar uno de sus turnos (o todos), verifica primero si lo tiene reservado en la lista de arriba "MIS TURNOS ACTIVOS" que coincida en fecha y hora. Si existe, genera la acción de cancelación. Si no coinciden o no tiene turnos activos, avísale amablemente que no cuenta con esa reserva.
+
+TURNOS OCUPADOS (DE TODOS LOS USUARIOS)
 ${ocupadosContext || "No hay reservas ocupadas registradas para los próximos días."}
 
 CANCHAS DISPONIBLES
@@ -85,18 +90,15 @@ Si es aproximado (ej: "a las 17 hs") → ofrecer el bloque oficial más cercano 
 Si no es aproximable (ej: "a las 10 de la mañana") → informar los horarios disponibles.
 NUNCA generes una reserva para un horario que no esté en la lista oficial.
 
-4. Verificación de disponibilidad
-Compara SIEMPRE contra la lista de turnos ocupados.
+4. Verificación de disponibilidad y cancelación
+Compara SIEMPRE contra la lista de turnos ocupados para reservar.
+Para cancelar, verifica SIEMPRE contra la lista de "MIS TURNOS ACTIVOS".
 
-Ocupado: "Ese horario ya está ocupado 😕 ¿Querés probar otro?"
-Disponible: Confirma de forma amable y entusiasta.
-
-Reservas múltiples:
+Reservas múltiples / Cancelaciones múltiples:
 
 Verificá CADA fecha por separado.
-Si algunas están libres y otras ocupadas: informá cuáles son cuáles y preguntá si desea continuar con las libres.
 Generá los comandos SOLO después de que el usuario confirme.
-Límite máximo: 4 turnos por solicitud. Si piden más, reservá los primeros 4 y avisá amablemente.
+Límite máximo: 4 turnos por solicitud.
 
 5. Acciones del sistema
 A. Al explorar una fecha/hora (redirección visual en la app):
@@ -105,8 +107,17 @@ A. Al explorar una fecha/hora (redirección visual en la app):
 
 B. Al confirmar una reserva (todos los datos completos: nombre, teléfono, fecha, hora, deporte, cancha disponible):
 [ACCION:CREAR_RESERVA({"nombre": "Nombre Apellido", "telefono": "WhatsApp", "fecha": "YYYY-MM-DD", "hora": "HH:MM", "cancha": 1, "deporte": "padel"})]
-El JSON debe ir EXACTAMENTE dentro de los paréntesis. El sistema lo interceptar automáticamente para guardar en base de datos.
+El JSON debe ir EXACTAMENTE dentro de los paréntesis. El sistema lo intercepta automáticamente para guardar en base de datos.
 Para reservas múltiples: generá un comando [ACCION:CREAR_RESERVA(...)] por cada turno confirmado, en la misma respuesta.
+
+C. Al confirmar la cancelación de una reserva (del usuario actual):
+[ACCION:CANCELAR_RESERVA({"fecha": "YYYY-MM-DD", "hora": "HH:MM", "cancha": 1})]
+El JSON debe ir EXACTAMENTE dentro de los paréntesis. El sistema lo interceptará automáticamente para eliminarlo de la base de datos en tiempo real.
+Para cancelaciones múltiples: generá un comando [ACCION:CANCELAR_RESERVA(...)] por cada turno cancelado, en la misma respuesta.
+
+D. Al recibir datos para registrar o actualizar el perfil del usuario (nombre completo y teléfono/WhatsApp):
+[ACCION:ACTUALIZAR_PERFIL({"nombre": "Nombre", "apellido": "Apellido", "telefono": "WhatsApp"})]
+El JSON debe ir EXACTAMENTE dentro de los paréntesis. El sistema registrará al usuario y actualizará su perfil automáticamente.
 
 OTRAS CONSULTAS
 Podés ayudar también con:
@@ -159,7 +170,7 @@ export async function POST(req: Request) {
 
     const { data: reservas } = await supabase
       .from('reservas')
-      .select('fecha, hora, cancha')
+      .select('fecha, hora, cancha, nombre, telefono')
       .gte('fecha', hoyISO)
       .order('fecha', { ascending: true })
       .order('hora', { ascending: true })
@@ -220,12 +231,21 @@ export async function POST(req: Request) {
       .map(r => `- Fecha: ${r.fecha}, Hora: ${r.hora}, Cancha: ${r.cancha} (${r.tipo})`)
       .join('\n');
 
-    // 2. Formatear perfil del usuario
+    // 2. Formatear perfil del usuario y sus turnos activos
     const profileContext = profile 
       ? `Usuario logueado:
   - Nombre: ${profile.nombre} ${profile.apellido || ""}
   - WhatsApp/Teléfono: ${profile.telefono || "No especificado"}`
       : "El usuario NO está logueado en el sistema.";
+
+    const userPhone = profile?.telefono;
+    const userReservas = (reservas && userPhone)
+      ? reservas.filter(r => r.telefono === userPhone)
+      : [];
+
+    const misTurnosContext = userReservas.length > 0
+      ? userReservas.map(r => `- Fecha: ${r.fecha}, Hora: ${r.hora.slice(0, 5)}, Cancha: ${r.cancha}`).join('\n')
+      : "El usuario no tiene turnos reservados para los próximos días.";
 
     // 3. Formatear lista de horas permitidas
     const horasContext = HORAS.map(h => `- ${h}`).join('\n');
@@ -243,7 +263,7 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext, horasContext, horaActual) }]
+          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext, misTurnosContext, horasContext, horaActual) }]
         },
         contents: [
           ...formattedHistory,
