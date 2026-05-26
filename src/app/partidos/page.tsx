@@ -29,8 +29,8 @@ export default function PartidosPage() {
   const [filterLevel, setFilterLevel] = useState('Todos');
 
   const { sport } = useSport();
-  const CATEGORIES = sport === 'futbol' 
-    ? ['Todos', 'Amateur', 'Intermedio', 'Avanzado'] 
+  const CATEGORIES = sport === 'futbol'
+    ? ['Todos', 'Amateur', 'Intermedio', 'Avanzado']
     : ['Todos', '7ma', '6ta', '5ta', '4ta', '3ra', '2da', '1ra', 'Pro'];
 
   const fetchData = async (isBackground = false) => {
@@ -42,7 +42,7 @@ export default function PartidosPage() {
     if (!isBackground) setLoading(true);
     try {
       const hoy = format(new Date(), 'yyyy-MM-dd');
-      
+
       // 1. Cargar Partidos
       const { data: pData, error: pError } = await supabase
         .from('partidos_abiertos')
@@ -68,12 +68,12 @@ export default function PartidosPage() {
           .gte('fecha', hoy)
           .order('fecha', { ascending: true })
           .order('hora', { ascending: true });
-        
+
         if (fallbackError) throw fallbackError;
-        
+
         // Local filter based on nivel
         const isFutbolNivel = (n: string) => ['Amateur', 'Intermedio', 'Avanzado'].includes(n);
-        const filtered = (fallbackData || []).filter((p: any) => 
+        const filtered = (fallbackData || []).filter((p: any) =>
           sport === 'futbol' ? isFutbolNivel(p.nivel) : !isFutbolNivel(p.nivel)
         );
         setPartidos(filtered);
@@ -92,10 +92,10 @@ export default function PartidosPage() {
       if (uError) throw uError;
 
       // Filtrar manualmente por el dueño del partido (Usando contacto_whatsapp que es texto)
-      const misSolicitudes = (uData || []).filter((u: any) => 
+      const misSolicitudes = (uData || []).filter((u: any) =>
         u.partidos_abiertos && u.partidos_abiertos.contacto_whatsapp === profile.telefono
       );
-      
+
       setSolicitudes(misSolicitudes);
 
       // 3. Cargar mis participaciones confirmadas
@@ -116,7 +116,7 @@ export default function PartidosPage() {
         .eq('telefono', profile.telefono)
         .gte('fecha', hoy)
         .limit(1);
-        
+
       setHasActiveReservation(!!(resData && resData.length > 0));
 
     } catch (e: any) {
@@ -134,7 +134,7 @@ export default function PartidosPage() {
     }
 
     const intervalId = setInterval(() => {
-      fetchData(true); 
+      fetchData(true);
     }, 5000);
 
     return () => {
@@ -207,7 +207,7 @@ export default function PartidosPage() {
         .update({ jugadores_faltantes: Math.max(0, (u.partidos_abiertos?.jugadores_faltantes || 1) - 1) })
         .eq('id', u.partido_id);
       toast.success('Jugador confirmado');
-      
+
       // Aviso por WhatsApp al interesado
       const msg = encodeURIComponent(`¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! ${sport === 'futbol' ? '⚽' : '🎾'}`);
       window.open(`https://wa.me/${u.whatsapp_interesado}?text=${msg}`, '_blank');
@@ -221,18 +221,16 @@ export default function PartidosPage() {
   return (
     <PageWrapper>
       <div className="max-w-4xl mx-auto space-y-10 pb-20">
-        
+
         {/* Premium Header Banner Card */}
-        <div className={`relative w-full overflow-hidden rounded-[2.5rem] border border-white/10 p-8 md:p-12 shadow-[0_25px_60px_rgba(0,0,0,0.5)] transition-all duration-500 ${
-          sport === 'futbol'
+        <div className={`relative w-full overflow-hidden rounded-[2.5rem] border border-white/10 p-8 md:p-12 shadow-[0_25px_60px_rgba(0,0,0,0.5)] transition-all duration-500 ${sport === 'futbol'
             ? 'bg-gradient-to-br from-[#07180e] via-[#090d0b] to-[#040507]'
             : 'bg-gradient-to-br from-[#120a24] via-[#0b0714] to-[#040507]'
-        }`}>
+          }`}>
           {/* Ambient radial glows */}
-          <div className={`absolute -right-10 -top-10 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-500 ${
-            sport === 'futbol' ? 'bg-green-500' : 'bg-primary'
-          }`} />
-          
+          <div className={`absolute -right-10 -top-10 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-500 ${sport === 'futbol' ? 'bg-green-500' : 'bg-primary'
+            }`} />
+
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left space-y-3.5">
               <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter italic leading-none">
@@ -242,11 +240,10 @@ export default function PartidosPage() {
                 {sport === 'futbol' ? '⚽ FÚTBOL 5 • UNITE A JUGAR O ARMÁ TU EQUIPO' : '🎾 PÁDEL • UNITE A JUGAR O ARMÁ TU EQUIPO'}
               </p>
               <div className="pt-2 flex justify-center md:justify-start">
-                <button 
+                <button
                   onClick={() => setIsTutorialOpen(true)}
-                  className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${
-                    sport === 'futbol' ? 'hover:text-green-400 hover:border-green-500/30' : 'hover:text-primary hover:border-primary/30'
-                  }`}
+                  className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${sport === 'futbol' ? 'hover:text-green-400 hover:border-green-500/30' : 'hover:text-primary hover:border-primary/30'
+                    }`}
                 >
                   <span className="flex items-center justify-center w-4 h-4 rounded-full bg-white/10 text-[9px] font-black">?</span>
                   ¿Cómo funciona?
@@ -256,7 +253,7 @@ export default function PartidosPage() {
 
             {/* Action Button: Publish Match */}
             <div className="shrink-0 w-full md:w-auto flex justify-center">
-              <button 
+              <button
                 id="tutorial-partidos-publish"
                 onClick={() => {
                   if (!profile) {
@@ -267,11 +264,10 @@ export default function PartidosPage() {
                   }
                   setIsModalOpen(true);
                 }}
-                className={`w-full md:w-auto px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center gap-2 ${
-                  sport === 'futbol'
+                className={`w-full md:w-auto px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center gap-2 ${sport === 'futbol'
                     ? 'bg-green-500 text-black shadow-green-500/20 hover:shadow-green-500/40 hover:bg-green-400'
                     : 'bg-primary text-white shadow-primary/20 hover:shadow-primary/40 hover:opacity-95'
-                }`}
+                  }`}
               >
                 + Publicar Partido
               </button>
@@ -281,7 +277,7 @@ export default function PartidosPage() {
 
         {/* Solicitudes Pendientes (Alerta / Popup integrado) */}
         {solicitudes.length > 0 && (
-          <motion.section 
+          <motion.section
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="relative z-50 bg-gradient-to-r from-secondary/20 to-primary/20 p-1 rounded-[2.5rem] shadow-[0_10px_40px_rgba(255,215,0,0.15)]"
@@ -293,7 +289,7 @@ export default function PartidosPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                    ¡Tenés solicitudes! 
+                    ¡Tenés solicitudes!
                     <span className="bg-secondary text-black text-xs px-2 py-0.5 rounded-full">{solicitudes.length}</span>
                   </h3>
                   <p className="text-[10px] opacity-60 font-bold uppercase tracking-widest text-secondary">Alguien quiere sumarse a tu partido</p>
@@ -308,13 +304,12 @@ export default function PartidosPage() {
                       <p className="text-[10px] opacity-50 font-bold uppercase tracking-tight">Para el partido de las {u.partidos_abiertos?.hora} hs</p>
                     </div>
                     <div className="flex gap-3">
-                      <button 
+                      <button
                         onClick={() => handleConfirmPlayer(u)}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all ${
-                          sport === 'futbol'
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all ${sport === 'futbol'
                             ? 'bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]'
                             : 'bg-primary text-white shadow-[0_0_15px_rgba(136,130,220,0.3)]'
-                        }`}
+                          }`}
                       >
                         <Check size={16} /> Confirmar
                       </button>
@@ -333,10 +328,10 @@ export default function PartidosPage() {
         {confirmaciones.length > 0 && (
           <section className="space-y-3">
             {confirmaciones.map(c => (
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                key={c.id} 
+                key={c.id}
                 className="bg-success/10 border border-success/30 p-5 rounded-2xl flex items-center justify-between shadow-[0_0_20px_rgba(76,175,80,0.15)]"
               >
                 <div>
@@ -376,19 +371,18 @@ export default function PartidosPage() {
                     onClick={() => setFilterLevel(cat)}
                     className={clsx(
                       "whitespace-nowrap px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border relative",
-                      isActive 
+                      isActive
                         ? sport === 'futbol'
-                          ? "bg-green-500 text-black border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] scale-105" 
+                          ? "bg-green-500 text-black border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] scale-105"
                           : "bg-primary text-white border-primary shadow-[0_0_15px_rgba(136,130,220,0.3)] scale-105"
                         : "bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white"
                     )}
                   >
                     {isActive && (
-                      <motion.span 
+                      <motion.span
                         layoutId="activeFilterGlow"
-                        className={`absolute -inset-px rounded-xl border ${
-                          sport === 'futbol' ? 'border-green-400' : 'border-primary-light'
-                        } pointer-events-none`}
+                        className={`absolute -inset-px rounded-xl border ${sport === 'futbol' ? 'border-green-400' : 'border-primary-light'
+                          } pointer-events-none`}
                       />
                     )}
                     {cat}
@@ -401,25 +395,23 @@ export default function PartidosPage() {
           {loading ? (
             <LoadingPro />
           ) : partidos.filter(p => filterLevel === 'Todos' || p.nivel === filterLevel).length === 0 ? (
-            
+
             /* High-End Glassmorphic Empty State */
             <div className="relative overflow-hidden rounded-[2.5rem] border border-white/5 bg-white/[0.01] backdrop-blur-md p-16 text-center space-y-6 shadow-2xl">
-              <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[80px] opacity-10 pointer-events-none transition-all duration-500 ${
-                sport === 'futbol' ? 'bg-green-500' : 'bg-primary'
-              }`} />
-              
+              <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[80px] opacity-10 pointer-events-none transition-all duration-500 ${sport === 'futbol' ? 'bg-green-500' : 'bg-primary'
+                }`} />
+
               <div className="relative z-10 max-w-sm mx-auto space-y-6">
-                <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center border bg-white/[0.02] ${
-                  sport === 'futbol' ? 'border-green-500/20 text-green-400' : 'border-primary/20 text-primary'
-                }`}>
+                <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center border bg-white/[0.02] ${sport === 'futbol' ? 'border-green-500/20 text-green-400' : 'border-primary/20 text-primary'
+                  }`}>
                   <Users size={32} className="opacity-80 animate-pulse" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <h4 className="text-xl font-black uppercase tracking-tight text-white italic">No hay partidos activos</h4>
                   <p className="text-xs text-white/50 font-bold uppercase tracking-wider leading-relaxed">
-                    {filterLevel === 'Todos' 
-                      ? 'Sé el primero en organizar un partido para esta fecha.' 
+                    {filterLevel === 'Todos'
+                      ? 'Sé el primero en organizar un partido para esta fecha.'
                       : `No hay partidos creados para la categoría ${filterLevel} en esta fecha.`
                     }
                   </p>
@@ -428,9 +420,8 @@ export default function PartidosPage() {
                 {filterLevel !== 'Todos' && (
                   <button
                     onClick={() => setFilterLevel('Todos')}
-                    className={`text-[9px] font-black uppercase tracking-widest px-6 py-2.5 rounded-full border bg-white/5 transition-all ${
-                      sport === 'futbol' ? 'hover:border-green-500/30 hover:text-green-400' : 'hover:border-primary/30 hover:text-primary'
-                    }`}
+                    className={`text-[9px] font-black uppercase tracking-widest px-6 py-2.5 rounded-full border bg-white/5 transition-all ${sport === 'futbol' ? 'hover:border-green-500/30 hover:text-green-400' : 'hover:border-primary/30 hover:text-primary'
+                      }`}
                   >
                     Ver todas las categorías
                   </button>
@@ -461,7 +452,7 @@ export default function PartidosPage() {
                     isPurple = cat === '5ta';
                     isGreen = cat === '6ta';
                   }
-                  
+
                   const auraColor = isDiamond ? "bg-cyan-400" : isGold ? "bg-yellow-400" : isRed ? "bg-red-500" : isPurple ? "bg-purple-500" : isGreen ? "bg-emerald-500" : "bg-zinc-400";
                   const ringBorder = isDiamond ? "border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]" : isGold ? "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)]" : isGreen ? "border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]" : "border-white/20";
                   const categoryLabel = cat.toUpperCase();
@@ -472,17 +463,17 @@ export default function PartidosPage() {
                   const jugadoresConfirmados = p.uniones_partidos?.filter(u => u.estado === 'confirmado') || [];
 
                   return (
-                    <motion.div 
+                    <motion.div
                       layout
                       whileHover={{ scale: 1.01, y: -2 }}
-                      key={p.id} 
+                      key={p.id}
                       className={clsx(
                         "relative p-6 rounded-[2.5rem] flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-all border overflow-hidden",
-                        completo ? "opacity-60 border-white/5 bg-black/20" : 
-                        isDiamond ? "bg-gradient-to-br from-cyan-950/40 to-black/60 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]" :
-                        isGold ? "bg-gradient-to-br from-yellow-950/40 to-black/60 border-yellow-400/30 shadow-[0_0_30px_rgba(250,204,21,0.15)]" :
-                        isRed ? "bg-gradient-to-br from-red-950/40 to-black/60 border-red-500/20" :
-                        "bg-white/5 border-white/10"
+                        completo ? "opacity-60 border-white/5 bg-black/20" :
+                          isDiamond ? "bg-gradient-to-br from-cyan-950/40 to-black/60 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]" :
+                            isGold ? "bg-gradient-to-br from-yellow-950/40 to-black/60 border-yellow-400/30 shadow-[0_0_30px_rgba(250,204,21,0.15)]" :
+                              isRed ? "bg-gradient-to-br from-red-950/40 to-black/60 border-red-500/20" :
+                                "bg-white/5 border-white/10"
                       )}
                     >
                       {/* Category Badge - Corner */}
@@ -490,11 +481,11 @@ export default function PartidosPage() {
                         <div className={clsx(
                           "px-5 py-1.5 rounded-bl-2xl font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2",
                           isDiamond ? "bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]" :
-                          isGold ? "bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]" :
-                          isRed ? "bg-red-500 text-white" :
-                          isPurple ? "bg-purple-500 text-white" :
-                          isGreen ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
-                          "bg-white/10 text-white/60"
+                            isGold ? "bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]" :
+                              isRed ? "bg-red-500 text-white" :
+                                isPurple ? "bg-purple-500 text-white" :
+                                  isGreen ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
+                                    "bg-white/10 text-white/60"
                         )}>
                           {sport === 'futbol' ? <Users size={10} /> : <Trophy size={10} />}
                           {categoryLabel}
@@ -510,13 +501,13 @@ export default function PartidosPage() {
                               "absolute inset-0 rounded-full blur-xl opacity-40 animate-pulse scale-150 transition-colors duration-700",
                               auraColor
                             )} />
-                            
+
                             <div className={clsx(
                               "w-16 h-16 bg-zinc-900 rounded-full border-2 backdrop-blur-xl flex items-center justify-center relative z-10 shadow-2xl transition-all duration-500 overflow-hidden",
                               ringBorder
                             )}>
                               {(esMio ? profile?.avatar_url : p.avatar_url) ? (
-                                <img 
+                                <img
                                   src={esMio ? profile?.avatar_url : p.avatar_url}
                                   alt="Avatar"
                                   className="w-full h-full object-cover"
@@ -526,7 +517,7 @@ export default function PartidosPage() {
                                   {p.nombre_creador.split(' ').map(n => n[0]).join('').slice(0, 2)}
                                 </div>
                               )}
-                              
+
                             </div>
                           </div>
 
@@ -539,7 +530,7 @@ export default function PartidosPage() {
                               <span className="flex items-center gap-1.5"><Calendar size={12} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {format(parseISO(p.fecha), 'd MMM', { locale: es })}</span>
                               <span className="flex items-center gap-1.5"><Clock size={12} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} /> {p.hora} hs</span>
                               <span className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-md border border-white/10">
-                                {sport === 'futbol' 
+                                {sport === 'futbol'
                                   ? <Users size={10} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} />
                                   : <Trophy size={10} className={isGold ? "text-yellow-400" : isDiamond ? "text-cyan-400" : "text-primary"} />
                                 } {p.nivel}
@@ -570,14 +561,14 @@ export default function PartidosPage() {
 
                         {esMio && (
                           <div className="flex gap-2 relative z-50 self-end mt-2 sm:mt-0">
-                            <button 
+                            <button
                               onClick={() => handleShare(p)}
                               className="p-3 bg-white/5 text-white/40 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
                               title="Compartir partido"
                             >
                               <Share2 size={20} />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteMatch(p.id)}
                               className="p-3 bg-error/10 text-error rounded-2xl hover:bg-error hover:text-white transition-all border border-error/20"
                             >
@@ -597,15 +588,15 @@ export default function PartidosPage() {
                                 <Clock size={16} /> Solicitud Enviada
                               </div>
                             ) : !completo ? (
-                              <button 
+                              <button
                                 onClick={() => handleJoin(p)}
                                 className={clsx(
                                   "w-full sm:w-auto px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2",
                                   isDiamond ? "bg-cyan-400 text-black hover:bg-cyan-300 shadow-[0_4px_12px_rgba(34,211,238,0.2)]" :
-                                  isGold ? "bg-yellow-400 text-black hover:bg-yellow-300 shadow-[0_4px_12px_rgba(250,204,21,0.2)]" :
-                                  sport === 'futbol'
-                                    ? "bg-green-500 text-black hover:bg-green-400 shadow-[0_4px_12px_rgba(34,197,94,0.2)]"
-                                    : "bg-primary text-white hover:opacity-95 shadow-[0_4px_12px_rgba(136,130,220,0.2)]"
+                                    isGold ? "bg-yellow-400 text-black hover:bg-yellow-300 shadow-[0_4px_12px_rgba(250,204,21,0.2)]" :
+                                      sport === 'futbol'
+                                        ? "bg-green-500 text-black hover:bg-green-400 shadow-[0_4px_12px_rgba(34,197,94,0.2)]"
+                                        : "bg-primary text-white hover:opacity-95 shadow-[0_4px_12px_rgba(136,130,220,0.2)]"
                                 )}
                               >
                                 <Send size={16} /> Sumarme
@@ -625,14 +616,14 @@ export default function PartidosPage() {
       <AnimatePresence>
         {matchToDelete && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMatchToDelete(null)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -646,13 +637,13 @@ export default function PartidosPage() {
                 <p className="text-xs font-bold uppercase tracking-widest opacity-40">Esta acción no se puede deshacer.</p>
               </div>
               <div className="grid grid-cols-2 gap-4 pt-4">
-                <button 
+                <button
                   onClick={() => setMatchToDelete(null)}
                   className="bg-white/5 border border-white/10 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all text-white"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={confirmDelete}
                   className="bg-error text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)]"
                 >
@@ -664,14 +655,14 @@ export default function PartidosPage() {
         )}
       </AnimatePresence>
 
-      <CreateMatchModal 
+      <CreateMatchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleCreateSuccess}
         profile={profile}
       />
 
-      <MatchTutorial 
+      <MatchTutorial
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
       />
