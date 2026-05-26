@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'react-hot-toast';
 import { X, Calendar, Clock, Trophy, Users } from 'lucide-react';
@@ -23,6 +23,32 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
   const [hora, setHora] = useState('18:00');
   const [nivel, setNivel] = useState(sport === 'futbol' ? 'Intermedio' : '4ta');
   const [faltan, setFaltan] = useState(sport === 'futbol' ? 5 : 3);
+
+  useEffect(() => {
+    if (isOpen && profile?.telefono) {
+      const fetchNextReserva = async () => {
+        const { data } = await supabase
+          .from('reservas')
+          .select('fecha, hora')
+          .eq('telefono', profile.telefono)
+          .gte('fecha', format(new Date(), 'yyyy-MM-dd'))
+          .order('fecha', { ascending: true })
+          .order('hora', { ascending: true })
+          .limit(1)
+          .single();
+        
+        if (data) {
+          const resDate = new Date(`${data.fecha}T${data.hora}:00`);
+          if (resDate >= new Date()) {
+            setFecha(data.fecha);
+            setHora(data.hora);
+            toast.success('Autocompletado con tu próxima reserva', { icon: '🗓️', style: { fontSize: '12px' } });
+          }
+        }
+      };
+      fetchNextReserva();
+    }
+  }, [isOpen, profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
