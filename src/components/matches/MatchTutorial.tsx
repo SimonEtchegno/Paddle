@@ -334,27 +334,18 @@ export function MatchTutorial({ isOpen, onClose }: MatchTutorialProps) {
               </div>
 
               {/* Bottom Actions */}
-              <div className="p-6 border-t border-white/5 bg-white/[0.01] flex items-center justify-between gap-3 relative z-40">
-                {step > 0 && (
-                  <button 
-                    onClick={handlePrev}
-                    className="px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-black uppercase tracking-widest text-[10px] transition-all border border-white/10 cursor-pointer"
-                  >
-                    Atrás
-                  </button>
-                )}
-                
+              <div className="p-6 border-t border-white/5 bg-white/[0.01] flex items-center justify-center relative z-40">
                 {step < steps.length - 1 ? (
                   <button 
                     onClick={handleNext}
-                    className="flex-1 py-4 rounded-2xl bg-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-white/20 transition-all border border-white/10 cursor-pointer"
+                    className="w-full py-4 rounded-2xl bg-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-white/20 transition-all border border-white/10 cursor-pointer"
                   >
                     Continuar
                   </button>
                 ) : (
                   <button 
                     onClick={onClose}
-                    className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
                       sport === 'futbol'
                         ? 'bg-green-500 text-black shadow-[0_0_30px_rgba(34,197,94,0.35)] hover:bg-green-400'
                         : 'bg-primary text-white shadow-[0_0_30px_rgba(136,130,220,0.35)] hover:opacity-95'
