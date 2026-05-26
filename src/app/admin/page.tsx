@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Reserva, ListaEspera } from '@/types';
-import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
+import { HORAS } from '@/lib/constants';
 import { Crown, Trash2, Phone, Download, LogOut, Users, Trophy, Layout, Plus, X, Save, ChevronLeft, CheckCircle2, Search, Edit2, Globe, BookOpen, Sparkles, UserPlus, Camera, Calendar as CalendarIcon, Home } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -119,10 +119,71 @@ export default function AdminPage() {
   const [espera, setEspera] = useState<ListaEspera[]>([]);
   const [loading, setLoading] = useState(false);
   const [systemMsg, setSystemMsg] = useState('');
-  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial' | 'estadisticas'>('turnos');
+  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial' | 'estadisticas' | 'fijos'>('turnos');
   const [statsReservas, setStatsReservas] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsTimeRange, setStatsTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
+
+  const [fixedTurnsList, setFixedTurnsList] = useState<any[]>([]);
+  const [fixedTurnsLoading, setFixedTurnsLoading] = useState(false);
+  const [newFixedTurn, setNewFixedTurn] = useState({
+    dia_semana: 1,
+    hora: '19:00',
+    cancha: 1,
+    nombre: ''
+  });
+
+  const fetchFixedTurns = async () => {
+    setFixedTurnsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('turnos_fijos')
+        .select('*')
+        .order('dia_semana', { ascending: true })
+        .order('hora', { ascending: true })
+        .order('cancha', { ascending: true });
+
+      if (error) throw error;
+      setFixedTurnsList(data || []);
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Error al cargar turnos fijos: ' + e.message);
+    } finally {
+      setFixedTurnsLoading(false);
+    }
+  };
+
+  const deleteFixedTurn = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este turno fijo?')) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('turnos_fijos').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Turno fijo eliminado');
+      fetchFixedTurns();
+    } catch (e: any) {
+      toast.error('Error al eliminar: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createFixedTurn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFixedTurn.nombre) return toast.error('Ingresá el nombre');
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('turnos_fijos').insert([newFixedTurn]);
+      if (error) throw error;
+      toast.success('Turno fijo creado');
+      setNewFixedTurn({ ...newFixedTurn, nombre: '' });
+      fetchFixedTurns();
+    } catch (e: any) {
+      toast.error('Error al crear: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchStatsData = async () => {
     setStatsLoading(true);
@@ -424,6 +485,8 @@ export default function AdminPage() {
         fetchHistory();
       } else if (activeTab === 'estadisticas') {
         fetchStatsData();
+      } else if (activeTab === 'fijos') {
+        fetchFixedTurns();
       } else {
         fetchData();
       }
@@ -432,6 +495,7 @@ export default function AdminPage() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => {
           if (activeTab === 'historial') fetchHistory();
           else if (activeTab === 'estadisticas') fetchStatsData();
+          else if (activeTab === 'fijos') fetchFixedTurns();
           else fetchData();
         })
         .subscribe();
@@ -440,6 +504,7 @@ export default function AdminPage() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'inscripciones_torneos' }, () => {
           if (activeTab === 'historial') fetchHistory();
           else if (activeTab === 'estadisticas') fetchStatsData();
+          else if (activeTab === 'fijos') fetchFixedTurns();
           else fetchData();
         })
         .subscribe();
@@ -448,6 +513,7 @@ export default function AdminPage() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas' }, () => {
           if (activeTab === 'historial') fetchHistory();
           else if (activeTab === 'estadisticas') fetchStatsData();
+          else if (activeTab === 'fijos') fetchFixedTurns();
           else fetchData();
         })
         .subscribe();
@@ -456,6 +522,14 @@ export default function AdminPage() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles' }, () => {
           if (activeTab === 'historial') fetchHistory();
           else if (activeTab === 'estadisticas') fetchStatsData();
+          else if (activeTab === 'fijos') fetchFixedTurns();
+          else fetchData();
+        })
+        .subscribe();
+
+      const tfChannel = supabase.channel('admin_turnos_fijos')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos_fijos' }, () => {
+          if (activeTab === 'fijos') fetchFixedTurns();
           else fetchData();
         })
         .subscribe();
@@ -465,6 +539,7 @@ export default function AdminPage() {
         supabase.removeChannel(iChannel);
         supabase.removeChannel(rChannel);
         supabase.removeChannel(pChannel);
+        supabase.removeChannel(tfChannel);
       };
     }
   }, [isLoggedIn, selectedDate, activeTab, statsTimeRange]);
@@ -934,6 +1009,15 @@ export default function AdminPage() {
             📊 Estadísticas
           </button>
           <button
+            onClick={() => setActiveTab('fijos')}
+            className={clsx(
+              "py-3.5 px-2 rounded-xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] transition-all border text-center flex items-center justify-center min-w-0 truncate",
+              activeTab === 'fijos' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
+            )}
+          >
+            🔒 Turnos Fijos
+          </button>
+          <button
             onClick={() => setActiveTab('historial')}
             className={clsx(
               "py-3.5 px-2 rounded-xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] transition-all border text-center flex items-center justify-center min-w-0 truncate",
@@ -1088,6 +1172,118 @@ export default function AdminPage() {
               )}
             </div>
           </>
+        ) : activeTab === 'fijos' ? (
+          <div className="space-y-8">
+            <div className="glass p-10 rounded-[3rem] border border-white/5 space-y-8">
+              <div className="flex items-center gap-3">
+                <Crown className="text-primary" size={24} />
+                <h3 className="text-xl font-black uppercase tracking-tighter italic">Nuevo Turno Fijo</h3>
+              </div>
+              <form onSubmit={createFixedTurn} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Día de la Semana</label>
+                  <select
+                    value={newFixedTurn.dia_semana}
+                    onChange={(e) => setNewFixedTurn({ ...newFixedTurn, dia_semana: Number(e.target.value) })}
+                    className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-4 px-6 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
+                  >
+                    <option value={1}>Lunes</option>
+                    <option value={2}>Martes</option>
+                    <option value={3}>Miércoles</option>
+                    <option value={4}>Jueves</option>
+                    <option value={5}>Viernes</option>
+                    <option value={6}>Sábado</option>
+                    <option value={0}>Domingo</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Hora</label>
+                  <select
+                    value={newFixedTurn.hora}
+                    onChange={(e) => setNewFixedTurn({ ...newFixedTurn, hora: e.target.value })}
+                    className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-4 px-6 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
+                  >
+                    {HORAS.map(h => (
+                      <option key={h} value={h}>{h} hs</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Cancha</label>
+                  <select
+                    value={newFixedTurn.cancha}
+                    onChange={(e) => setNewFixedTurn({ ...newFixedTurn, cancha: Number(e.target.value) })}
+                    className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-4 px-6 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
+                  >
+                    <option value={1}>Cancha 1</option>
+                    <option value={2}>Cancha 2</option>
+                    <option value={10}>Cancha F5</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Nombre Titular</label>
+                  <input
+                    type="text"
+                    value={newFixedTurn.nombre}
+                    onChange={(e) => setNewFixedTurn({ ...newFixedTurn, nombre: e.target.value.toUpperCase() })}
+                    placeholder="Ej: JORGE"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-xs font-bold focus:outline-none focus:border-primary text-white"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-4 pt-4 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-primary text-black px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(76,175,80,0.2)] disabled:opacity-50"
+                  >
+                    Agregar Turno Fijo
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 px-4">Turnos Fijos Activos</h3>
+              {fixedTurnsLoading ? (
+                <div className="glass p-20 rounded-[3rem] text-center opacity-30 font-bold uppercase tracking-widest text-xs">
+                  Cargando...
+                </div>
+              ) : fixedTurnsList.length === 0 ? (
+                <div className="glass p-20 rounded-[3rem] text-center opacity-30 font-bold uppercase tracking-widest text-xs">
+                  No hay turnos fijos registrados en la base de datos
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {fixedTurnsList.map((f) => {
+                    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    return (
+                      <motion.div
+                        layout
+                        key={f.id}
+                        className="glass p-6 rounded-3xl border border-white/5 flex items-center justify-between gap-6 hover:border-white/10 transition-all shadow-lg"
+                      >
+                        <div>
+                          <h4 className="text-lg font-bold text-white mb-1">
+                            {days[f.dia_semana]} <span className="opacity-30">·</span> {f.hora} hs
+                          </h4>
+                          <p className="text-xs font-medium opacity-50 uppercase tracking-widest">
+                            {f.cancha === 10 ? 'Cancha F5' : `Cancha ${f.cancha}`} <span className="opacity-30">|</span> {f.nombre}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => deleteFixedTurn(f.id)}
+                          className="p-3 bg-error/10 text-error rounded-xl border border-error/20 hover:bg-error/20 transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         ) : activeTab === 'torneos' ? (
           <div className="space-y-12">
             {/* Create Tournament Form */}

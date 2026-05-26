@@ -1,11 +1,13 @@
 'use client';
 
-import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
+import { useState, useEffect } from 'react';
+import { HORAS } from '@/lib/constants';
 import { Reserva } from '@/types';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
+import { supabase } from '@/lib/supabase';
 
 interface BookingGridProps {
   reservas: Reserva[];
@@ -15,10 +17,49 @@ interface BookingGridProps {
 }
 
 export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: BookingGridProps) {
+  const [fixedTurns, setFixedTurns] = useState<Record<string, Record<number, string>>>({});
   const date = new Date(selectedDate + 'T00:00:00');
   const dayOfWeek = date.getDay();
-  const fixedTurns = TURNOS_FIJOS[dayOfWeek] || {};
   const { profile } = useGuestProfile();
+
+  useEffect(() => {
+    const fetchFixedTurns = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('turnos_fijos')
+          .select('hora, cancha, nombre')
+          .eq('dia_semana', dayOfWeek);
+        if (error) throw error;
+        
+        const transformed: Record<string, Record<number, string>> = {};
+        data?.forEach((item: any) => {
+          // Normalize hour (e.g. '19:00:00' -> '19:00' or '19:00')
+          const h = item.hora.split(':').slice(0, 2).join(':');
+          if (!transformed[h]) {
+            transformed[h] = {};
+          }
+          transformed[h][item.cancha] = item.nombre;
+        });
+        setFixedTurns(transformed);
+      } catch (err) {
+        console.error('Error fetching fixed turns:', err);
+      }
+    };
+
+    fetchFixedTurns();
+
+    // Set up realtime channel to update fixed turns on changes instantly
+    const channel = supabase
+      .channel('turnos_fijos_booking_grid')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos_fijos' }, () => {
+        fetchFixedTurns();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [dayOfWeek]);
 
   const canchas = sport === 'futbol' ? [10] : [1, 2];
 

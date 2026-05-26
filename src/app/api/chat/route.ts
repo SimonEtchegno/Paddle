@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { TURNOS_FIJOS, HORAS } from "@/lib/constants";
+import { HORAS } from "@/lib/constants";
 
 const getSystemPrompt = (ocupadosContext: string, profileContext: string, misTurnosContext: string, horasContext: string, horaActual: string) => {
   // Obtenemos la fecha en Argentina (UTC-3) restando 3 horas al timestamp UTC
@@ -213,6 +213,26 @@ export async function POST(req: Request) {
       }
     }
 
+    // Obtener turnos fijos dinámicos desde la BD
+    const { data: dbFixedTurns } = await supabase
+      .from('turnos_fijos')
+      .select('dia_semana, hora, cancha, nombre');
+
+    const dynamicFixedTurns: Record<number, Record<string, Record<number, string>>> = {};
+    dbFixedTurns?.forEach(item => {
+      const d = item.dia_semana;
+      const h = item.hora.split(':').slice(0, 2).join(':'); // Normalizar hora '19:00:00' -> '19:00'
+      const c = item.cancha;
+      const n = item.nombre;
+      if (!dynamicFixedTurns[d]) {
+        dynamicFixedTurns[d] = {};
+      }
+      if (!dynamicFixedTurns[d][h]) {
+        dynamicFixedTurns[d][h] = {};
+      }
+      dynamicFixedTurns[d][h][c] = n;
+    });
+
     // Agregar turnos fijos semanales correspondientes a los próximos 14 días
     for (let i = 0; i < 14; i++) {
       // Calcular fecha desplazada en base a argTime sumando días en milisegundos
@@ -220,7 +240,7 @@ export async function POST(req: Request) {
       const fechaStr = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, '0') + "-" + String(d.getUTCDate()).padStart(2, '0');
       const dayOfWeek = d.getUTCDay();
       
-      const dayFixed = TURNOS_FIJOS[dayOfWeek];
+      const dayFixed = dynamicFixedTurns[dayOfWeek];
       if (dayFixed) {
         for (const hora of Object.keys(dayFixed)) {
           const courts = dayFixed[hora];
