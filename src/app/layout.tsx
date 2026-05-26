@@ -22,9 +22,9 @@ import { ProfileProvider } from "@/hooks/useGuestProfile";
 import { SportProvider } from "@/hooks/useSport";
 
 export async function generateMetadata(): Promise<Metadata> {
-  let title = "Complejo Pádel";
+  let title = "Complejo Peñarol";
   let description = "Reserva tu turno en segundos.";
-  let appleTitle = "Complejo Pádel";
+  let appleTitle = "Complejo Peñarol";
   let appleIcon = "/logo.jpg";
 
   try {

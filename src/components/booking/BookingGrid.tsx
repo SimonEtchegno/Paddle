@@ -4,6 +4,7 @@ import { HORAS, TURNOS_FIJOS } from '@/lib/constants';
 import { Reserva } from '@/types';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
+import { Lock } from 'lucide-react';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 
 interface BookingGridProps {
@@ -79,19 +80,19 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: Boo
                   )}
                 >
                   <div className={clsx(
-                    "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] mb-0.5 sm:mb-1 text-center leading-tight",
+                    "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] mb-0.5 sm:mb-1 text-center leading-tight flex items-center gap-1",
                     ocupado ? isMine ? "text-primary" : "text-white/40" : "text-primary drop-shadow-[0_0_8px_rgba(136,130,220,0.4)]"
                   )}>
-                    {ocupado ? (isMine ? 'Tu Reserva' : (fijo ? 'Fijo' : 'Ocupado')) : 'Disponible'}
+                    {fijo && !isMine && <Lock size={10} className="inline-block opacity-50" />}
+                    {ocupado ? (isMine ? 'Tu Reserva' : (fijo ? 'Turno Fijo' : 'Ocupado')) : 'Disponible'}
                   </div>
                   
                   <div className={clsx(
                     "text-[10px] sm:text-xs font-bold truncate max-w-[95%] px-1 sm:px-2 mt-0.5",
-                    ocupado ? isMine ? "text-white" : "text-white/10" : "text-white group-hover:text-primary transition-colors"
+                    ocupado ? isMine ? "text-white" : (fijo ? "text-white/30" : "text-white/10") : "text-white group-hover:text-primary transition-colors"
                   )}>
-                    {ocupado ? (isMine ? 'Confirmado' : 'No disp.') : 'Libre'}
+                    {ocupado ? (isMine ? 'Confirmado' : (fijo ? fijo : 'No disp.')) : 'Libre'}
                   </div>
-
 
                   {/* Visual cue only for Available */}
                   {!ocupado && (
