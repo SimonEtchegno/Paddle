@@ -19,8 +19,22 @@ export async function getCroppedImg(
     throw new Error('No 2d context');
   }
 
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  const MAX_SIZE = 400;
+  let targetWidth = pixelCrop.width;
+  let targetHeight = pixelCrop.height;
+
+  if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
+    if (targetWidth > targetHeight) {
+      targetHeight = Math.round((targetHeight * MAX_SIZE) / targetWidth);
+      targetWidth = MAX_SIZE;
+    } else {
+      targetWidth = Math.round((targetWidth * MAX_SIZE) / targetHeight);
+      targetHeight = MAX_SIZE;
+    }
+  }
+
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
 
   ctx.drawImage(
     image,
@@ -30,10 +44,10 @@ export async function getCroppedImg(
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    targetWidth,
+    targetHeight
   );
 
-  // We return a data URL instead of ObjectURL because the Profile state stores it in localStorage
-  return canvas.toDataURL('image/jpeg');
+  // We return a compressed data URL to avoid exceeding localStorage quota or Supabase payload limits
+  return canvas.toDataURL('image/jpeg', 0.8);
 }

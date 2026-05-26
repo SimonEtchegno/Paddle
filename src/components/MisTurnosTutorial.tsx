@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, Play, ChevronRight,
+  X, Play, ChevronLeft, ChevronRight,
   Calendar, Clock, MapPin, Trash2, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 
@@ -248,6 +248,11 @@ export function MisTurnosTutorial({ isOpen, onClose }: MisTurnosTutorialProps) {
     setStep(s => Math.min(steps.length - 1, s + 1));
   };
 
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setStep(s => Math.max(0, s - 1));
+  };
+
   const steps = [
     {
       title: 'Tus Próximas Reservas',
@@ -294,6 +299,15 @@ export function MisTurnosTutorial({ isOpen, onClose }: MisTurnosTutorialProps) {
           />
 
           <div className="relative">
+            {step > 0 && (
+              <button
+                onClick={handlePrev}
+                className="hidden md:flex absolute top-1/2 -left-16 -translate-y-1/2 w-11 h-11 rounded-full bg-[#11131a]/85 hover:bg-[#11131a] text-white/50 hover:text-white border border-white/10 items-center justify-center transition-all z-[320] shadow-[0_4px_20px_rgba(0,0,0,0.5)] cursor-pointer"
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
+
             {step < steps.length - 1 && (
               <button
                 onClick={handleNext}
@@ -330,6 +344,7 @@ export function MisTurnosTutorial({ isOpen, onClose }: MisTurnosTutorialProps) {
               </button>
 
               <div className="p-8 pt-16 flex flex-col items-center flex-1 relative overflow-hidden">
+                <div onClick={handlePrev} className="absolute left-0 top-0 bottom-0 w-[30%] z-30 cursor-w-resize md:hidden" />
                 <div onClick={handleNext} className="absolute right-0 top-0 bottom-0 w-[70%] z-30 cursor-e-resize md:hidden" />
 
                 <AnimatePresence mode="wait">

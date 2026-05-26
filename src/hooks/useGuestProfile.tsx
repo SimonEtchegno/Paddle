@@ -61,7 +61,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     // Sincronizar con Supabase para que el admin pueda verlo
     try {
       const { supabase } = await import('@/lib/supabase');
-      await supabase.from('perfiles').upsert({
+      const { error } = await supabase.from('perfiles').upsert({
         id: profileWithUid.uid,
         nombre: profileWithUid.nombre,
         apellido: profileWithUid.apellido,
@@ -72,8 +72,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         avatar_url: profileWithUid.avatar_url,
         last_seen: new Date().toISOString()
       }, { onConflict: 'id' });
+      
+      if (error) throw error;
     } catch (e) {
       console.error('Error syncing profile:', e);
+      throw e;
     }
   };
 
