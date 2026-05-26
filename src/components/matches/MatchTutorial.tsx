@@ -295,17 +295,17 @@ export function MatchTutorial({ isOpen, onClose }: MatchTutorialProps) {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={step}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                    initial={{ opacity: 0, x: 40, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, x: -40, filter: 'blur(4px)' }}
+                    transition={{ type: "spring", bounce: 0.1, duration: 0.45 }}
                     className="w-full flex flex-col items-center text-center space-y-8 h-[395px]"
                   >
-                    {/* Icon Badge container */}
+                    {/* Icon Badge — spring pop */}
                     <motion.div 
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
+                      initial={{ scale: 0, rotate: -15, opacity: 0 }}
+                      animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                      transition={{ type: "spring", bounce: 0.55, delay: 0.08, duration: 0.5 }}
                       className={`w-18 h-18 rounded-[1.8rem] border ${steps[step].bg} ${steps[step].color} flex items-center justify-center shadow-2xl relative`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent rounded-[1.8rem]" />
@@ -315,46 +315,80 @@ export function MatchTutorial({ isOpen, onClose }: MatchTutorialProps) {
                       })()}
                     </motion.div>
                     
-                    {/* Graphic Mockup Preview */}
-                    <div className="h-40 w-full rounded-3xl flex items-center justify-center relative">
+                    {/* Graphic Mockup Preview — fade up */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: "spring", bounce: 0.2, delay: 0.18, duration: 0.5 }}
+                      className="h-40 w-full rounded-3xl flex items-center justify-center relative"
+                    >
                       {steps[step].graphic}
-                    </div>
+                    </motion.div>
 
-                    {/* Title & Desc */}
+                    {/* Title — slide up */}
                     <div className="space-y-3.5 mt-auto">
-                      <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight italic text-white leading-none">
+                      <motion.h3
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ type: "spring", bounce: 0.1, delay: 0.28 }}
+                        className="text-xl md:text-2xl font-black uppercase tracking-tight italic text-white leading-none"
+                      >
                         {steps[step].title}
-                      </h3>
-                      <p className="text-[10px] md:text-[10.5px] font-black uppercase tracking-[0.18em] text-white/40 leading-relaxed px-3">
+                      </motion.h3>
+                      {/* Desc — slide up, slightly later */}
+                      <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ type: "spring", bounce: 0.1, delay: 0.38 }}
+                        className="text-[10px] md:text-[10.5px] font-black uppercase tracking-[0.18em] text-white/40 leading-relaxed px-3"
+                      >
                         {steps[step].desc}
-                      </p>
+                      </motion.p>
                     </div>
                   </motion.div>
                 </AnimatePresence>
               </div>
 
               {/* Bottom Actions */}
-              <div className="p-6 border-t border-white/5 bg-white/[0.01] flex items-center justify-center relative z-40">
-                {step < steps.length - 1 ? (
-                  <button 
-                    onClick={handleNext}
-                    className="w-full py-4 rounded-2xl bg-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-white/20 transition-all border border-white/10 cursor-pointer"
-                  >
-                    Continuar
-                  </button>
-                ) : (
-                  <button 
-                    onClick={onClose}
-                    className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      sport === 'futbol'
-                        ? 'bg-green-500 text-black shadow-[0_0_30px_rgba(34,197,94,0.35)] hover:bg-green-400'
-                        : 'bg-primary text-white shadow-[0_0_30px_rgba(136,130,220,0.35)] hover:opacity-95'
-                    }`}
-                  >
-                    ¡Entendido! <Play size={14} fill="currentColor" />
-                  </button>
-                )}
-              </div>
+              <motion.div
+                key={`btn-${step}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45, duration: 0.35, ease: 'easeOut' }}
+                className="p-6 border-t border-white/5 bg-white/[0.01] flex items-center justify-center relative z-40"
+              >
+                <AnimatePresence mode="wait">
+                  {step < steps.length - 1 ? (
+                    <motion.button
+                      key="continuar"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={handleNext}
+                      className="w-full py-4 rounded-2xl bg-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-white/20 transition-colors border border-white/10 cursor-pointer"
+                    >
+                      Continuar
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      key="entendido"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={onClose}
+                      className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+                        sport === 'futbol'
+                          ? 'bg-green-500 text-black shadow-[0_0_30px_rgba(34,197,94,0.35)] hover:bg-green-400'
+                          : 'bg-primary text-white shadow-[0_0_30px_rgba(136,130,220,0.35)] hover:opacity-95'
+                      }`}
+                    >
+                      ¡Entendido! <Play size={14} fill="currentColor" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </motion.div>
 
             </motion.div>
           </div>
