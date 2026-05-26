@@ -9,6 +9,7 @@ import { PageWrapper } from '@/components/PageWrapper';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingPro } from '@/components/ui/LoadingPro';
 import { clsx } from 'clsx';
+import { TorneoTutorial } from '@/components/matches/TorneoTutorial';
 
 interface Torneo {
   id: string;
@@ -28,6 +29,7 @@ export default function TorneosPage() {
   const [loading, setLoading] = useState(true);
   const [myInscriptions, setMyInscriptions] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'mis' | 'todos'>('todos');
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   useEffect(() => {
     fetchTorneos();
@@ -113,6 +115,21 @@ export default function TorneosPage() {
           >
             Explorá los próximos eventos y seguí tu progreso.
           </motion.p>
+
+          {/* How it works button */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <button
+              onClick={() => setIsTutorialOpen(true)}
+              className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 text-white border border-white/15 hover:bg-white/20 hover:border-primary/30 hover:text-primary transition-all cursor-pointer"
+            >
+              <span className="flex items-center justify-center w-4 h-4 rounded-full bg-white/20 text-[9px] font-black">?</span>
+              ¿Cómo funciona?
+            </button>
+          </motion.div>
 
           {/* Tabs */}
           {profile?.telefono && (
@@ -276,6 +293,8 @@ export default function TorneosPage() {
           )}
         </AnimatePresence>
       </div>
+
+      <TorneoTutorial isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
     </PageWrapper>
   );
 }
