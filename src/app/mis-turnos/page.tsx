@@ -12,12 +12,14 @@ import { PageWrapper } from '@/components/PageWrapper';
 import { LoadingPro } from '@/components/ui/LoadingPro';
 import { AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MisTurnosTutorial } from '@/components/MisTurnosTutorial';
 
 export default function MisTurnosPage() {
   const { profile } = useGuestProfile();
   const [turnos, setTurnos] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
   const [turnoToCancel, setTurnoToCancel] = useState<{id: string, fecha: string, hora: string} | null>(null);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const fetchMisTurnos = async () => {
     if (!profile) return setLoading(false);
@@ -100,6 +102,13 @@ export default function MisTurnosPage() {
         <header className="text-center space-y-2">
           <h2 className="text-4xl font-black italic uppercase tracking-tighter">Mis <span className="text-primary">Turnos</span></h2>
           <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest">Gestioná tus reservas activas</p>
+          <button
+            onClick={() => setIsTutorialOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 text-white border border-white/15 hover:bg-white/20 hover:border-primary/30 hover:text-primary transition-all cursor-pointer text-[10px] font-black uppercase tracking-widest"
+          >
+            <span className="flex items-center justify-center w-4 h-4 rounded-full bg-white/20 text-[9px] font-black">?</span>
+            ¿Cómo funciona?
+          </button>
         </header>
 
         {turnos.length === 0 ? (
@@ -200,6 +209,8 @@ export default function MisTurnosPage() {
           </div>
         )}
       </AnimatePresence>
+
+      <MisTurnosTutorial isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
     </PageWrapper>
   );
 }
