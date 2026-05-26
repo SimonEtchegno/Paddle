@@ -25,22 +25,47 @@ export default function AdminStatsView({
   loading
 }: AdminStatsViewProps) {
 
+  // Precios editables con persistencia local
+  const [padelPrice, setPadelPrice] = React.useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('stats_padel_price');
+      return saved ? parseInt(saved, 10) : 8000;
+    }
+    return 8000;
+  });
+
+  const [futbolPrice, setFutbolPrice] = React.useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('stats_futbol_price');
+      return saved ? parseInt(saved, 10) : 12000;
+    }
+    return 12000;
+  });
+
+  const handlePadelPriceChange = (val: number) => {
+    setPadelPrice(val);
+    localStorage.setItem('stats_padel_price', val.toString());
+  };
+
+  const handleFutbolPriceChange = (val: number) => {
+    setFutbolPrice(val);
+    localStorage.setItem('stats_futbol_price', val.toString());
+  };
+
   // 1. Cálculos de Facturación
   const bookingStats = useMemo(() => {
     let totalBookings = reservas.length;
     let padelCount = 0;
     let futbolCount = 0;
-    
-    // Estimación de precios: Pádel = $8000, Fútbol = $12000
     let estimatedRevenue = 0;
 
     reservas.forEach(r => {
       if (r.cancha === 10) {
         futbolCount++;
-        estimatedRevenue += 12000;
+        estimatedRevenue += futbolPrice;
       } else {
         padelCount++;
-        estimatedRevenue += 8000;
+        estimatedRevenue += padelPrice;
       }
     });
 
@@ -50,7 +75,7 @@ export default function AdminStatsView({
       futbolCount,
       estimatedRevenue
     };
-  }, [reservas]);
+  }, [reservas, padelPrice, futbolPrice]);
 
   const tournamentRevenue = useMemo(() => {
     return inscripciones.reduce((acc, i) => {
@@ -150,29 +175,52 @@ export default function AdminStatsView({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
       
-      {/* Time Range Selector */}
-      <div className="flex justify-between items-center bg-white/[0.02] border border-white/5 p-4 rounded-3xl">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 pl-2">
-          Rango de Análisis
-        </span>
-        <div className="flex gap-2">
-          {[
-            { id: '7d', label: 'Últimos 7 días' },
-            { id: '30d', label: 'Últimos 30 días' },
-            { id: 'all', label: 'Histórico Total' }
-          ].map(r => (
-            <button
-              key={r.id}
-              onClick={() => setTimeRange(r.id as any)}
-              className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
-                timeRange === r.id 
-                  ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(200,255,0,0.25)]' 
-                  : 'bg-white/5 border-white/10 opacity-50 hover:opacity-100 hover:bg-white/10'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+      {/* Configuration & Time Range Selector */}
+      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] gap-6">
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="flex-1 space-y-1.5">
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 ml-1">Tarifa Turno Pádel ($)</label>
+            <input
+              type="number"
+              value={padelPrice}
+              onChange={(e) => handlePadelPriceChange(parseInt(e.target.value) || 0)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-primary transition-all text-white font-bold"
+            />
+          </div>
+          <div className="flex-1 space-y-1.5">
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 ml-1">Tarifa Turno Fútbol ($)</label>
+            <input
+              type="number"
+              value={futbolPrice}
+              onChange={(e) => handleFutbolPriceChange(parseInt(e.target.value) || 0)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-primary transition-all text-white font-bold"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 pl-2">
+            Rango de Análisis:
+          </span>
+          <div className="flex gap-2">
+            {[
+              { id: '7d', label: 'Últimos 7 días' },
+              { id: '30d', label: 'Últimos 30 días' },
+              { id: 'all', label: 'Histórico Total' }
+            ].map(r => (
+              <button
+                key={r.id}
+                onClick={() => setTimeRange(r.id as any)}
+                className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                  timeRange === r.id 
+                    ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(200,255,0,0.25)]' 
+                    : 'bg-white/5 border-white/10 opacity-50 hover:opacity-100 hover:bg-white/10'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
