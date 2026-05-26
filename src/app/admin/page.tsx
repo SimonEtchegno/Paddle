@@ -301,8 +301,13 @@ export default function AdminPage() {
       msg = `Tu inscripción al torneo "${item.torneos?.nombre || 'de Padel'}" ha sido cancelada por el administrador.`;
     }
     if (item.category === 'partido') {
-      table = 'uniones_partidos';
-      msg = `Tu unión al partido del ${item.partidos_abiertos?.fecha} ha sido cancelada por el administrador.`;
+      if (item.isCreation) {
+        table = 'partidos_abiertos';
+        msg = `Tu partido abierto del ${item.fecha} ha sido cancelado por el administrador.`;
+      } else {
+        table = 'uniones_partidos';
+        msg = `Tu unión al partido del ${item.partidos_abiertos?.fecha || item.fecha} ha sido cancelada por el administrador.`;
+      }
     }
     if (item.category === 'registro') {
       table = 'perfiles';
@@ -340,7 +345,9 @@ export default function AdminPage() {
         let table = '';
         if (item.category === 'reserva') table = 'reservas';
         if (item.category === 'torneo') table = 'inscripciones_torneos';
-        if (item.category === 'partido') table = 'uniones_partidos';
+        if (item.category === 'partido') {
+          table = item.isCreation ? 'partidos_abiertos' : 'uniones_partidos';
+        }
         if (item.category === 'registro') table = 'perfiles';
 
         if (table) {
