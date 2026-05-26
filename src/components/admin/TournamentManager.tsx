@@ -703,155 +703,154 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
           </button>
         </div>
 
-        {/* Stepper & Actions Container */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4 w-full lg:w-auto justify-center lg:justify-end">
-          {/* Action buttons (Cargar, Guía, Compartir, Guardar, Estado) */}
-          <div className="flex flex-wrap items-center gap-2 justify-center w-full lg:w-auto">
-            <button
-              id="tutorial-tourney-load"
-              onClick={openLoadModal}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/40 hover:text-white"
-            >
-              <Clock size={12} /> <span>Cargar</span>
-            </button>
+        {/* Action buttons (Cargar, Guía, Compartir, Guardar, Estado) */}
+        <div className="flex flex-wrap items-center gap-2 justify-center w-full lg:w-auto mt-4 lg:mt-0">
+          <button
+            id="tutorial-tourney-load"
+            onClick={openLoadModal}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/40 hover:text-white"
+          >
+            <Clock size={12} /> <span>Cargar</span>
+          </button>
 
-            <button
-              onClick={() => startTournamentAdminTour((s) => setStep(s as ManagementStep))}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all text-primary"
-            >
-              <Sparkles size={12} /> <span>Guía</span>
-            </button>
+          <button
+            onClick={() => startTournamentAdminTour((s) => setStep(s as ManagementStep))}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all text-primary"
+          >
+            <Sparkles size={12} /> <span>Guía</span>
+          </button>
 
-            <button
-              onClick={() => {
-                const url = `${window.location.origin}/torneos/${tournament.id}`;
-                navigator.clipboard.writeText(url);
-                toast.success('¡Link público copiado!');
-              }}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white"
-            >
-              <Share2 size={12} /> <span>Compartir</span>
-            </button>
+          <button
+            onClick={() => {
+              const url = `${window.location.origin}/torneos/${tournament.id}`;
+              navigator.clipboard.writeText(url);
+              toast.success('¡Link público copiado!');
+            }}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white"
+          >
+            <Share2 size={12} /> <span>Compartir</span>
+          </button>
 
+          <button
+            id="tutorial-tourney-save"
+            onClick={() => handleSave()}
+            disabled={isSyncing}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-black text-[9px] font-black uppercase tracking-[0.1em] hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(200,255,0,0.2)] disabled:opacity-50"
+          >
+            {isSyncing ? (
+              <Clock className="animate-spin" size={12} />
+            ) : (
+              <Save size={12} />
+            )}
+            <span>{isSyncing ? 'Guardando' : 'Guardar'}</span>
+          </button>
+
+          {/* Visibility Toggle */}
+          <div id="tutorial-tourney-visibility" className="flex items-center gap-2 bg-black/20 px-3 py-2.5 rounded-xl border border-white/5">
+            <div className="flex flex-col items-end">
+              <span className="text-[7px] font-black uppercase opacity-40">Estado</span>
+              <span className={clsx("text-[8px] font-black uppercase", isVisible ? "text-primary" : "text-white/20")}>
+                {isVisible ? 'Público' : 'Privado'}
+              </span>
+            </div>
             <button
-              id="tutorial-tourney-save"
-              onClick={() => handleSave()}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-black text-[9px] font-black uppercase tracking-[0.1em] hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(200,255,0,0.2)] disabled:opacity-50"
-            >
-              {isSyncing ? (
-                <Clock className="animate-spin" size={12} />
-              ) : (
-                <Save size={12} />
+              onClick={() => setIsVisible(!isVisible)}
+              className={clsx(
+                "w-8 h-4 rounded-full transition-all relative p-0.5",
+                isVisible ? "bg-primary" : "bg-white/10"
               )}
-              <span>{isSyncing ? 'Guardando' : 'Guardar'}</span>
-            </button>
-
-            {/* Visibility Toggle */}
-            <div id="tutorial-tourney-visibility" className="flex items-center gap-2 bg-black/20 px-3 py-2.5 rounded-xl border border-white/5">
-              <div className="flex flex-col items-end">
-                <span className="text-[7px] font-black uppercase opacity-40">Estado</span>
-                <span className={clsx("text-[8px] font-black uppercase", isVisible ? "text-primary" : "text-white/20")}>
-                  {isVisible ? 'Público' : 'Privado'}
-                </span>
-              </div>
-              <button
-                onClick={() => setIsVisible(!isVisible)}
-                className={clsx(
-                  "w-8 h-4 rounded-full transition-all relative p-0.5",
-                  isVisible ? "bg-primary" : "bg-white/10"
-                )}
-              >
-                <motion.div
-                  animate={{ x: isVisible ? 16 : 0 }}
-                  className="w-3 h-3 bg-white rounded-full shadow-lg"
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* Stepper Navigation */}
-          {/* Mobile Stepper (up to lg) */}
-          <div className="flex lg:hidden items-center justify-between bg-black/40 backdrop-blur-2xl px-3 py-2 rounded-xl border border-white/5 shadow-2xl w-full">
-            <button
-              disabled={currentStepIdx === 0}
-              onClick={prevStep}
-              className="p-2 bg-white/5 rounded-lg border border-white/10 disabled:opacity-30 disabled:pointer-events-none"
             >
-              <ChevronLeft size={14} />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="text-[8px] font-black uppercase tracking-widest text-primary">
-                Paso {currentStepIdx + 1}/6:
-              </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-white">
-                {steps[currentStepIdx].label}
-              </span>
-            </div>
-            <button
-              disabled={currentStepIdx === steps.length - 1 || !unlockedSteps.includes(steps[currentStepIdx + 1].id)}
-              onClick={nextStep}
-              className="p-2 bg-white/5 rounded-lg border border-white/10 disabled:opacity-30 disabled:pointer-events-none"
-            >
-              <ChevronRight size={14} />
+              <motion.div
+                animate={{ x: isVisible ? 16 : 0 }}
+                className="w-3 h-3 bg-white rounded-full shadow-lg"
+              />
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* Desktop Stepper (lg and above) */}
-          <div className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-2xl p-1 rounded-2xl border border-white/5 shadow-2xl relative">
-            {steps.map((s, idx) => {
-              const Icon = s.icon;
-              const isActive = step === s.id;
-              const isCompleted = unlockedSteps.includes(s.id);
-              const isLocked = !isCompleted && !isActive;
+      {/* Stepper Navigation */}
+      <div className="flex justify-center w-full mb-4">
+        {/* Mobile Stepper (up to lg) */}
+        <div className="flex lg:hidden items-center justify-between bg-black/40 backdrop-blur-2xl px-3 py-2 rounded-xl border border-white/5 shadow-2xl w-full max-w-md">
+          <button
+            disabled={currentStepIdx === 0}
+            onClick={prevStep}
+            className="p-2 bg-white/5 rounded-lg border border-white/10 disabled:opacity-30 disabled:pointer-events-none"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[8px] font-black uppercase tracking-widest text-primary">
+              Paso {currentStepIdx + 1}/6:
+            </span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-white">
+              {steps[currentStepIdx].label}
+            </span>
+          </div>
+          <button
+            disabled={currentStepIdx === steps.length - 1 || !unlockedSteps.includes(steps[currentStepIdx + 1].id)}
+            onClick={nextStep}
+            className="p-2 bg-white/5 rounded-lg border border-white/10 disabled:opacity-30 disabled:pointer-events-none"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
 
-              return (
-                <div key={s.id} className="flex items-center">
-                  <button
-                    id={`tutorial-tourney-step-${s.id}`}
-                    disabled={isLocked}
-                    onClick={() => setStep(s.id as ManagementStep)}
-                    className={clsx(
-                      "flex items-center gap-2 px-3 py-2 rounded-xl transition-all relative group",
-                      isActive ? "text-black" : "text-white/40 hover:text-white"
-                    )}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-pill"
-                        className="absolute inset-0 bg-primary rounded-xl shadow-[0_0_15px_rgba(136,130,220,0.3)]"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                      />
-                    )}
+        {/* Desktop Stepper (lg and above) */}
+        <div className="hidden lg:flex items-center justify-center gap-0.5 bg-black/40 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/5 shadow-2xl relative w-max mx-auto">
+          {steps.map((s, idx) => {
+            const Icon = s.icon;
+            const isActive = step === s.id;
+            const isCompleted = unlockedSteps.includes(s.id);
+            const isLocked = !isCompleted && !isActive;
 
-                    <div className="relative z-10 flex items-center gap-1.5">
-                      <div className={clsx(
-                        "p-1 rounded-lg transition-all",
-                        isActive ? "bg-black/10" : "bg-white/5"
-                      )}>
-                        <Icon size={12} className={clsx(isActive && "animate-pulse")} />
-                      </div>
-                      <span className={clsx(
-                        "text-[9px] font-black uppercase tracking-widest transition-all",
-                        isActive ? "block" : "hidden xl:block"
-                      )}>
-                        {s.label}
-                      </span>
-                    </div>
-                  </button>
-
-                  {idx < steps.length - 1 && (
-                    <div className="px-0.5">
-                      <div className={clsx(
-                        "w-2 h-[1px] rounded-full transition-all duration-500",
-                        unlockedSteps.includes(steps[idx + 1].id) ? "bg-primary/40" : "bg-white/5"
-                      )} />
-                    </div>
+            return (
+              <div key={s.id} className="flex items-center">
+                <button
+                  id={`tutorial-tourney-step-${s.id}`}
+                  disabled={isLocked}
+                  onClick={() => setStep(s.id as ManagementStep)}
+                  className={clsx(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all relative group",
+                    isActive ? "text-black" : "text-white/40 hover:text-white"
                   )}
-                </div>
-              );
-            })}
-          </div>
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-pill"
+                      className="absolute inset-0 bg-primary rounded-xl shadow-[0_0_15px_rgba(136,130,220,0.3)]"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+
+                  <div className="relative z-10 flex items-center gap-1.5">
+                    <div className={clsx(
+                      "p-1.5 rounded-lg transition-all",
+                      isActive ? "bg-black/10" : "bg-white/5"
+                    )}>
+                      <Icon size={14} className={clsx(isActive && "animate-pulse")} />
+                    </div>
+                    <span className={clsx(
+                      "text-[10px] font-black uppercase tracking-widest transition-all",
+                      isActive ? "block" : "hidden xl:block"
+                    )}>
+                      {s.label}
+                    </span>
+                  </div>
+                </button>
+
+                {idx < steps.length - 1 && (
+                  <div className="px-1.5">
+                    <div className={clsx(
+                      "w-4 h-[2px] rounded-full transition-all duration-500",
+                      unlockedSteps.includes(steps[idx + 1].id) ? "bg-primary/40" : "bg-white/5"
+                    )} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
