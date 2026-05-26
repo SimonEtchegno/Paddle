@@ -207,3 +207,61 @@ body {
 .animate-float-slow {
   animation: float-slow 4s ease-in-out infinite;
 }
+
+/* ==========================================
+   LAPTOP & NOTEBOOK OPTIMIZATIONS (1024px - 1440px)
+   ========================================== */
+@media (min-width: 1024px) and (max-width: 1440px) {
+  /* Reducir espaciado del contenedor principal */
+  main {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  /* Compactar espaciado entre secciones de reserva */
+  .space-y-12 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.5rem !important;
+  }
+
+  /* Reducir altura del Banner de Portada (Hero) */
+  .h-\[200px\], .sm\:h-\[280px\], .md\:h-\[320px\] {
+    height: 180px !important;
+  }
+
+  /* Ajustar la grilla de dos columnas (lateral y principal) */
+  .lg\:grid-cols-\[350px_1fr\] {
+    grid-template-columns: 280px 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* Reducir títulos gigantes */
+  .text-3xl, .sm\:text-5xl, .md\:text-6xl {
+    font-size: 2.25rem !important;
+  }
+
+  /* Compactar las tarjetas glass generales */
+  .glass {
+    padding: 1.5rem !important;
+    border-radius: 1.75rem !important;
+  }
+
+  /* Hacer más compactas las celdas de la grilla de reservas */
+  .min-h-\[70px\], .sm\:min-h-\[90px\] {
+    min-height: 68px !important;
+    border-radius: 1.25rem !important;
+    padding: 0.75rem !important;
+  }
+
+  /* Ajustar tamaño de textos en las celdas de turnos */
+  .text-\[8px\], .sm\:text-\[10px\] {
+    font-size: 8px !important;
+  }
+  .text-\[10px\], .sm\:text-xs {
+    font-size: 10px !important;
+  }
+
+  /* Compactar el calendario lateral y el widget del clima */
+  aside.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1rem !important;
+  }
+}
