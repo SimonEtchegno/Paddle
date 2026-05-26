@@ -21,20 +21,51 @@ import { cookies, headers } from "next/headers";
 import { ProfileProvider } from "@/hooks/useGuestProfile";
 import { SportProvider } from "@/hooks/useSport";
 
-export const metadata: Metadata = {
-  title: "Peñarol Pádel",
-  description: "Reserva tu turno de pádel en segundos.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Peñarol Pádel",
-  },
-  icons: {
-    icon: "/icon?v=4",
-    apple: "/logo.jpg",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let title = "Complejo Pádel";
+  let description = "Reserva tu turno en segundos.";
+  let appleTitle = "Complejo Pádel";
+  let appleIcon = "/logo.jpg";
+
+  try {
+    const headerList = await headers();
+    const cookieStore = await cookies();
+    const activeSlug = headerList.get('x-active-club-slug') ||
+      cookieStore.get('active_club_slug')?.value ||
+      'peñarol';
+
+    const { data } = await supabase
+      .from('clubes')
+      .select('*')
+      .eq('slug', activeSlug)
+      .single();
+
+    if (data) {
+      title = data.nombre;
+      appleTitle = data.nombre;
+      if (data.logo_url) {
+        appleIcon = data.logo_url;
+      }
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+  }
+
+  return {
+    title,
+    description,
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: appleTitle,
+    },
+    icons: {
+      icon: "/icon?v=4",
+      apple: appleIcon,
+    },
+  };
+}
 
 export default async function RootLayout({
   children,
