@@ -78,14 +78,14 @@ export function Navbar({ club }: { club?: any }) {
           <Link href="/" className="flex items-center gap-3">
             <Image
               src={club?.logo_url || "/logo.jpg"}
-              alt={sport === 'futbol' ? `Fútbol 5 - ${club?.nombre || 'Complejo'}` : (club?.nombre || "Complejo Pádel")}
+              alt={sport === 'futbol' ? 'complejo F5' : 'Complejo Pádel'}
               width={40}
               height={40}
               className="rounded-full object-cover border border-primary/30 shadow-[0_0_15px_rgba(var(--primary-rgb), 0.3)]"
             />
             <div className="flex flex-col justify-center">
               <span className="text-sm sm:text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-white to-primary bg-clip-text text-transparent leading-none drop-shadow-sm truncate max-w-[200px] sm:max-w-none">
-                {sport === 'futbol' ? `Fútbol 5 ${club?.nombre || ''}` : (club?.nombre || "Complejo Pádel")}
+                {sport === 'futbol' ? 'complejo F5' : 'Complejo Pádel'}
               </span>
               <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-primary/70 mt-0.5 sm:mt-1 font-bold">
                 Reserva de Turnos
@@ -313,7 +313,7 @@ export function Navbar({ club }: { club?: any }) {
 
               <div className="p-6 border-t border-white/5 bg-white/[0.01]">
                 <p className="text-[9px] font-black uppercase tracking-widest text-white/20 text-center">
-                  {sport === 'futbol' ? `Fútbol 5 ${club?.nombre || ''}` : (club?.nombre || "Complejo Pádel")} v2.0
+                  {sport === 'futbol' ? 'complejo F5' : 'Complejo Pádel'} v2.0
                 </p>
               </div>
             </motion.div>

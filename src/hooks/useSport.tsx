@@ -40,6 +40,25 @@ export function SportProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (sport === 'futbol') {
+      const greenColor = '#22c55e';
+      document.body.style.setProperty('--primary', greenColor);
+      document.body.style.setProperty('--glass', 'rgba(34, 197, 94, 0.08)');
+      document.body.style.setProperty('--border', 'rgba(34, 197, 94, 0.25)');
+      document.body.style.setProperty('--secondary', '#a7f3d0');
+    } else {
+      const defaultColor = '#8882dc';
+      const originalPrimary = document.body.getAttribute('data-original-primary') || defaultColor;
+      document.body.style.setProperty('--primary', originalPrimary);
+      document.body.style.setProperty('--glass', 'rgba(136, 130, 220, 0.08)');
+      document.body.style.setProperty('--border', 'rgba(136, 130, 220, 0.25)');
+      document.body.style.setProperty('--secondary', '#b6b3e8');
+    }
+  }, [sport]);
+
   const setSport = (newSport: Sport) => {
     setSportState(newSport);
     if (newSport) {

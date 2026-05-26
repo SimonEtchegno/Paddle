@@ -107,9 +107,29 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for(let registration of registrations) {
+                    registration.unregister().then(function(success) {
+                      if (success) {
+                        console.log('Old Service Worker unregistered successfully.');
+                      }
+                    });
+                  }
+                });
+              }
+            `
+          }}
+        />
+      </head>
       <body
         className="min-h-full flex flex-col pb-20 md:pb-0"
         suppressHydrationWarning
+        data-original-primary={primaryColor}
         style={{
           // @ts-ignore
           '--primary': primaryColor,

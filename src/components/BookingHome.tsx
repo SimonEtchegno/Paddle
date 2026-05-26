@@ -6,7 +6,7 @@ import { es } from 'date-fns/locale';
 import { useReservas } from '@/hooks/useReservas';
 import { BookingGrid } from '@/components/booking/BookingGrid';
 import { BookingModal } from '@/components/booking/BookingModal';
-import { Info } from 'lucide-react';
+import { Info, Trophy, Activity } from 'lucide-react';
 import { PageWrapper } from '@/components/PageWrapper';
 import { Calendar } from '@/components/ui/Calendar';
 import { parseISO, isValid } from 'date-fns';
@@ -17,12 +17,14 @@ import { useSport } from '@/hooks/useSport';
 import { SportSelection } from '@/components/SportSelection';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+
+
 export default function BookingHome() {
   const { sport, setSport, isLoading } = useSport();
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlDate = searchParams.get('date');
-  
+
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   useEffect(() => {
@@ -59,47 +61,79 @@ export default function BookingHome() {
 
       <PageWrapper>
         <div className="space-y-12 pb-20">
-          {/* Hero Banner / Header */}
-          <div className="relative w-full h-[200px] sm:h-[280px] md:h-[320px] rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)] group">
-            {/* Background Image */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
-              style={{
-                backgroundImage: sport === 'futbol' ? 'url("/images/futbol_bg.png")' : 'url("/images/padel_bg.png")',
-              }}
-            />
-            {/* Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b0e] via-black/40 to-transparent" />
-            <div className="absolute inset-0 bg-black/10" />
-            
-            {/* Content */}
-            <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 md:p-10 space-y-4">
+          {/* Hero Banner / Header (Premium Design Edition) */}
+          <div className={`relative w-full overflow-hidden rounded-[2.5rem] border border-white/10 p-8 md:p-12 shadow-[0_25px_60px_rgba(0,0,0,0.5)] transition-all duration-500 ${sport === 'futbol'
+              ? 'bg-gradient-to-br from-[#07180e] via-[#090d0b] to-[#040507]'
+              : 'bg-gradient-to-br from-[#120a24] via-[#0b0714] to-[#040507]'
+            }`}>
+            {/* Ambient Radial Glows */}
+            <div className={`absolute -right-10 -top-10 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-500 ${sport === 'futbol' ? 'bg-green-500' : 'bg-primary'
+              }`} />
+            <div className={`absolute -left-10 -bottom-10 w-72 h-72 rounded-full blur-3xl opacity-10 pointer-events-none transition-all duration-500 ${sport === 'futbol' ? 'bg-green-600' : 'bg-primary'
+              }`} />
+
+            {/* Subtle Grid Pattern Overlay */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+
+            <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8 z-10">
+              {/* Left Column: Text Content */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
-                className="space-y-3"
+                className="space-y-4 max-w-xl"
               >
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 bg-primary text-white font-black uppercase text-[9px] tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
+                <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_4px_12px_rgba(0,0,0,0.25)] ${sport === 'futbol'
+                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                    : 'bg-primary/10 text-primary border-primary/20'
+                  }`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                   <span>{sport === 'futbol' ? '⚽ Fútbol 5' : '🎾 Pádel'}</span>
                 </div>
 
-                <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase leading-none italic text-white">
-                  Reservá tu <span className="text-primary">
+                {/* Title */}
+                <h2 className="text-4xl sm:text-5xl md:text-6.5xl font-black tracking-tight uppercase leading-none italic text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+                  Reservá tu <span className={sport === 'futbol' ? 'text-green-400' : 'text-primary'}>
                     {sport === 'futbol' ? 'Cancha' : 'Turno'}
                   </span>
                 </h2>
 
                 {/* Subinfo and Stats */}
-                <div className="flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em]">
-                  <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-full border border-white/10">
+                <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] pt-2">
+                  <div className="flex items-center gap-2.5 bg-white/[0.03] backdrop-blur-md text-white px-5 py-2.5 rounded-full border border-white/5 shadow-inner">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <span>Disponible</span>
+                    <span className="opacity-90">Disponible</span>
                   </div>
-                  <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-full border border-white/10">
-                    <Info size={12} className="text-primary" />
-                    <span>Precio: {sport === 'futbol' ? '$20.000' : '$34.000'}</span>
+                  <div className="flex items-center gap-2.5 bg-white/[0.03] backdrop-blur-md text-white px-5 py-2.5 rounded-full border border-white/5 shadow-inner">
+                    <Info size={12} className={sport === 'futbol' ? 'text-green-400' : 'text-primary'} />
+                    <span className="opacity-90">Precio: {sport === 'futbol' ? '$20.000' : '$34.000'}</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Right Column: Beautiful Glowing Icon / Visual Element */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, rotate: 10 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="hidden md:flex items-center justify-center pr-6"
+              >
+                <div className="relative group">
+                  {/* Glowing background behind the icon */}
+                  <div className={`absolute inset-0 rounded-full blur-2xl opacity-30 group-hover:opacity-50 transition-opacity duration-500 ${sport === 'futbol' ? 'bg-green-500' : 'bg-primary'
+                    }`} />
+
+                  {/* The Icon */}
+                  <div className={`relative p-8 rounded-full border bg-white/[0.02] backdrop-blur-sm shadow-2xl transition-all duration-500 transform group-hover:scale-110 group-hover:rotate-6 ${sport === 'futbol'
+                      ? 'border-green-500/20 text-green-400'
+                      : 'border-primary/20 text-primary'
+                    }`}>
+                    {sport === 'futbol' ? (
+                      <Activity size={56} className="stroke-[1.5] drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]" />
+                    ) : (
+                      <Trophy size={56} className="stroke-[1.5] drop-shadow-[0_0_15px_rgba(136,130,220,0.4)]" />
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -131,7 +165,7 @@ export default function BookingHome() {
             <main id="tutorial-grid" className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 gap-4">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-2 sm:mb-0">Horarios Disponibles</h3>
-                <button 
+                <button
                   onClick={handleChangeSport}
                   className="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/40 transition-all flex items-center justify-center gap-3 backdrop-blur-md shadow-lg group"
                 >
@@ -169,7 +203,7 @@ export default function BookingHome() {
             cancha={selectedSlot?.cancha || 0}
             sport={sport}
           />
-          
+
           {sport && <WelcomeModal />}
         </div>
       </PageWrapper>

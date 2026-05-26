@@ -8,6 +8,8 @@ import Link from 'next/link';
 
 import { useRouter } from 'next/navigation';
 
+
+
 export function SportSelection() {
   const { setSport } = useSport();
   const router = useRouter();
@@ -28,10 +30,10 @@ export function SportSelection() {
         onClick={() => handleSelect('padel')}
       >
         <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
+          className="absolute inset-0 bg-cover bg-[position:center_15%] transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
           style={{ backgroundImage: 'url("/images/padel_bg.jpg")' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent group-hover:via-black/20 transition-all duration-700" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent group-hover:via-black/50 transition-all duration-700" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] mix-blend-overlay" />
 
         <div className="relative h-full flex flex-col items-center justify-center p-12 text-center z-20">
@@ -72,9 +74,9 @@ export function SportSelection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.6 }}
-              className="pt-4 inline-flex items-center gap-2 text-white/50 text-[10px] font-black uppercase tracking-widest group-hover:text-primary transition-colors"
+              className="mt-6 px-6 py-2.5 rounded-full bg-black/40 group-hover:bg-primary group-hover:text-black border border-white/10 group-hover:border-primary text-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 inline-flex items-center gap-2 shadow-lg"
             >
-              Reservar cancha <span className="text-lg leading-none transition-transform group-hover:translate-x-1">→</span>
+              Reservar cancha <span className="text-sm leading-none transition-transform group-hover:translate-x-1">→</span>
             </motion.div>
           </div>
         </div>
@@ -95,7 +97,7 @@ export function SportSelection() {
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 group-hover:-rotate-1"
           style={{ backgroundImage: 'url("/images/futbol_bg.jpg")' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-l from-black/90 via-black/40 to-transparent group-hover:via-black/20 transition-all duration-700" />
+        <div className="absolute inset-0 bg-gradient-to-l from-black/90 via-black/40 to-transparent group-hover:via-black/50 transition-all duration-700" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,#22c55e_0%,transparent_70%)] mix-blend-overlay" />
 
         <div className="relative h-full flex flex-col items-center justify-center p-12 text-center z-20">
@@ -136,9 +138,9 @@ export function SportSelection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.6 }}
-              className="pt-4 inline-flex items-center gap-2 text-white/50 text-[10px] font-black uppercase tracking-widest group-hover:text-green-500 transition-colors"
+              className="mt-6 px-6 py-2.5 rounded-full bg-black/40 group-hover:bg-green-500 group-hover:text-black border border-white/10 group-hover:border-green-500 text-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 inline-flex items-center gap-2 shadow-lg"
             >
-              Armar partido <span className="text-lg leading-none transition-transform group-hover:translate-x-1">→</span>
+              Armar partido <span className="text-sm leading-none transition-transform group-hover:translate-x-1">→</span>
             </motion.div>
           </div>
         </div>
