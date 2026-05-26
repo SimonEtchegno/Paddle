@@ -28,6 +28,17 @@ const TournamentManager = dynamic(
   }
 );
 
+const AdminStatsView = dynamic(
+  () => import('@/components/admin/AdminStatsView'),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-96 opacity-30">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+);
+
 function InscriptionGroup({ torneoNombre, inscriptos, deleteInscription }: any) {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
@@ -108,7 +119,52 @@ export default function AdminPage() {
   const [espera, setEspera] = useState<ListaEspera[]>([]);
   const [loading, setLoading] = useState(false);
   const [systemMsg, setSystemMsg] = useState('');
-  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial'>('turnos');
+  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial' | 'estadisticas'>('turnos');
+  const [statsReservas, setStatsReservas] = useState<any[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsTimeRange, setStatsTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
+
+  const fetchStatsData = async () => {
+    setStatsLoading(true);
+    try {
+      const cookies = document.cookie.split('; ');
+      const slugCookie = cookies.find(row => row.startsWith('active_club_slug='));
+      const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'peñarol';
+
+      const { data: clubData } = await supabase
+        .from('clubes')
+        .select('id')
+        .eq('slug', activeSlug)
+        .single();
+      
+      const clubId = clubData?.id;
+
+      let query = supabase
+        .from('reservas')
+        .select('fecha, hora, cancha, nombre, telefono, created_at');
+
+      if (clubId) {
+        query = query.or(`club_id.eq.${clubId},club_id.is.null`);
+      }
+
+      if (statsTimeRange !== 'all') {
+        const days = statsTimeRange === '7d' ? 7 : 30;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        const cutoffISO = cutoffDate.toISOString().split('T')[0];
+        query = query.gte('fecha', cutoffISO);
+      }
+
+      const { data, error } = await query.order('fecha', { ascending: false });
+      if (error) throw error;
+      setStatsReservas(data || []);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      toast.error('Error al cargar estadísticas');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -359,24 +415,42 @@ export default function AdminPage() {
     if (isLoggedIn) {
       if (activeTab === 'historial') {
         fetchHistory();
+      } else if (activeTab === 'estadisticas') {
+        fetchStatsData();
       } else {
         fetchData();
       }
 
       const tChannel = supabase.channel('admin_torneos')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'torneos' }, () => {
+          if (activeTab === 'historial') fetchHistory();
+          else if (activeTab === 'estadisticas') fetchStatsData();
+          else fetchData();
+        })
         .subscribe();
 
       const iChannel = supabase.channel('admin_inscripciones')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'inscripciones_torneos' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inscripciones_torneos' }, () => {
+          if (activeTab === 'historial') fetchHistory();
+          else if (activeTab === 'estadisticas') fetchStatsData();
+          else fetchData();
+        })
         .subscribe();
 
       const rChannel = supabase.channel('admin_reservas')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas' }, () => {
+          if (activeTab === 'historial') fetchHistory();
+          else if (activeTab === 'estadisticas') fetchStatsData();
+          else fetchData();
+        })
         .subscribe();
 
       const pChannel = supabase.channel('admin_perfiles')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles' }, () => activeTab === 'historial' ? fetchHistory() : fetchData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles' }, () => {
+          if (activeTab === 'historial') fetchHistory();
+          else if (activeTab === 'estadisticas') fetchStatsData();
+          else fetchData();
+        })
         .subscribe();
 
       return () => {
@@ -386,7 +460,7 @@ export default function AdminPage() {
         supabase.removeChannel(pChannel);
       };
     }
-  }, [isLoggedIn, selectedDate, activeTab]);
+  }, [isLoggedIn, selectedDate, activeTab, statsTimeRange]);
 
   const handleDelete = async (id: string) => {
     if (id === 'fijo') return toast.error('No se pueden borrar turnos fijos');
@@ -842,6 +916,15 @@ export default function AdminPage() {
             )}
           >
             Gestión de Torneos
+          </button>
+          <button
+            onClick={() => setActiveTab('estadisticas')}
+            className={clsx(
+              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              activeTab === 'estadisticas' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
+            )}
+          >
+            📊 Estadísticas
           </button>
           <button
             onClick={() => setActiveTab('historial')}
@@ -1307,6 +1390,16 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+        ) : activeTab === 'estadisticas' ? (
+          /* TAB ESTADISTICAS */
+          <AdminStatsView
+            reservas={statsReservas}
+            torneos={torneos}
+            inscripciones={inscripciones}
+            timeRange={statsTimeRange}
+            setTimeRange={setStatsTimeRange}
+            loading={statsLoading}
+          />
         ) : (
           /* TAB HISTORIAL */
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
