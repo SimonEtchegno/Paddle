@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Grid, CreditCard, Play, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Calendar, Grid, Play, Check, ChevronLeft, ChevronRight, Send, User, Phone } from 'lucide-react';
 import { useSport } from '@/hooks/useSport';
 
 interface BookingTutorialProps {
@@ -106,42 +106,37 @@ export function BookingTutorial({ isOpen, onClose }: BookingTutorialProps) {
       )
     },
     {
-      title: "Asegurá tu Reserva",
-      desc: "Señá la cancha con el 50% o pagá el total para confirmar el turno. Podés pagar online con cualquier tarjeta.",
-      icon: CreditCard,
+      title: "Confirmá tu Turno",
+      desc: "Completá tu nombre y WhatsApp para asegurar tu lugar. Sin pagos por adelantado: abonás directamente en el complejo al jugar.",
+      icon: Send,
       color: "text-emerald-400",
       bg: "bg-emerald-500/10 border-emerald-500/20",
       graphic: (
         <div className="flex flex-col items-center justify-center relative w-full h-full">
           <div className="absolute inset-0 bg-green-500/5 blur-3xl rounded-full opacity-10" />
           
-          {/* Reservation checkout options mockup */}
+          {/* Booking Confirmation Mockup Form */}
           <div className="w-full max-w-[240px] bg-[#12131a] rounded-2xl p-4 border border-white/10 shadow-2xl space-y-3 text-left relative z-10 backdrop-blur-md">
-            <p className="text-[8.5px] font-black text-white/50 uppercase tracking-widest">Opciones de Pago</p>
+            <p className="text-[8.5px] font-black text-white/50 uppercase tracking-widest">Tus Datos</p>
             
             <div className="space-y-2">
-              <div className="bg-white/[0.02] border border-white/10 p-2.5 rounded-xl flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black text-white uppercase">Señar Turno</p>
-                  <p className="text-[7px] text-white/40 font-bold uppercase">Paga el 50% ahora</p>
-                </div>
-                <span className="text-[9px] font-black text-white">$10.000</span>
+              <div className="bg-white/5 border border-white/10 rounded-xl py-2 px-3 flex items-center gap-2">
+                <User size={10} className="text-white/20" />
+                <span className="text-[9px] font-bold text-white/80">Juan Pérez</span>
               </div>
               
-              <div className={`p-2.5 rounded-xl flex items-center justify-between border ${
-                sport === 'futbol' ? 'bg-green-500/5 border-green-500/30' : 'bg-primary/5 border-primary/30'
-              }`}>
-                <div>
-                  <p className="text-[9px] font-black text-white uppercase">Pago Completo</p>
-                  <p className="text-[7px] text-white/40 font-bold uppercase">Paga el 100% ahora</p>
-                </div>
-                <span className="text-[9px] font-black text-white">$20.000</span>
+              <div className="bg-white/5 border border-white/10 rounded-xl py-2 px-3 flex items-center gap-2">
+                <Phone size={10} className="text-white/20" />
+                <span className="text-[9px] font-bold text-white/80">2923460902</span>
               </div>
             </div>
             
-            <button className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-center ${
-              sport === 'futbol' ? 'bg-green-500 text-black' : 'bg-primary text-white'
+            <button className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-center shadow-lg border flex items-center justify-center gap-1.5 ${
+              sport === 'futbol' 
+                ? 'bg-green-500 text-black border-green-400 shadow-green-500/20' 
+                : 'bg-primary text-white border-primary-light shadow-primary/20'
             }`}>
+              <Send size={10} />
               Confirmar Reserva
             </button>
           </div>
