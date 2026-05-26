@@ -439,24 +439,26 @@ export default function AdminPage() {
         .select('*')
         .eq('fecha', selectedDate);
 
-      // Add fixed turns
+      // Fetch fixed turns for this day from DB
       const day = new Date(selectedDate + 'T00:00:00').getDay();
-      const fixed = TURNOS_FIJOS[day] || {};
+      const { data: dbFixed } = await supabase
+        .from('turnos_fijos')
+        .select('*')
+        .eq('dia_semana', day);
+
       const allReservas = [...(rData || [])];
 
-      for (const h in fixed) {
-        for (const c in fixed[h]) {
-          allReservas.push({
-            id: 'fijo',
-            nombre: fixed[h][c],
-            hora: h,
-            cancha: parseInt(c),
-            telefono: 'FIJO',
-            fecha: selectedDate,
-            created_at: ''
-          });
-        }
-      }
+      dbFixed?.forEach((f: any) => {
+        allReservas.push({
+          id: 'fijo',
+          nombre: f.nombre,
+          hora: f.hora.split(':').slice(0, 2).join(':'), // Normalizar formato '19:00:00' -> '19:00'
+          cancha: f.cancha,
+          telefono: 'FIJO',
+          fecha: selectedDate,
+          created_at: f.created_at
+        });
+      });
       setReservas(allReservas.sort((a, b) => a.hora.localeCompare(b.hora)));
 
       // Fetch waitlist
