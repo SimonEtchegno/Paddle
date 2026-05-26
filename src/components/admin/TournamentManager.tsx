@@ -655,6 +655,17 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     toast.success(`${unassigned.length} parejas asignadas (Cabezas de serie + Agrupadas por Horario)`);
   };
 
+  const assignPairToZone = (pairId: string, zoneId: string) => {
+    setZones(prev => prev.map(z => {
+      if (z.id === zoneId) {
+        if (z.pairs.includes(pairId)) return z;
+        return { ...z, pairs: [...z.pairs, pairId] };
+      }
+      return { ...z, pairs: z.pairs.filter(p => p !== pairId) };
+    }));
+    toast.success('Pareja asignada a la zona');
+  };
+
   // --- RENDERING HELPERS ---
   const steps = [
     { id: 'config', label: 'Configuración', icon: Settings2 },
@@ -663,13 +674,13 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
     { id: 'groups', label: 'Zonas', icon: Trophy },
     { id: 'bracket', label: 'Cuadro', icon: Layout },
     { id: 'champions', label: 'Premiación', icon: Crown },
-  ];
+  ];  const currentStepIdx = steps.findIndex(s => s.id === step);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-8 bg-surface/30 p-4 md:p-10 rounded-[3rem] border border-white/5 min-h-[85vh] flex flex-col"
+      className="space-y-8 bg-surface/30 p-3 sm:p-6 md:p-10 rounded-2xl md:rounded-[3rem] border border-white/5 min-h-[85vh] flex flex-col"
     >
       <div id="tutorial-tourney-header" className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-white/5 pb-8">
         <div className="flex items-center gap-4 md:gap-6 w-full lg:w-auto">
@@ -693,73 +704,101 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
         </div>
 
         {/* Stepper & Actions Container */}
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-center lg:justify-end">
-          <button
-            id="tutorial-tourney-load"
-            onClick={openLoadModal}
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/40 hover:text-white"
-          >
-            <Clock size={14} /> Cargar
-          </button>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 w-full lg:w-auto justify-center lg:justify-end">
+          {/* Action buttons (Cargar, Guía, Compartir, Guardar, Estado) */}
+          <div className="flex flex-wrap items-center gap-2 justify-center w-full lg:w-auto">
+            <button
+              id="tutorial-tourney-load"
+              onClick={openLoadModal}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/40 hover:text-white"
+            >
+              <Clock size={12} /> <span>Cargar</span>
+            </button>
 
-          <button
-            onClick={() => startTournamentAdminTour((s) => setStep(s as ManagementStep))}
-            className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all text-primary"
-          >
-            <Sparkles size={16} /> ¿Cómo organizar mi torneo?
-          </button>
+            <button
+              onClick={() => startTournamentAdminTour((s) => setStep(s as ManagementStep))}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all text-primary"
+            >
+              <Sparkles size={12} /> <span>Guía</span>
+            </button>
 
-          <button
-            onClick={() => {
-              const url = `${window.location.origin}/torneos/${tournament.id}`;
-              navigator.clipboard.writeText(url);
-              toast.success('¡Link público copiado!');
-            }}
-            className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white"
-          >
-            <Share2 size={16} /> Compartir
-          </button>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/torneos/${tournament.id}`;
+                navigator.clipboard.writeText(url);
+                toast.success('¡Link público copiado!');
+              }}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white"
+            >
+              <Share2 size={12} /> <span>Compartir</span>
+            </button>
 
-          <button
-            id="tutorial-tourney-save"
-            onClick={() => handleSave()}
-            disabled={isSyncing}
-            className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-[0_0_20px_rgba(200,255,0,0.3)] disabled:opacity-50"
-          >
-            {isSyncing ? (
-              <Clock className="animate-spin" size={16} />
-            ) : (
-              <Save size={16} />
-            )}
-            {isSyncing ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+            <button
+              id="tutorial-tourney-save"
+              onClick={() => handleSave()}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-black text-[9px] font-black uppercase tracking-[0.1em] hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(200,255,0,0.2)] disabled:opacity-50"
+            >
+              {isSyncing ? (
+                <Clock className="animate-spin" size={12} />
+              ) : (
+                <Save size={12} />
+              )}
+              <span>{isSyncing ? 'Guardando' : 'Guardar'}</span>
+            </button>
 
-          <div className="w-px h-8 bg-white/10 mx-2" />
+            {/* Visibility Toggle */}
+            <div id="tutorial-tourney-visibility" className="flex items-center gap-2 bg-black/20 px-3 py-2.5 rounded-xl border border-white/5">
+              <div className="flex flex-col items-end">
+                <span className="text-[7px] font-black uppercase opacity-40">Estado</span>
+                <span className={clsx("text-[8px] font-black uppercase", isVisible ? "text-primary" : "text-white/20")}>
+                  {isVisible ? 'Público' : 'Privado'}
+                </span>
+              </div>
+              <button
+                onClick={() => setIsVisible(!isVisible)}
+                className={clsx(
+                  "w-8 h-4 rounded-full transition-all relative p-0.5",
+                  isVisible ? "bg-primary" : "bg-white/10"
+                )}
+              >
+                <motion.div
+                  animate={{ x: isVisible ? 16 : 0 }}
+                  className="w-3 h-3 bg-white rounded-full shadow-lg"
+                />
+              </button>
+            </div>
+          </div>
 
-          <div id="tutorial-tourney-visibility" className="flex items-center gap-4 bg-black/20 px-6 py-3 rounded-2xl border border-white/5 mr-4">
-            <div className="flex flex-col items-end">
-              <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Estado Público</span>
-              <span className={clsx("text-[9px] font-black uppercase tracking-widest", isVisible ? "text-primary" : "text-white/20")}>
-                {isVisible ? 'Visible para todos' : 'Privado (Solo Admin)'}
+          {/* Stepper Navigation */}
+          {/* Mobile Stepper (up to lg) */}
+          <div className="flex lg:hidden items-center justify-between bg-black/40 backdrop-blur-2xl px-3 py-2 rounded-xl border border-white/5 shadow-2xl w-full">
+            <button
+              disabled={currentStepIdx === 0}
+              onClick={prevStep}
+              className="p-2 bg-white/5 rounded-lg border border-white/10 disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-[8px] font-black uppercase tracking-widest text-primary">
+                Paso {currentStepIdx + 1}/6:
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-white">
+                {steps[currentStepIdx].label}
               </span>
             </div>
             <button
-              onClick={() => setIsVisible(!isVisible)}
-              className={clsx(
-                "w-12 h-6 rounded-full transition-all relative p-1",
-                isVisible ? "bg-primary" : "bg-white/10"
-              )}
+              disabled={currentStepIdx === steps.length - 1 || !unlockedSteps.includes(steps[currentStepIdx + 1].id)}
+              onClick={nextStep}
+              className="p-2 bg-white/5 rounded-lg border border-white/10 disabled:opacity-30 disabled:pointer-events-none"
             >
-              <motion.div
-                animate={{ x: isVisible ? 24 : 0 }}
-                className="w-4 h-4 bg-white rounded-full shadow-lg"
-              />
+              <ChevronRight size={14} />
             </button>
           </div>
 
-          <div className="w-px h-8 bg-white/10 mx-2" />
-
-          <div className="flex items-center gap-1 bg-black/40 backdrop-blur-2xl p-1 rounded-[1.8rem] border border-white/5 shadow-2xl relative">
+          {/* Desktop Stepper (lg and above) */}
+          <div className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-2xl p-1 rounded-2xl border border-white/5 shadow-2xl relative">
             {steps.map((s, idx) => {
               const Icon = s.icon;
               const isActive = step === s.id;
@@ -773,29 +812,28 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                     disabled={isLocked}
                     onClick={() => setStep(s.id as ManagementStep)}
                     className={clsx(
-                      "flex items-center gap-2.5 px-4 py-3 rounded-[1.3rem] transition-all relative group",
+                      "flex items-center gap-2 px-3 py-2 rounded-xl transition-all relative group",
                       isActive ? "text-black" : "text-white/40 hover:text-white"
                     )}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="active-pill"
-                        className="absolute inset-0 bg-primary rounded-[1.3rem] shadow-[0_0_20px_rgba(136,130,220,0.4)]"
+                        className="absolute inset-0 bg-primary rounded-xl shadow-[0_0_15px_rgba(136,130,220,0.3)]"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                       />
                     )}
 
-                    <div className="relative z-10 flex items-center gap-2">
+                    <div className="relative z-10 flex items-center gap-1.5">
                       <div className={clsx(
-                        "p-1.5 rounded-lg transition-all",
+                        "p-1 rounded-lg transition-all",
                         isActive ? "bg-black/10" : "bg-white/5"
                       )}>
-                        <Icon size={14} className={clsx(isActive && "animate-pulse")} />
+                        <Icon size={12} className={clsx(isActive && "animate-pulse")} />
                       </div>
-                      {/* Only show text on active step or very wide screens to save space */}
                       <span className={clsx(
                         "text-[9px] font-black uppercase tracking-widest transition-all",
-                        isActive ? "block" : "hidden 2xl:block"
+                        isActive ? "block" : "hidden xl:block"
                       )}>
                         {s.label}
                       </span>
@@ -803,9 +841,9 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   </button>
 
                   {idx < steps.length - 1 && (
-                    <div className="px-1">
+                    <div className="px-0.5">
                       <div className={clsx(
-                        "w-4 h-[1px] rounded-full transition-all duration-500",
+                        "w-2 h-[1px] rounded-full transition-all duration-500",
                         unlockedSteps.includes(steps[idx + 1].id) ? "bg-primary/40" : "bg-white/5"
                       )} />
                     </div>
@@ -813,21 +851,6 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                 </div>
               );
             })}
-          </div>
-
-          <div className="flex items-center gap-4">
-            {!isVisible && (
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-error/20 border border-error/30 rounded-xl animate-pulse">
-                <Globe size={14} className="text-error" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-error">Torneo Oculto (Privado)</span>
-              </div>
-            )}
-            <button
-              onClick={onClose}
-              className="p-3 rounded-2xl hover:bg-white/5 transition-all text-white/40 hover:text-white"
-            >
-              <X size={24} />
-            </button>
           </div>
         </div>
       </div>
@@ -994,11 +1017,11 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   <motion.div
                     layout
                     key={p.id}
-                    className="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6 relative group"
+                    className="glass p-4 sm:p-8 rounded-2xl md:rounded-[2.5rem] border border-white/5 space-y-4 sm:space-y-6 relative group"
                   >
                     <button
                       onClick={() => setPairs(pairs.filter(x => x.id !== p.id))}
-                      className="absolute top-6 right-6 p-2 text-error/20 hover:text-error hover:bg-error/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 text-error hover:text-error lg:text-error/20 lg:hover:text-error hover:bg-error/10 rounded-xl transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -1169,7 +1192,13 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
                   </div>
                   <div className="space-y-2 flex-1 overflow-y-auto pr-3 custom-scrollbar">
                     {pairs.filter(p => !zones.some(z => z.pairs.includes(p.id))).map((p) => (
-                      <DraggablePair key={p.id} pair={p} tournamentName={(tournament as any).nombre || ''} />
+                      <DraggablePair
+                        key={p.id}
+                        pair={p}
+                        tournamentName={(tournament as any).nombre || ''}
+                        zones={zones}
+                        onAssignZone={assignPairToZone}
+                      />
                     ))}
                   </div>
                 </div>
@@ -2310,7 +2339,7 @@ export default function TournamentManager({ tournament, inscripciones, onSave, o
 
 // --- HELPER COMPONENTS ---
 
-function DraggablePair({ pair, tournamentName }: { pair: Pair, tournamentName: string }) {
+function DraggablePair({ pair, tournamentName, zones, onAssignZone }: { pair: Pair, tournamentName: string, zones?: Zone[], onAssignZone?: (pairId: string, zoneId: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
     id: pair.id,
   });
@@ -2326,25 +2355,43 @@ function DraggablePair({ pair, tournamentName }: { pair: Pair, tournamentName: s
       style={style}
       {...attributes}
       {...listeners}
-      className="w-full p-5 rounded-[1.5rem] border bg-white/5 border-white/5 hover:border-primary/40 hover:bg-primary/5 transition-all text-left flex items-center justify-between group cursor-grab active:cursor-grabbing"
+      className="w-full p-4 rounded-2xl border bg-white/5 border-white/5 hover:border-primary/40 hover:bg-primary/5 transition-all text-left flex items-center justify-between gap-3 group cursor-grab active:cursor-grabbing"
     >
-      <div className="min-w-0 pr-4 flex items-center gap-2">
-        <div className="min-w-0">
-          <p className="text-sm md:text-base font-black uppercase italic leading-tight truncate">{pair.name || 'Sin Jugadores'}</p>
+      <div className="min-w-0 flex-1 flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs sm:text-sm font-black uppercase italic leading-tight truncate">{pair.name || 'Sin Jugadores'}</p>
           {(pair.dayRange || pair.timeRange) && (
-            <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
+            <p className="text-[8px] sm:text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
               Disp: {pair.dayRange} {pair.timeRange}{pair.endTimeRange ? ` - ${pair.endTimeRange}` : ''}
             </p>
           )}
         </div>
         {getPairScore(pair, tournamentName) > 0 && (
-          <div className="bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-yellow-400/20" title={`Puntos de Ranking: ${getPairScore(pair, tournamentName)}`}>
+          <div className="bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-yellow-400/20 shrink-0" title={`Puntos de Ranking: ${getPairScore(pair, tournamentName)}`}>
             <Crown size={10} />
             <span className="text-[8px] font-black">{getPairScore(pair, tournamentName)} pts</span>
           </div>
         )}
       </div>
-      <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+      
+      {zones && onAssignZone && (
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value) {
+              onAssignZone(pair.id, e.target.value);
+            }
+          }}
+          className="lg:hidden text-[9px] font-black uppercase bg-black/60 border border-white/15 rounded-xl py-2 px-3 outline-none text-primary cursor-pointer appearance-none shrink-0"
+        >
+          <option value="">Mover...</option>
+          {zones.map(z => (
+            <option key={z.id} value={z.id}>{z.name}</option>
+          ))}
+        </select>
+      )}
+
+      <div className="hidden lg:flex w-8 h-8 rounded-full bg-white/5 items-center justify-center opacity-0 group-hover:opacity-100 transition-all shrink-0">
         <GripVertical size={14} className="text-primary" />
       </div>
     </div>
@@ -2360,16 +2407,16 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone, tournamentN
     <div
       ref={setNodeRef}
       className={clsx(
-        "glass p-8 rounded-[3rem] border transition-all h-[400px] flex flex-col group/zone",
+        "glass p-4 sm:p-6 md:p-8 rounded-2xl md:rounded-[3rem] border transition-all h-[360px] sm:h-[400px] flex flex-col group/zone",
         isOver ? "border-primary bg-primary/10 scale-[1.02]" : "border-white/5"
       )}
     >
-      <div className="flex justify-between items-center mb-6">
-        <h4 className="text-xl font-black uppercase italic tracking-tighter">{zone.name}</h4>
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h4 className="text-lg sm:text-xl font-black uppercase italic tracking-tighter">{zone.name}</h4>
         {onDeleteZone && (
           <button
             onClick={onDeleteZone}
-            className="p-2 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover/zone:opacity-100"
+            className="p-2 text-red-500 hover:text-red-500 lg:text-red-500/40 lg:hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-100 lg:opacity-0 lg:group-hover/zone:opacity-100"
             title="Borrar Zona"
           >
             <Trash2 size={16} />
@@ -2381,10 +2428,10 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone, tournamentN
           const pair = allPairs.find(x => x.id === pId);
           if (!pair) return null;
           return (
-            <div key={pId} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex justify-between items-center group/pair">
-              <div className="min-w-0 pr-4 flex items-center gap-2">
+            <div key={pId} className="bg-white/5 border border-white/5 rounded-2xl p-3 sm:p-4 flex justify-between items-center group/pair">
+              <div className="min-w-0 pr-2 flex items-center gap-2">
                 <div className="min-w-0">
-                  <p className="text-xs md:text-sm font-black uppercase truncate">{pair.name}</p>
+                  <p className="text-xs font-black uppercase truncate">{pair.name}</p>
                   {(pair.dayRange || pair.timeRange) && (
                     <p className="text-[8px] font-bold text-primary/60 mt-0.5 uppercase tracking-widest truncate">
                       Disp: {pair.dayRange} {pair.timeRange}{pair.endTimeRange ? ` - ${pair.endTimeRange}` : ''}
@@ -2392,19 +2439,19 @@ function ZoneDroppable({ zone, allPairs, onRemovePair, onDeleteZone, tournamentN
                   )}
                 </div>
                 {getPairScore(pair, tournamentName) > 0 && (
-                  <span title={`Puntos de Ranking: ${getPairScore(pair, tournamentName)}`} className="flex items-center">
+                  <span title={`Puntos de Ranking: ${getPairScore(pair, tournamentName)}`} className="flex items-center shrink-0">
                     <Crown size={10} className="text-yellow-400" />
                   </span>
                 )}
               </div>
-              <button onClick={() => onRemovePair(pId)} className="p-2 text-error/20 hover:text-error hover:bg-error/10 rounded-xl transition-all opacity-0 group-hover/pair:opacity-100">
+              <button onClick={() => onRemovePair(pId)} className="p-2 text-error hover:text-error lg:text-error/20 lg:hover:text-error hover:bg-error/10 rounded-xl transition-all opacity-100 lg:opacity-0 lg:group-hover/pair:opacity-100 shrink-0">
                 <X size={14} />
               </button>
             </div>
           );
         })}
         {zone.pairs.length === 0 && (
-          <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-[2rem] opacity-20 text-[9px] font-black uppercase text-center p-6">
+          <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl opacity-20 text-[9px] font-black uppercase text-center p-6">
             Arrastra parejas aquí
           </div>
         )}
@@ -2485,11 +2532,11 @@ function MatchRow({ match, pairs, onUpdate, allMatches }: { match: Match, pairs:
       "border rounded-[1rem] overflow-hidden shadow-lg transition-all",
       (p1Wins || p2Wins) ? "border-primary/40 shadow-primary/10" : "border-primary/20 bg-primary/5"
     )}>
-      {/* Header Numbers & Time */}
+      {/* Header: date, time, court */}
       <div className="flex items-center bg-black/40 border-b border-primary/20">
-        <div className="flex-1 py-1 px-4 flex items-center gap-4">
+        <div className="flex-1 py-1.5 px-3 flex flex-wrap items-center gap-2">
           <div className="flex items-center">
-            <Clock size={12} className="text-primary/40 mr-2" />
+            <Clock size={12} className="text-primary/40 mr-1.5" />
             <select
               value={match.date || ''}
               onChange={(e) => onUpdate({ date: e.target.value })}
@@ -2503,7 +2550,7 @@ function MatchRow({ match, pairs, onUpdate, allMatches }: { match: Match, pairs:
             <select
               value={match.time || ''}
               onChange={(e) => onUpdate({ time: e.target.value })}
-              className="bg-transparent text-[10px] font-black tracking-widest text-primary/60 outline-none w-14 cursor-pointer appearance-none ml-2"
+              className="bg-transparent text-[10px] font-black tracking-widest text-primary/60 outline-none w-14 cursor-pointer appearance-none ml-1.5"
             >
               <option value="" className="bg-black">Hora...</option>
               {getTimeOptions(match.date).filter(t => t !== '').map(time => (
@@ -2511,8 +2558,8 @@ function MatchRow({ match, pairs, onUpdate, allMatches }: { match: Match, pairs:
               ))}
             </select>
           </div>
-          <div className="flex items-center border-l border-white/10 pl-4">
-            <MapPin size={12} className="text-primary/40 mr-2" />
+          <div className="flex items-center border-l border-white/10 pl-2">
+            <MapPin size={12} className="text-primary/40 mr-1.5" />
             <select
               value={match.court || ''}
               onChange={(e) => onUpdate({ court: e.target.value })}
@@ -2524,83 +2571,150 @@ function MatchRow({ match, pairs, onUpdate, allMatches }: { match: Match, pairs:
             </select>
           </div>
         </div>
-        <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">1</div>
-        <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">2</div>
-        <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">3</div>
+        {/* Set column labels — desktop only */}
+        <div className="hidden sm:flex shrink-0">
+          <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">1</div>
+          <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">2</div>
+          <div className="w-12 text-center text-[10px] font-black uppercase tracking-widest text-primary/60 py-1.5 border-l border-primary/20">3</div>
+        </div>
       </div>
 
-      {/* Player 1 Row */}
-      <div className="flex border-b border-primary/10">
-        <div className={clsx(
-          "flex-1 py-4 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
-          p1Wins ? "bg-primary/20 border-primary" : "bg-primary/10 border-transparent",
-          p2Wins ? "opacity-40" : ""
-        )}>
-          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p1Name}</p>
-          {(p1?.dayRange || p1?.timeRange) && (
-            <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
-              Disp: {p1.dayRange} {p1.timeRange}{p1.endTimeRange ? ` - ${p1.endTimeRange}` : ''}
-            </p>
-          )}
+      {/* ── MOBILE layout (<sm): vertical scoreboard ── */}
+      <div className="sm:hidden">
+        <div className="flex items-center px-3 pt-2 pb-1 gap-1">
+          <div className="flex-1" />
+          {['S1', 'S2', 'S3'].map(s => (
+            <div key={s} className="w-10 text-center text-[9px] font-black uppercase tracking-widest text-primary/40">{s}</div>
+          ))}
         </div>
-        {[0, 1, 2].map(i => {
-          const g1 = parseInt(parsedSets[i].g1);
-          const g2 = parseInt(parsedSets[i].g2);
-          const wonSet = !isNaN(g1) && !isNaN(g2) && g1 > g2;
-          return (
-            <div key={`p1-s${i}`} className={clsx("w-12 border-l border-primary/20", p1Wins ? "bg-primary/20" : "bg-primary/10")}>
+        {/* Pair 1 */}
+        <div className={clsx(
+          "flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 border-l-4",
+          p1Wins ? "border-l-primary bg-primary/10" : "border-l-transparent"
+        )}>
+          <p className={clsx("flex-1 text-[11px] font-black uppercase leading-tight truncate min-w-0", p2Wins && "opacity-40")}>{p1Name}</p>
+          {[0, 1, 2].map(i => {
+            const g1v = parseInt(parsedSets[i].g1);
+            const g2v = parseInt(parsedSets[i].g2);
+            const wonSet = !isNaN(g1v) && !isNaN(g2v) && g1v > g2v;
+            return (
               <input
+                key={`mob-p1-s${i}`}
                 type="text"
                 inputMode="numeric"
                 value={parsedSets[i].g1}
                 onChange={(e) => updateGame(i, 1, e.target.value)}
                 onFocus={e => e.target.select()}
                 className={clsx(
-                  "w-full h-full py-3 bg-transparent text-center text-lg font-black outline-none transition-all placeholder:text-white/20",
-                  wonSet ? "text-primary focus:bg-primary/40" : "text-white focus:bg-primary/30"
+                  "w-10 h-10 rounded-xl text-center text-base font-black outline-none border transition-all shrink-0",
+                  wonSet ? "bg-primary/30 border-primary text-primary" : "bg-white/5 border-white/10 text-white"
                 )}
-                placeholder=""
+                placeholder="–"
               />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Player 2 Row */}
-      <div className="flex">
-        <div className={clsx(
-          "flex-1 py-4 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
-          p2Wins ? "bg-primary/20 border-primary" : "bg-primary/5 border-transparent",
-          p1Wins ? "opacity-40" : ""
-        )}>
-          <p className="text-xs md:text-sm font-black uppercase tracking-tight text-white leading-tight">{p2Name}</p>
-          {(p2?.dayRange || p2?.timeRange) && (
-            <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
-              Disp: {p2.dayRange} {p2.timeRange}{p2.endTimeRange ? ` - ${p2.endTimeRange}` : ''}
-            </p>
-          )}
+            );
+          })}
         </div>
-        {[0, 1, 2].map(i => {
-          const g1 = parseInt(parsedSets[i].g1);
-          const g2 = parseInt(parsedSets[i].g2);
-          const wonSet = !isNaN(g1) && !isNaN(g2) && g2 > g1;
-          return (
-            <div key={`p2-s${i}`} className={clsx("w-12 border-l border-primary/20", p2Wins ? "bg-primary/20" : "bg-primary/5")}>
+        {/* Pair 2 */}
+        <div className={clsx(
+          "flex items-center gap-1.5 px-3 py-2 border-l-4",
+          p2Wins ? "border-l-primary bg-primary/10" : "border-l-transparent"
+        )}>
+          <p className={clsx("flex-1 text-[11px] font-black uppercase leading-tight truncate min-w-0", p1Wins && "opacity-40")}>{p2Name}</p>
+          {[0, 1, 2].map(i => {
+            const g1v = parseInt(parsedSets[i].g1);
+            const g2v = parseInt(parsedSets[i].g2);
+            const wonSet = !isNaN(g1v) && !isNaN(g2v) && g2v > g1v;
+            return (
               <input
+                key={`mob-p2-s${i}`}
                 type="text"
                 inputMode="numeric"
                 value={parsedSets[i].g2}
                 onChange={(e) => updateGame(i, 2, e.target.value)}
                 onFocus={e => e.target.select()}
                 className={clsx(
-                  "w-full h-full py-3 bg-transparent text-center text-lg font-black outline-none transition-all placeholder:text-white/20",
-                  wonSet ? "text-primary focus:bg-primary/40" : "text-white focus:bg-primary/30"
+                  "w-10 h-10 rounded-xl text-center text-base font-black outline-none border transition-all shrink-0",
+                  wonSet ? "bg-primary/30 border-primary text-primary" : "bg-white/5 border-white/10 text-white"
                 )}
-                placeholder=""
+                placeholder="–"
               />
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── DESKTOP layout (sm+): horizontal table ── */}
+      <div className="hidden sm:block">
+        <div className="flex border-b border-primary/10">
+          <div className={clsx(
+            "flex-1 py-4 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
+            p1Wins ? "bg-primary/20 border-primary" : "bg-primary/10 border-transparent",
+            p2Wins ? "opacity-40" : ""
+          )}>
+            <p className="text-sm font-black uppercase tracking-tight text-white leading-tight">{p1Name}</p>
+            {(p1?.dayRange || p1?.timeRange) && (
+              <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
+                Disp: {p1.dayRange} {p1.timeRange}{p1.endTimeRange ? ` - ${p1.endTimeRange}` : ''}
+              </p>
+            )}
+          </div>
+          {[0, 1, 2].map(i => {
+            const g1 = parseInt(parsedSets[i].g1);
+            const g2 = parseInt(parsedSets[i].g2);
+            const wonSet = !isNaN(g1) && !isNaN(g2) && g1 > g2;
+            return (
+              <div key={`p1-s${i}`} className={clsx("w-12 border-l border-primary/20", p1Wins ? "bg-primary/20" : "bg-primary/10")}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={parsedSets[i].g1}
+                  onChange={(e) => updateGame(i, 1, e.target.value)}
+                  onFocus={e => e.target.select()}
+                  className={clsx(
+                    "w-full h-full py-3 bg-transparent text-center text-lg font-black outline-none transition-all",
+                    wonSet ? "text-primary" : "text-white"
+                  )}
+                  placeholder=""
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex">
+          <div className={clsx(
+            "flex-1 py-4 px-4 flex flex-col justify-center min-w-0 transition-all border-l-4",
+            p2Wins ? "bg-primary/20 border-primary" : "bg-primary/5 border-transparent",
+            p1Wins ? "opacity-40" : ""
+          )}>
+            <p className="text-sm font-black uppercase tracking-tight text-white leading-tight">{p2Name}</p>
+            {(p2?.dayRange || p2?.timeRange) && (
+              <p className="text-[9px] font-bold text-primary/60 mt-1 uppercase tracking-widest truncate">
+                Disp: {p2.dayRange} {p2.timeRange}{p2.endTimeRange ? ` - ${p2.endTimeRange}` : ''}
+              </p>
+            )}
+          </div>
+          {[0, 1, 2].map(i => {
+            const g1 = parseInt(parsedSets[i].g1);
+            const g2 = parseInt(parsedSets[i].g2);
+            const wonSet = !isNaN(g1) && !isNaN(g2) && g2 > g1;
+            return (
+              <div key={`p2-s${i}`} className={clsx("w-12 border-l border-primary/20", p2Wins ? "bg-primary/20" : "bg-primary/5")}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={parsedSets[i].g2}
+                  onChange={(e) => updateGame(i, 2, e.target.value)}
+                  onFocus={e => e.target.select()}
+                  className={clsx(
+                    "w-full h-full py-3 bg-transparent text-center text-lg font-black outline-none transition-all",
+                    wonSet ? "text-primary" : "text-white"
+                  )}
+                  placeholder=""
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

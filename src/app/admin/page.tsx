@@ -897,11 +897,11 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs Selector */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:flex gap-3 sm:gap-4 mb-8">
           <button
             onClick={() => setActiveTab('turnos')}
             className={clsx(
-              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              "py-3.5 px-2 rounded-xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] transition-all border text-center flex items-center justify-center min-w-0 truncate",
               activeTab === 'turnos' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
             )}
           >
@@ -911,7 +911,7 @@ export default function AdminPage() {
             id="tutorial-admin-tournaments"
             onClick={() => setActiveTab('torneos')}
             className={clsx(
-              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              "py-3.5 px-2 rounded-xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] transition-all border text-center flex items-center justify-center min-w-0 truncate",
               activeTab === 'torneos' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
             )}
           >
@@ -920,7 +920,7 @@ export default function AdminPage() {
           <button
             onClick={() => setActiveTab('estadisticas')}
             className={clsx(
-              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              "py-3.5 px-2 rounded-xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] transition-all border text-center flex items-center justify-center min-w-0 truncate",
               activeTab === 'estadisticas' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
             )}
           >
@@ -929,7 +929,7 @@ export default function AdminPage() {
           <button
             onClick={() => setActiveTab('historial')}
             className={clsx(
-              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all border",
+              "py-3.5 px-2 rounded-xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] transition-all border text-center flex items-center justify-center min-w-0 truncate",
               activeTab === 'historial' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
             )}
           >

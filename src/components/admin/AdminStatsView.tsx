@@ -176,7 +176,7 @@ export default function AdminStatsView({
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
       
       {/* Configuration & Time Range Selector */}
-      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] gap-6">
+      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center bg-white/[0.02] border border-white/5 p-4 sm:p-6 rounded-2xl md:rounded-[2rem] gap-6">
         <div className="flex flex-col sm:flex-row gap-4 flex-1">
           <div className="flex-1 space-y-1.5">
             <label className="text-[8px] font-black uppercase tracking-widest text-white/40 ml-1">Tarifa Turno Pádel ($)</label>
@@ -211,7 +211,7 @@ export default function AdminStatsView({
               <button
                 key={r.id}
                 onClick={() => setTimeRange(r.id as any)}
-                className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
                   timeRange === r.id 
                     ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(200,255,0,0.25)]' 
                     : 'bg-white/5 border-white/10 opacity-50 hover:opacity-100 hover:bg-white/10'
@@ -225,63 +225,63 @@ export default function AdminStatsView({
       </div>
 
       {loading ? (
-        <div className="glass py-32 rounded-[3rem] border border-white/5 flex flex-col items-center justify-center gap-3 text-white/30">
+        <div className="glass py-24 sm:py-32 rounded-2xl md:rounded-[3rem] border border-white/5 flex flex-col items-center justify-center gap-3 text-white/30">
           <RefreshCw size={24} className="animate-spin text-primary" />
           <span className="text-[9px] font-black uppercase tracking-[0.2em]">Procesando base de datos...</span>
         </div>
       ) : (
         <>
           {/* KPI Dashboard Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="glass p-6 rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[150px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <div className="glass p-4 sm:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[140px] sm:h-[150px]">
               <div className="flex justify-between items-start">
                 <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Total Reservas</span>
-                <div className="p-2.5 bg-primary/10 rounded-xl text-primary border border-primary/20">
-                  <Calendar size={16} />
+                <div className="p-2 bg-primary/10 rounded-xl text-primary border border-primary/20">
+                  <Calendar size={14} />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-white italic">{bookingStats.totalBookings}</h3>
+                <h3 className="text-2xl sm:text-3xl font-black text-white italic">{bookingStats.totalBookings}</h3>
                 <p className="text-[8px] font-bold uppercase tracking-wider text-green-400 mt-1">Canchas reservadas</p>
               </div>
             </div>
 
-            <div className="glass p-6 rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[150px]">
+            <div className="glass p-4 sm:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[140px] sm:h-[150px]">
               <div className="flex justify-between items-start">
                 <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Ingresos Canchas (Est.)</span>
-                <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
-                  <DollarSign size={16} />
+                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
+                  <DollarSign size={14} />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-white italic">{formattedCurrency(bookingStats.estimatedRevenue)}</h3>
+                <h3 className="text-2xl sm:text-3xl font-black text-white italic">{formattedCurrency(bookingStats.estimatedRevenue)}</h3>
                 <p className="text-[8px] font-bold uppercase tracking-wider text-white/30 mt-1">Suma por tarifas de reserva</p>
               </div>
             </div>
 
-            <div className="glass p-6 rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[150px]">
+            <div className="glass p-4 sm:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[140px] sm:h-[150px]">
               <div className="flex justify-between items-start">
                 <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Ingresos Torneos</span>
-                <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20">
-                  <Trophy size={16} />
+                <div className="p-2 bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20">
+                  <Trophy size={14} />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-white italic">{formattedCurrency(tournamentRevenue)}</h3>
+                <h3 className="text-2xl sm:text-3xl font-black text-white italic">{formattedCurrency(tournamentRevenue)}</h3>
                 <p className="text-[8px] font-bold uppercase tracking-wider text-white/30 mt-1">Inscripciones cobradas</p>
               </div>
             </div>
 
-            <div className="glass p-6 rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[150px] relative overflow-hidden bg-gradient-to-br from-primary/5 to-transparent">
+            <div className="glass p-4 sm:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/5 flex flex-col justify-between h-[140px] sm:h-[150px] relative overflow-hidden bg-gradient-to-br from-primary/5 to-transparent">
               <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -z-10" />
               <div className="flex justify-between items-start">
                 <span className="text-[9px] font-black uppercase tracking-widest text-primary">Ingresos Totales</span>
-                <div className="p-2.5 bg-primary text-black rounded-xl border border-primary/30 shadow-[0_0_15px_rgba(200,255,0,0.2)]">
-                  <TrendingUp size={16} />
+                <div className="p-2 bg-primary text-black rounded-xl border border-primary/30 shadow-[0_0_15px_rgba(200,255,0,0.2)]">
+                  <TrendingUp size={14} />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-primary italic">{formattedCurrency(totalRevenue)}</h3>
+                <h3 className="text-2xl sm:text-3xl font-black text-primary italic">{formattedCurrency(totalRevenue)}</h3>
                 <p className="text-[8px] font-black uppercase tracking-widest text-white/50 mt-1">Cifra de negocio estimada</p>
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function AdminStatsView({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Deportes Preferidos */}
-            <div className="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+            <div className="glass p-4 sm:p-8 rounded-2xl md:rounded-[2.5rem] border border-white/5 space-y-6">
               <div className="flex items-center gap-2 mb-2">
                 <BarChart2 size={18} className="text-primary" />
                 <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Deportes Preferidos</h4>
@@ -322,7 +322,7 @@ export default function AdminStatsView({
             </div>
 
             {/* Ocupación por Canchas */}
-            <div className="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+            <div className="glass p-4 sm:p-8 rounded-2xl md:rounded-[2.5rem] border border-white/5 space-y-6">
               <div className="flex items-center gap-2 mb-2">
                 <Zap size={18} className="text-primary" />
                 <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Uso de Canchas</h4>
@@ -357,7 +357,7 @@ export default function AdminStatsView({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             {/* Horarios Pico (Col 6) */}
-            <div className="lg:col-span-6 glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+            <div className="lg:col-span-6 glass p-4 sm:p-8 rounded-2xl md:rounded-[2.5rem] border border-white/5 space-y-6">
               <div className="flex items-center gap-2 mb-2">
                 <Clock size={18} className="text-primary" />
                 <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Horarios Más Solicitados</h4>
@@ -388,7 +388,7 @@ export default function AdminStatsView({
             </div>
 
             {/* Días más Activos (Col 6) */}
-            <div className="lg:col-span-6 glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+            <div className="lg:col-span-6 glass p-4 sm:p-8 rounded-2xl md:rounded-[2.5rem] border border-white/5 space-y-6">
               <div className="flex items-center gap-2 mb-2">
                 <Award size={18} className="text-primary" />
                 <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Días de Mayor Actividad</h4>
@@ -418,7 +418,7 @@ export default function AdminStatsView({
           </div>
 
           {/* Bottom Grid (Jugadores Frecuentes) */}
-          <div className="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+          <div className="glass p-4 sm:p-8 rounded-2xl md:rounded-[2.5rem] border border-white/5 space-y-6">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Sparkles size={18} className="text-primary" />
@@ -432,7 +432,7 @@ export default function AdminStatsView({
             {topCustomers.length === 0 ? (
               <div className="text-center py-10 opacity-30 text-[9px] uppercase font-black tracking-widest">Aún no hay suficientes reservas registradas</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 {topCustomers.map((c, idx) => (
                   <div key={idx} className="bg-white/[0.01] border border-white/5 rounded-2xl p-5 flex flex-col justify-between items-center text-center relative overflow-hidden group hover:border-white/10 hover:bg-white/[0.02] transition-all">
                     
