@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSport } from '@/hooks/useSport';
 import { SportSelection } from '@/components/SportSelection';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { BookingTutorial } from '@/components/booking/BookingTutorial';
 
 
 
@@ -26,6 +27,7 @@ export default function BookingHome() {
   const urlDate = searchParams.get('date');
 
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   useEffect(() => {
     if (urlDate) {
@@ -109,6 +111,15 @@ export default function BookingHome() {
                     <Info size={12} className={sport === 'futbol' ? 'text-green-400' : 'text-primary'} />
                     <span className="opacity-90">Precio: {sport === 'futbol' ? '$20.000' : '$34.000'}</span>
                   </div>
+                  <button 
+                    onClick={() => setIsTutorialOpen(true)}
+                    className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/15 text-white border border-white/20 hover:bg-white/25 transition-all cursor-pointer ${
+                      sport === 'futbol' ? 'hover:text-green-400 hover:border-green-500/30' : 'hover:text-primary hover:border-primary/30'
+                    }`}
+                  >
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-white/20 text-[9px] font-black">?</span>
+                    ¿Cómo funciona?
+                  </button>
                 </div>
               </motion.div>
 
@@ -205,6 +216,7 @@ export default function BookingHome() {
           />
 
           {sport && <WelcomeModal />}
+          <BookingTutorial isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
         </div>
       </PageWrapper>
     </>
