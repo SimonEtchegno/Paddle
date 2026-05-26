@@ -43,8 +43,8 @@ function CalendarGraphic({ sport }: { sport: string | null }) {
           return (
             <motion.span
               key={d}
-              animate={isSelected ? { scale: [1, 1.25, 1.1] } : {}}
-              transition={{ type: 'spring', bounce: 0.5, duration: 0.5 }}
+              animate={isSelected ? { scale: 1.1 } : { scale: 1 }}
+              transition={{ type: 'tween', ease: [0.34, 1.56, 0.64, 1], duration: 0.45 }}
               className={`py-1 rounded-full font-black flex items-center justify-center transition-colors duration-300 ${
                 isSelected
                   ? `${accent.ring} ${accent.text} ${accent.shadow}`
