@@ -78,13 +78,18 @@ export function Chatbot() {
     setIsLoading(true);
 
     try {
+      const cookies = document.cookie.split('; ');
+      const slugCookie = cookies.find(row => row.startsWith('active_club_slug='));
+      const activeSlug = slugCookie ? slugCookie.split('=')[1] : 'peñarol';
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           message: userMsg, 
           history: messages.filter(m => m.content !== "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?"),
-          profile: profile ? { nombre: profile.nombre, apellido: profile.apellido, telefono: profile.telefono } : null
+          profile: profile ? { nombre: profile.nombre, apellido: profile.apellido, telefono: profile.telefono } : null,
+          clubSlug: activeSlug
         }),
       });
 

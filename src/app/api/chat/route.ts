@@ -150,7 +150,7 @@ Siempre priorizá: claridad → rapidez → buena experiencia → resolver la in
 
 export async function POST(req: Request) {
   try {
-    const { message, history, profile } = await req.json();
+    const { message, history, profile, clubSlug } = await req.json();
 
     const apiKey = process.env.GEMINI_API_KEY;
     console.log("GEMINI_API_KEY in process.env:", !!apiKey, apiKey ? apiKey.substring(0, 5) : "undefined");
@@ -162,16 +162,39 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Obtener reservas ocupadas desde hoy en adelante para inyectar como contexto
+    // 1. Obtener el ID del club activo para aislar las reservas en el SaaS
+    const activeSlug = clubSlug || 'peñarol';
+    let clubId = null;
+    try {
+      const { data: clubData } = await supabase
+        .from('clubes')
+        .select('id')
+        .eq('slug', activeSlug)
+        .single();
+      if (clubData) {
+        clubId = clubData.id;
+      }
+    } catch (err) {
+      console.error('Error fetching club ID in chat API:', err);
+    }
+
+    // 2. Obtener reservas ocupadas desde hoy en adelante para inyectar como contexto
     const now = new Date();
     const argTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
     const hoyISO = argTime.getUTCFullYear() + "-" + String(argTime.getUTCMonth() + 1).padStart(2, '0') + "-" + String(argTime.getUTCDate()).padStart(2, '0');
     const horaActual = String(argTime.getUTCHours()).padStart(2, '0') + ":" + String(argTime.getUTCMinutes()).padStart(2, '0');
 
-    const { data: reservas } = await supabase
+    let query = supabase
       .from('reservas')
       .select('fecha, hora, cancha, nombre, telefono')
-      .gte('fecha', hoyISO)
+      .gte('fecha', hoyISO);
+
+    if (clubId) {
+      // Filtrar por el club activo o sin asignar (retrocompatibilidad)
+      query = query.or(`club_id.eq.${clubId},club_id.is.null`);
+    }
+
+    const { data: reservas } = await query
       .order('fecha', { ascending: true })
       .order('hora', { ascending: true })
       .limit(100);
