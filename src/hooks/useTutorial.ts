@@ -136,6 +136,10 @@ export function useTutorial() {
     driverObj.drive();
   };
 
+  const startProfileTour = () => {
+    router.push('/perfil?tutorial=true');
+  };
+
   const startAdminTour = () => {
     const driverObj = driver({
       showProgress: true,
@@ -297,6 +301,7 @@ export function useTutorial() {
     startBookingTour, 
     startTournamentTour, 
     startMatchesTour, 
+    startProfileTour,
     startAdminTour,
     startTournamentAdminTour 
   };

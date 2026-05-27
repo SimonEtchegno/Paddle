@@ -5,7 +5,7 @@ import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { useSport } from '@/hooks/useSport';
 import { UserProfile } from '@/types';
 import { toast } from 'react-hot-toast';
-import { Save, User, MapPin, Phone, Zap, Trophy, Share2, Camera, Trash2 } from 'lucide-react';
+import { Save, User, MapPin, Phone, Zap, Trophy, Share2, Camera, Trash2, Play } from 'lucide-react';
 import { PageWrapper } from '@/components/PageWrapper';
 import { motion } from 'framer-motion';
 import { PlayerCard } from '@/components/PlayerCard';
@@ -13,11 +13,24 @@ import { clsx } from 'clsx';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/cropImage';
 import { toPng } from 'html-to-image';
+import { ProfileTutorial } from '@/components/perfil/ProfileTutorial';
+import { useTutorial } from '@/hooks/useTutorial';
+import { useSearchParams } from 'next/navigation';
 
 export default function PerfilPage() {
   const { profile, saveProfile, realPoints } = useGuestProfile();
   const { sport } = useSport();
   const [loading, setLoading] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('tutorial') === 'true') {
+      setIsTutorialOpen(true);
+      // Clean up the URL to prevent reopening on reload
+      window.history.replaceState(null, '', '/perfil');
+    }
+  }, [searchParams]);
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -172,9 +185,18 @@ export default function PerfilPage() {
       />
 
       <div className="max-w-6xl mx-auto pb-20 relative z-10">
-        <header className="mb-12">
-          <h2 className="text-5xl font-black uppercase tracking-tighter italic">Tu Ficha <span className="text-primary">PRO</span></h2>
-          <p className="text-xs font-bold opacity-30 uppercase tracking-[0.3em] mt-2">Personalizá tu tarjeta de jugador profesional</p>
+        <header id="tutorial-profile-header" className="mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-5xl font-black uppercase tracking-tighter italic">Tu Ficha <span className="text-primary">PRO</span></h2>
+            <p className="text-xs font-bold opacity-30 uppercase tracking-[0.3em] mt-2">Personalizá tu tarjeta de jugador profesional</p>
+          </div>
+          <button 
+            onClick={() => setIsTutorialOpen(true)}
+            className="px-6 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-primary hover:text-black transition-all flex items-center gap-2"
+          >
+            <Play size={14} />
+            Ver Tutorial
+          </button>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -183,9 +205,11 @@ export default function PerfilPage() {
             <div className="lg:sticky lg:top-24 flex flex-col items-center gap-6 pb-12">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-center opacity-30 italic">Previsualización de Carta</h3>
 
-              <div id="player-card-download" className="relative flex justify-center" style={{ overflow: 'visible', padding: '20px' }}>
-                <div className="absolute inset-0 blur-[120px] opacity-25 transition-colors duration-1000" style={{ backgroundColor: accentColor }} />
-                <PlayerCard profile={formData} realPoints={realPoints} />
+              <div id="tutorial-profile-card" className="relative flex justify-center w-full" style={{ padding: '20px' }}>
+                <div id="player-card-download" className="relative flex justify-center w-full" style={{ overflow: 'visible' }}>
+                  <div className="absolute inset-0 blur-[120px] opacity-25 transition-colors duration-1000" style={{ backgroundColor: accentColor }} />
+                  <PlayerCard profile={formData} realPoints={realPoints} />
+                </div>
               </div>
 
               <div className="w-full max-w-[320px] space-y-5 pt-2">
@@ -220,7 +244,7 @@ export default function PerfilPage() {
           <div className="lg:col-span-7">
             <form onSubmit={handleSubmit} className="space-y-8">
 
-              <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-6">
+              <div id="tutorial-profile-info" className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-6">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Información Personal</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
@@ -263,7 +287,7 @@ export default function PerfilPage() {
                 </div>
               </div>
 
-              <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-8">
+              <div id="tutorial-profile-stats" className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-8">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Atributos y Estadísticas</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
@@ -333,7 +357,7 @@ export default function PerfilPage() {
                 </div>
               </div>
 
-              <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-6">
+              <div id="tutorial-profile-photo" className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Foto de Jugador</h3>
                   {formData.avatar_url && (
@@ -379,6 +403,7 @@ export default function PerfilPage() {
               </div>
 
               <button
+                id="tutorial-profile-save"
                 type="submit" disabled={loading}
                 className="w-full py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 text-black shadow-lg relative overflow-hidden group"
                 style={{
@@ -451,6 +476,9 @@ export default function PerfilPage() {
           </div>
         </div>
       )}
+
+      {/* Profile Animated Tutorial Modal */}
+      <ProfileTutorial isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
 
     </PageWrapper>
   );
