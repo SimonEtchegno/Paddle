@@ -249,15 +249,19 @@ export default function RankingPage() {
                       className="order-1 md:order-2 relative group z-10"
                     >
                       <div className="absolute -inset-1 bg-gradient-to-b from-primary/50 to-transparent blur-2xl opacity-30 group-hover:opacity-50 transition-opacity" />
+                      
                       <div className="glass p-10 rounded-[3rem] border-2 border-primary/20 flex flex-col items-center text-center relative h-[360px] justify-end overflow-hidden bg-gradient-to-b from-primary/5 to-transparent group-hover:border-primary/40 transition-all shadow-2xl">
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary to-transparent" />
+                        
+                        {/* Corona DENTRO del container, pero más abajo */}
                         <motion.div 
                           animate={trophyAnimation}
-                          className="absolute top-0 z-20 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]"
+                          className="absolute top-6 z-20 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]"
                         >
-                          <Crown size={40} fill="currentColor" />
+                          <Crown size={44} fill="currentColor" />
                         </motion.div>
-                        <div className="absolute top-12 w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_30px_rgba(136,130,220,0.4)] text-5xl font-black text-primary z-10">
+
+                        <div className="absolute top-20 w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_30px_rgba(136,130,220,0.4)] text-5xl font-black text-primary z-10">
                           1
                         </div>
                         <div className="z-10 mt-auto">

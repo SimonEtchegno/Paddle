@@ -261,7 +261,7 @@ export function RankingTutorial({ isOpen, onClose }: RankingTutorialProps) {
     },
     {
       title: 'Tu Nivel Real',
-      desc: 'Ganar torneos suma una gran cantidad de puntos. Superá los umbrales necesarios para que tu ficha ascienda y evolucione a ligas superiores.',
+      desc: 'Ganá torneos para sumar puntos. Al superar cada umbral, tu ficha evolucionará a ligas superiores.',
       icon: TrendingUp,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10 border-emerald-500/20',
@@ -355,7 +355,7 @@ export function RankingTutorial({ isOpen, onClose }: RankingTutorialProps) {
                     animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
                     exit={{ opacity: 0, x: -40, filter: 'blur(4px)' }}
                     transition={{ type: 'spring', bounce: 0.1, duration: 0.45 }}
-                    className="w-full flex flex-col items-center text-center space-y-5 h-[440px]"
+                    className="w-full flex flex-col items-center text-center space-y-6 h-[480px]"
                   >
                     {/* Icon badge — spring pop */}
                     <motion.div
@@ -379,7 +379,7 @@ export function RankingTutorial({ isOpen, onClose }: RankingTutorialProps) {
                     </motion.div>
 
                     {/* Title */}
-                    <div className="space-y-3 mt-auto w-full">
+                    <div className="space-y-4 mt-auto w-full pb-8">
                       <motion.h3
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -392,7 +392,7 @@ export function RankingTutorial({ isOpen, onClose }: RankingTutorialProps) {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ type: 'spring', bounce: 0.1, delay: 0.38 }}
-                        className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40 leading-relaxed px-1"
+                        className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40 leading-relaxed px-1 mb-4"
                       >
                         {steps[step].desc}
                       </motion.p>
