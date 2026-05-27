@@ -74,7 +74,7 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: Boo
         {canchas.map(c => (
           <div key={c} className="glass py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-white/5 flex items-center justify-center">
             <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">
-              {sport === 'futbol' ? 'Cancha F5' : `Cancha ${c}`}
+              {sport === 'futbol' ? 'Cancha F5' : `Cancha Pádel ${c}`}
             </span>
           </div>
         ))}

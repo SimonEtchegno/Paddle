@@ -968,8 +968,8 @@ export default function AdminPage() {
         <div id="tutorial-admin-calendar" className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'TOTAL HOY', value: reservas.length, color: 'text-primary' },
-            { label: 'CANCHA 1', value: reservas.filter(r => r.cancha === 1).length, color: 'text-white' },
-            { label: 'CANCHA 2', value: reservas.filter(r => r.cancha === 2).length, color: 'text-white' },
+            { label: 'CANCHA PÁDEL 1', value: reservas.filter(r => r.cancha === 1).length, color: 'text-white' },
+            { label: 'CANCHA PÁDEL 2', value: reservas.filter(r => r.cancha === 2).length, color: 'text-white' },
             { label: 'CANCHA F5', value: reservas.filter(r => r.cancha === 10).length, color: 'text-white' },
             { label: 'TURNOS LIBRES', value: (HORAS.length * 2) - reservas.length, color: 'text-primary' },
           ].map((stat, i) => (

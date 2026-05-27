@@ -88,7 +88,7 @@ export function WelcomeModal() {
               <div className="grid grid-cols-1 gap-4 py-4">
                 {[
                   { icon: Camera, title: "Foto Profesional", desc: "Subí y recortá tu foto para tu carta de jugador.", color: "text-blue-400" },
-                  { icon: Calendar, title: "Reservas Rápidas", desc: "Gestioná tus turnos y recibí recordatorios.", color: "text-primary" },
+                  { icon: Zap, title: "Tiempo Real", desc: "Reservas y notificaciones sincronizadas al instante.", color: "text-green-400" },
                   { icon: Trophy, title: "Ranking Oficial", desc: "Participá en el ranking del club y subí de categoría.", color: "text-yellow-400" },
                 ].map((f, i) => (
                   <motion.div 
