@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { PageWrapper } from '@/components/PageWrapper';
-import { Trophy, Search, ChevronRight, TrendingUp, Medal, Star, Loader2, Crown } from 'lucide-react';
+import { Trophy, Search, ChevronRight, TrendingUp, Medal, Star, Loader2, Crown, Play } from 'lucide-react';
 import { motion, AnimatePresence, TargetAndTransition } from 'framer-motion';
 import { clsx } from 'clsx';
 import { rankingData } from '@/lib/rankingData';
 import { supabase } from '@/lib/supabase';
+import { RankingTutorial } from '@/components/ranking/RankingTutorial';
+import { useSearchParams } from 'next/navigation';
 
 const trophyAnimation: TargetAndTransition = {
   y: [0, -10, 0],
@@ -23,8 +25,17 @@ export default function RankingPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [liveRanking, setLiveRanking] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const searchParams = useSearchParams();
 
   const categories = ['4ta', '5ta', '6ta', '7ma', 'Principiante', 'Pro'];
+
+  useEffect(() => {
+    if (searchParams.get('tutorial') === 'true') {
+      setIsTutorialOpen(true);
+      window.history.replaceState(null, '', '/ranking');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     async function fetchRanking() {
@@ -135,6 +146,17 @@ export default function RankingPage() {
           >
             Ranking <span className="text-primary text-3xl md:text-5xl block mt-2">Peñarol</span>
           </motion.h1>
+
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            onClick={() => setIsTutorialOpen(true)}
+            className="mt-6 px-6 py-3 bg-white/5 text-white/80 border border-white/10 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 hover:text-white hover:border-primary/50 transition-all flex items-center gap-2"
+          >
+            <Play size={14} className="text-primary" />
+            ¿Cómo funciona?
+          </motion.button>
         </div>
 
         {/* Categories Tabs */}
@@ -355,6 +377,8 @@ export default function RankingPage() {
           </p>
         </div>
       </div>
+
+      <RankingTutorial isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
     </PageWrapper>
   );
 }

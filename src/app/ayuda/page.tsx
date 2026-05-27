@@ -14,7 +14,8 @@ import {
   Settings, 
   ShieldCheck,
   MousePointer2,
-  UserCircle
+  UserCircle,
+  Crown
 } from 'lucide-react';
 
 const FAQS = [
@@ -45,18 +46,20 @@ const TUTORIALS = [
   { id: 'partidos', name: 'Partidos Abiertos', icon: Users, color: 'bg-green-500' },
   { id: 'torneos', name: 'Inscripción Torneos', icon: Trophy, color: 'bg-yellow-500' },
   { id: 'perfil', name: 'Tu Ficha PRO', icon: UserCircle, color: 'bg-indigo-500' },
+  { id: 'ranking', name: 'Sistema de Ranking', icon: Crown, color: 'bg-amber-600' },
   { id: 'admin', name: 'Gestión para Dueños', icon: Settings, color: 'bg-purple-500' },
 ];
 
 import { BookOpen } from 'lucide-react';
 import { useTutorial } from '@/hooks/useTutorial';
+import { TutorialManual } from '@/components/TutorialManual';
 
 export default function AyudaPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPin, setAdminPin] = useState('');
-  const { startBookingTour, startTournamentTour, startMatchesTour, startProfileTour, startAdminTour } = useTutorial();
+  const { startBookingTour, startTournamentTour, startMatchesTour, startProfileTour, startRankingTour, startAdminTour } = useTutorial();
 
   const handleAdminTutorial = () => {
     if (adminPin === '1234') { // Pin de seguridad simple para el tutorial
@@ -158,6 +161,7 @@ export default function AyudaPage() {
                   else if (tut.id === 'torneos') startTournamentTour();
                   else if (tut.id === 'partidos') startMatchesTour();
                   else if (tut.id === 'perfil') startProfileTour();
+                  else if (tut.id === 'ranking') startRankingTour();
                   else if (tut.id === 'admin') setShowAdminLogin(true);
                 }}
                 className="glass p-8 rounded-[2.5rem] border border-white/5 flex items-center gap-6 text-left group transition-all hover:border-primary/30"
