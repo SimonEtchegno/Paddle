@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { HORAS } from "@/lib/constants";
 
-const getSystemPrompt = (ocupadosContext: string, profileContext: string, misTurnosContext: string, horasContext: string, horaActual: string) => {
-  // Obtenemos la fecha en Argentina (UTC-3) restando 3 horas al timestamp UTC
-  const now = new Date();
-  const argTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  const fechaLegible = `${dias[argTime.getUTCDay()]} ${argTime.getUTCDate()} de ${meses[argTime.getUTCMonth()]} de ${argTime.getUTCFullYear()}`;
-  const fechaISO = argTime.getUTCFullYear() + "-" + String(argTime.getUTCMonth() + 1).padStart(2, '0') + "-" + String(argTime.getUTCDate()).padStart(2, '0');
+interface ChatMessage {
+  role: 'user' | 'model';
+  content: string;
+}
 
+const getSystemPrompt = (
+  ocupadosContext: string,
+  profileContext: string,
+  misTurnosContext: string,
+  horasContext: string,
+  fechaISO: string,
+  fechaLegible: string,
+  horaActual: string
+) => {
   return `
 Sistema de Gestión de Pádel y Fútbol — System Prompt
 Eres el asistente virtual con IA OFICIAL del sistema de gestión de Pádel y Fútbol.
@@ -119,15 +123,11 @@ D. Al recibir datos para registrar o actualizar el perfil del usuario (nombre co
 [ACCION:ACTUALIZAR_PERFIL({"nombre": "Nombre", "apellido": "Apellido", "telefono": "WhatsApp"})]
 El JSON debe ir EXACTAMENTE dentro de los paréntesis. El sistema registrará al usuario y actualizará su perfil automáticamente.
 
-OTRAS CONSULTAS
-Podés ayudar también con:
+Otras reglas y consultas frecuentes:
 
-Cómo reservar / cancelar
-Cómo unirse o crear partidos abiertos
-Cómo funciona el ranking y los torneos
-Cómo editar la Player Card
-Cómo comprar en la tienda
-Historial de turnos
+- Torneos: Los jugadores NO pueden inscribirse a sí mismos desde la web/app. Si alguien pide inscribirse a un torneo, informale que la inscripción es gestionada exclusivamente por el administrador y que debe contactarse directamente con el club para anotarse.
+- Ranking y Puntos: Aclará siempre que los puntos para subir en el ranking (y evolucionar la carta) SOLO se consiguen jugando y ganando torneos. Reservar turnos regulares o jugar partidos amistosos NO otorga puntos.
+- Podés ayudar con: Cómo reservar / cancelar, unirse a partidos abiertos, funcionamiento del ranking, edición de la Player Card y la tienda.
 
 Información dinámica del club (precios, promociones, estado de canchas en tiempo real):
 
@@ -166,23 +166,48 @@ export async function POST(req: Request) {
     const activeSlug = clubSlug || 'peñarol';
     let clubId = null;
     try {
-      const { data: clubData } = await supabase
+      const { data: clubData, error: clubError } = await supabase
         .from('clubes')
         .select('id')
         .eq('slug', activeSlug)
         .single();
+      
+      if (clubError) throw clubError;
       if (clubData) {
         clubId = clubData.id;
       }
     } catch (err) {
       console.error('Error fetching club ID in chat API:', err);
+      // Abortar si no podemos validar el club para evitar mostrar reservas de otros clubes (data leak)
+      return NextResponse.json(
+        { reply: "Lo siento, hubo un error de validación con tu club. Por favor, intenta recargar la página." },
+        { status: 400 }
+      );
     }
 
     // 2. Obtener reservas ocupadas desde hoy en adelante para inyectar como contexto
     const now = new Date();
-    const argTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    const hoyISO = argTime.getUTCFullYear() + "-" + String(argTime.getUTCMonth() + 1).padStart(2, '0') + "-" + String(argTime.getUTCDate()).padStart(2, '0');
-    const horaActual = String(argTime.getUTCHours()).padStart(2, '0') + ":" + String(argTime.getUTCMinutes()).padStart(2, '0');
+    
+    // Formato robusto con Intl para evitar hardcodear offset UTC-3
+    const hoyISO = now.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }); // YYYY-MM-DD
+    
+    const formatterHora = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const horaActual = formatterHora.format(now);
+
+    const formatterLegible = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    const fechaLegibleRaw = formatterLegible.format(now);
+    const fechaLegible = fechaLegibleRaw.charAt(0).toUpperCase() + fechaLegibleRaw.slice(1);
 
     let query = supabase
       .from('reservas')
@@ -235,10 +260,12 @@ export async function POST(req: Request) {
 
     // Agregar turnos fijos semanales correspondientes a los próximos 14 días
     for (let i = 0; i < 14; i++) {
-      // Calcular fecha desplazada en base a argTime sumando días en milisegundos
-      const d = new Date(argTime.getTime() + i * 24 * 60 * 60 * 1000);
-      const fechaStr = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, '0') + "-" + String(d.getUTCDate()).padStart(2, '0');
-      const dayOfWeek = d.getUTCDay();
+      const d = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+      const fechaStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
+      
+      const dayStr = d.toLocaleDateString('en-US', { timeZone: 'America/Argentina/Buenos_Aires', weekday: 'short' });
+      const dayMap: Record<string, number> = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+      const dayOfWeek = dayMap[dayStr];
       
       const dayFixed = dynamicFixedTurns[dayOfWeek];
       if (dayFixed) {
@@ -294,7 +321,7 @@ export async function POST(req: Request) {
     const horasContext = HORAS.map(h => `- ${h}`).join('\n');
 
     // Convert history format to Gemini API format
-    const formattedHistory = history.map((msg: any) => ({
+    const formattedHistory = history.map((msg: ChatMessage) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }]
     }));
@@ -306,7 +333,7 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext, misTurnosContext, horasContext, horaActual) }]
+          parts: [{ text: getSystemPrompt(ocupadosContext, profileContext, misTurnosContext, horasContext, hoyISO, fechaLegible, horaActual) }]
         },
         contents: [
           ...formattedHistory,

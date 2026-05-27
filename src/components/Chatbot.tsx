@@ -24,6 +24,16 @@ export function Chatbot() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Autofocus input when chat opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 300); // Pequeña demora para esperar que termine la animación de entrada
+    }
+  }, [isOpen]);
 
   // Cargar historial de chat al montar
   useEffect(() => {
@@ -444,6 +454,7 @@ export function Chatbot() {
                 className="flex gap-2 relative"
               >
                 <input
+                  ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -467,6 +478,7 @@ export function Chatbot() {
       <AnimatePresence>
         {!isOpen && (
           <motion.button
+            id="chat-widget-button"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}

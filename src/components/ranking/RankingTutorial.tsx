@@ -23,11 +23,11 @@ function PodiumGraphic() {
   }, []);
 
   return (
-    <div className="w-full max-w-[240px] bg-[#12131a] rounded-2xl p-4 pt-10 border border-white/10 shadow-2xl space-y-4 text-center relative z-10 backdrop-blur-md flex flex-col items-center">
+    <div className="w-full max-w-[240px] bg-[#12131a] rounded-2xl p-4 pt-6 border border-white/10 shadow-2xl text-center relative z-10 backdrop-blur-md flex flex-col items-center">
       <div className="absolute inset-0 bg-primary/5 blur-xl z-0 rounded-2xl overflow-hidden" />
-      <p className="text-[8.5px] font-black text-white/50 uppercase tracking-widest relative z-10 -mt-6">El Salón de la Fama</p>
+      <p className="text-[8.5px] font-black text-white/50 uppercase tracking-widest relative z-10 mb-16">El Salón de la Fama</p>
 
-      <div className="flex items-end justify-center gap-2 h-32 relative z-10 w-full pt-4">
+      <div className="flex items-end justify-center gap-2 h-28 relative z-10 w-full">
         {/* Puesto 2 */}
         <motion.div
           initial={{ height: 0, opacity: 0 }}

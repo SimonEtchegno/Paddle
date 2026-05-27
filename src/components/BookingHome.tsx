@@ -12,6 +12,7 @@ import { Calendar } from '@/components/ui/Calendar';
 import { parseISO, isValid } from 'date-fns';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { WelcomeModal } from '@/components/WelcomeModal';
+import { AIWelcomeModal } from '@/components/AIWelcomeModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSport } from '@/hooks/useSport';
 import { SportSelection } from '@/components/SportSelection';
@@ -216,6 +217,7 @@ export default function BookingHome() {
           />
 
           {sport && <WelcomeModal />}
+          {sport && <AIWelcomeModal />}
           <BookingTutorial isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
         </div>
       </PageWrapper>
