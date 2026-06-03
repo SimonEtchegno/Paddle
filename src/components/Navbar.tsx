@@ -21,7 +21,7 @@ export function Navbar({ club }: { club?: any }) {
   const [showNotifs, setShowNotifs] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
-  
+
   // Activar notificaciones en tiempo real
   const { notifications, unreadCount, dismissNotification, clearAllNotifications } = useNotifications();
 
@@ -46,11 +46,11 @@ export function Navbar({ club }: { club?: any }) {
         setShowNotifs(false);
       }
     }
-    
+
     if (showNotifs) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -115,24 +115,24 @@ export function Navbar({ club }: { club?: any }) {
 
           {/* Profile & Notifications Section */}
           <div className="flex items-center gap-2 sm:gap-4">
-            
 
-            
+
+
             {/* Install App Button (Desktop) */}
             <InstallAppButton className="hidden sm:flex" />
 
             {/* Hamburger Menu (Mobile Only) */}
-            <button 
+            <button
               onClick={() => setIsMenuOpen(true)}
               className="md:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white"
             >
               <Menu size={20} />
             </button>
-            
+
             {/* Notifications Bell */}
             {profile && (
               <div className="relative" ref={notifRef}>
-                <button 
+                <button
                   onClick={() => setShowNotifs(!showNotifs)}
                   className="p-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all relative"
                 >
@@ -152,7 +152,7 @@ export function Navbar({ club }: { club?: any }) {
                       <div className="flex items-center gap-3">
                         {unreadCount > 0 && <span className="text-[9px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest">{unreadCount} nuevas</span>}
                         {notifications.length > 0 && (
-                          <button 
+                          <button
                             onClick={clearAllNotifications}
                             className="text-[9px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors"
                           >
@@ -173,12 +173,12 @@ export function Navbar({ club }: { club?: any }) {
                         notifications.map((n) => (
                           <div key={n.id} className="p-4 border-b border-white/5 hover:bg-white/5 transition-all flex items-start gap-3 group">
                             <div className="mt-0.5 text-base leading-none">
-                              {n.type === 'confirmacion' ? '🎾' : 
-                               n.type === 'cancelacion' ? <span className="text-error">⚠️</span> : 
-                               n.type === 'sistema' ? <Bell size={16} className="text-blue-400 mt-1" /> :
-                               <Users size={16} className="text-primary mt-1" />}
+                              {n.type === 'confirmacion' ? '🎾' :
+                                n.type === 'cancelacion' ? <span className="text-error">⚠️</span> :
+                                  n.type === 'sistema' ? <Bell size={16} className="text-blue-400 mt-1" /> :
+                                    <Users size={16} className="text-primary mt-1" />}
                             </div>
-                            <div 
+                            <div
                               className="flex-1 cursor-pointer"
                               onClick={() => {
                                 setShowNotifs(false);
@@ -200,8 +200,8 @@ export function Navbar({ club }: { club?: any }) {
                                 {new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
                             </div>
-                            <button 
-                              onClick={() => dismissNotification(n.id)} 
+                            <button
+                              onClick={() => dismissNotification(n.id)}
                               className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
                               title="Marcar como leída"
                             >
@@ -224,7 +224,7 @@ export function Navbar({ club }: { club?: any }) {
                     profile.nivel && profile.nivel >= 6 ? "border-yellow-400/50 shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "border-white/10"
                   )}>
                     {profile.avatar_url ? (
-                      <img 
+                      <img
                         src={profile.avatar_url}
                         alt="Avatar"
                         className="w-full h-full object-cover"
@@ -257,7 +257,7 @@ export function Navbar({ club }: { club?: any }) {
         {isMenuOpen && (
           <div className="md:hidden fixed inset-0 z-[100] flex justify-end">
             {/* Overlay */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -266,7 +266,7 @@ export function Navbar({ club }: { club?: any }) {
             />
 
             {/* Menu Panel */}
-            <motion.div 
+            <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -275,7 +275,7 @@ export function Navbar({ club }: { club?: any }) {
             >
               <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Menú</span>
-                <button 
+                <button
                   onClick={() => setIsMenuOpen(false)}
                   className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white transition-colors"
                 >
@@ -293,8 +293,8 @@ export function Navbar({ club }: { club?: any }) {
                       href={item.href}
                       className={clsx(
                         "flex items-center gap-4 p-4 rounded-2xl transition-all font-bold text-sm",
-                        active 
-                          ? "bg-primary/10 text-primary border border-primary/20" 
+                        active
+                          ? "bg-primary/10 text-primary border border-primary/20"
                           : "text-white/60 hover:bg-white/5 hover:text-white"
                       )}
                     >
@@ -340,7 +340,7 @@ export function Navbar({ club }: { club?: any }) {
             </Link>
           );
         })}
-        <button 
+        <button
           onClick={() => setIsMenuOpen(true)}
           className="flex flex-col items-center gap-1 text-white/40"
         >

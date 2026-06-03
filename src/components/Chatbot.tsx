@@ -16,7 +16,6 @@ type Message = {
 export function Chatbot() {
   const router = useRouter();
   const { profile, saveProfile } = useGuestProfile();
-  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: "model", content: "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?" }
   ]);
@@ -26,14 +25,12 @@ export function Chatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Autofocus input when chat opens
+  // Autofocus input on mount
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 300); // Pequeña demora para esperar que termine la animación de entrada
-    }
-  }, [isOpen]);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 300);
+  }, []);
 
   // Cargar historial de chat al montar
   useEffect(() => {
@@ -329,16 +326,9 @@ export function Chatbot() {
 
   return (
     <>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 right-6 md:bottom-6 md:right-6 w-[90vw] md:w-[380px] h-[500px] max-h-[80vh] bg-[#1a2235] border border-[var(--border)] rounded-2xl shadow-2xl flex flex-col z-[100] overflow-hidden"
-          >
-            {/* Header */}
-            <div className="bg-[#1a2235] text-white p-4 flex justify-between items-center border-b border-[var(--border)]">
+      <div className="flex flex-col h-full bg-[#0f1423]">
+        {/* Header (Simplified since it's inside the main widget now) */}
+        <div className="bg-[#1a2235] text-white p-3 flex justify-between items-center border-b border-[var(--border)] shrink-0">
               <div className="flex items-center gap-3">
                 <div className="bg-[var(--primary)]/10 p-2 rounded-full text-[var(--primary)]">
                   <Bot className="w-5 h-5" />
@@ -393,16 +383,6 @@ export function Chatbot() {
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-
-                <div className="w-[1px] h-4 bg-white/10 mx-1" />
-
-                {/* Cerrar */}
-                <button 
-                  onClick={() => setIsOpen(false)}
-                  className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-gray-400 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
             </div>
 
@@ -419,9 +399,9 @@ export function Chatbot() {
                     </div>
                   )}
                   
-                  <div className={`max-w-[80%] p-3 text-sm shadow-sm ${
+                  <div className={`max-w-[80%] px-4 py-2.5 text-[13px] sm:text-sm shadow-sm whitespace-pre-wrap break-words leading-relaxed ${
                     msg.role === 'user' 
-                      ? 'bg-[var(--primary)] text-white rounded-2xl rounded-tr-sm' 
+                      ? 'bg-[var(--primary)] text-[#0a0b0e] font-medium rounded-2xl rounded-tr-sm' 
                       : 'bg-[#1a2235] border border-[var(--border)] text-gray-200 rounded-2xl rounded-tl-sm'
                   }`}>
                     {msg.content}
@@ -470,25 +450,7 @@ export function Chatbot() {
                 </button>
               </form>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Floating Button */}
-      <AnimatePresence>
-        {!isOpen && (
-          <motion.button
-            id="chat-widget-button"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed bottom-24 right-6 md:bottom-6 md:right-6 w-14 h-14 bg-[var(--primary)] text-black rounded-full shadow-lg shadow-[var(--primary)]/30 flex items-center justify-center hover:scale-110 transition-transform z-[100] border-4 border-[#0a0b0e]"
-          >
-            <MessageCircle className="w-6 h-6" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      </div>
     </>
   );
 }

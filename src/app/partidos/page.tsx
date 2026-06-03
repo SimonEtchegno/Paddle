@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { PartidoAbierto, UnionPartido } from '@/types';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
 import { useSport } from '@/hooks/useSport';
-import { Users, Calendar, Clock, Trophy, Send, Trash2, Check, X, User, AlertTriangle, Share2 } from 'lucide-react';
+import { Users, Calendar, Clock, Trophy, Send, Trash2, Check, X, User, AlertTriangle, Share2, MessageCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { clsx } from 'clsx';
 import { PageWrapper } from '@/components/PageWrapper';
@@ -15,6 +15,7 @@ import { es } from 'date-fns/locale';
 import { CreateMatchModal } from '@/components/matches/CreateMatchModal';
 import { MatchTutorial } from '@/components/matches/MatchTutorial';
 import { LoadingPro } from '@/components/ui/LoadingPro';
+import { MatchChatModal } from '@/components/matches/MatchChatModal';
 
 export default function PartidosPage() {
   const { profile } = useGuestProfile();
@@ -27,6 +28,8 @@ export default function PartidosPage() {
   const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
   const [hasActiveReservation, setHasActiveReservation] = useState(false);
   const [filterLevel, setFilterLevel] = useState('Todos');
+  const [mensajesCount, setMensajesCount] = useState<Record<string, number>>({});
+  const [chatPartido, setChatPartido] = useState<PartidoAbierto | null>(null);
 
   const { sport } = useSport();
   const CATEGORIES = sport === 'futbol'
@@ -119,6 +122,26 @@ export default function PartidosPage() {
 
       setHasActiveReservation(!!(resData && resData.length > 0));
 
+      // 5. Cargar Mensajes de Grupos (Graceful fallback si la tabla no existe)
+      try {
+        const { data: mData, error: mError } = await supabase
+          .from('mensajes_partido')
+          .select('partido_id, created_at');
+          
+        if (!mError && mData) {
+          const counts: Record<string, number> = {};
+          mData.forEach((m: any) => {
+            const lastRead = localStorage.getItem(`chat_read_${m.partido_id}`);
+            if (!lastRead || new Date(m.created_at) > new Date(lastRead)) {
+              counts[m.partido_id] = (counts[m.partido_id] || 0) + 1;
+            }
+          });
+          setMensajesCount(counts);
+        }
+      } catch (err) {
+        // Ignorar si la tabla no existe aún
+      }
+
     } catch (e: any) {
       console.error('Error en fetchData:', e);
       if (!isBackground) toast.error('Error al cargar datos: ' + e.message);
@@ -137,8 +160,12 @@ export default function PartidosPage() {
       fetchData(true);
     }, 5000);
 
+    const handleReadUpdate = () => fetchData(true);
+    window.addEventListener('chat_read_updated', handleReadUpdate);
+
     return () => {
       clearInterval(intervalId);
+      window.removeEventListener('chat_read_updated', handleReadUpdate);
     };
   }, [profile?.telefono]);
 
@@ -562,6 +589,18 @@ export default function PartidosPage() {
                         {esMio && (
                           <div className="flex gap-2 relative z-50 self-end mt-2 sm:mt-0">
                             <button
+                              onClick={() => setChatPartido(p)}
+                              className="p-3 bg-white/5 text-white/80 rounded-2xl hover:bg-white/10 transition-all border border-white/10 relative"
+                              title="Chat Grupal"
+                            >
+                              <MessageCircle size={20} />
+                              {(mensajesCount[p.id] || 0) > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
+                                  {mensajesCount[p.id]}
+                                </span>
+                              )}
+                            </button>
+                            <button
                               onClick={() => handleShare(p)}
                               className="p-3 bg-white/5 text-white/40 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
                               title="Compartir partido"
@@ -578,20 +617,33 @@ export default function PartidosPage() {
                         )}
 
                         {!esMio && (
-                          <div className="shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                            <button
+                              onClick={() => setChatPartido(p)}
+                              className="p-3 bg-white/5 text-white/80 rounded-2xl hover:bg-white/10 transition-all border border-white/10 relative shrink-0"
+                              title="Chat Grupal"
+                            >
+                              <MessageCircle size={20} />
+                              {(mensajesCount[p.id] || 0) > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
+                                  {mensajesCount[p.id]}
+                                </span>
+                              )}
+                            </button>
+
                             {isConfirmed ? (
-                              <div className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest bg-success/20 text-success border border-success/30 flex items-center justify-center gap-2">
+                              <div className="flex-1 sm:flex-none px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest bg-success/20 text-success border border-success/30 flex items-center justify-center gap-2">
                                 <Check size={16} /> Adentro
                               </div>
                             ) : isPending ? (
-                              <div className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-white/10 text-white/60 flex items-center justify-center gap-2 border border-white/10">
+                              <div className="flex-1 sm:flex-none px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-white/10 text-white/60 flex items-center justify-center gap-2 border border-white/10">
                                 <Clock size={16} /> Solicitud Enviada
                               </div>
                             ) : !completo ? (
                               <button
                                 onClick={() => handleJoin(p)}
                                 className={clsx(
-                                  "w-full sm:w-auto px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2",
+                                  "flex-1 sm:flex-none px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2",
                                   isDiamond ? "bg-cyan-400 text-black hover:bg-cyan-300 shadow-[0_4px_12px_rgba(34,211,238,0.2)]" :
                                     isGold ? "bg-yellow-400 text-black hover:bg-yellow-300 shadow-[0_4px_12px_rgba(250,204,21,0.2)]" :
                                       sport === 'futbol'
@@ -666,6 +718,14 @@ export default function PartidosPage() {
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
       />
+
+      <MatchChatModal
+        isOpen={!!chatPartido}
+        onClose={() => setChatPartido(null)}
+        partido={chatPartido}
+        profile={profile}
+      />
+
     </PageWrapper>
   );
 }

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "react-hot-toast";
-import { Chatbot } from "@/components/Chatbot";
+import { SocialChatWidget } from "@/components/SocialChatWidget";
 import { supabase } from "@/lib/supabase";
 import { cookies, headers } from "next/headers";
 import { ProfileProvider } from "@/hooks/useGuestProfile";
@@ -107,8 +107,21 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <head>
+      <body
+        className="min-h-full flex flex-col pb-20 md:pb-0"
+        suppressHydrationWarning
+        data-original-primary={primaryColor}
+        style={{
+          // @ts-ignore
+          '--primary': primaryColor,
+          // @ts-ignore
+          '--glass': `${primaryColor}14`, // 8% de opacidad para el glass
+          // @ts-ignore
+          '--border': `${primaryColor}40`, // 25% de opacidad para bordes
+        }}
+      >
         <script
+          id="sw-unregister"
           dangerouslySetInnerHTML={{
             __html: `
               if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
@@ -125,20 +138,6 @@ export default async function RootLayout({
             `
           }}
         />
-      </head>
-      <body
-        className="min-h-full flex flex-col pb-20 md:pb-0"
-        suppressHydrationWarning
-        data-original-primary={primaryColor}
-        style={{
-          // @ts-ignore
-          '--primary': primaryColor,
-          // @ts-ignore
-          '--glass': `${primaryColor}14`, // 8% de opacidad para el glass
-          // @ts-ignore
-          '--border': `${primaryColor}40`, // 25% de opacidad para bordes
-        }}
-      >
         <SportProvider>
           <ProfileProvider>
             <Navbar club={club} />
@@ -156,7 +155,7 @@ export default async function RootLayout({
                 },
               }}
             />
-            <Chatbot />
+            <SocialChatWidget />
           </ProfileProvider>
         </SportProvider>
 
