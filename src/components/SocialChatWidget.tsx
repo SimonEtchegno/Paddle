@@ -296,7 +296,7 @@ export function SocialChatWidget() {
 
             {/* Content Body */}
             <div className="flex-1 overflow-hidden relative bg-[#0f1423]">
-              {!profile?.telefono ? (
+              {!profile?.telefono && activeTab !== 'ai' ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                   <MessageSquare className="w-12 h-12 text-blue-500 mb-4 opacity-80" />
                   <h2 className="text-lg font-bold text-white mb-2">Comunidad</h2>
