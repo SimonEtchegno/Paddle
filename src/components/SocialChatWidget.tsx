@@ -7,6 +7,7 @@ import { useGuestProfile } from "@/hooks/useGuestProfile";
 import { supabase } from "@/lib/supabase";
 import { Chatbot } from "@/components/Chatbot";
 import { useSport } from "@/hooks/useSport";
+import { toast } from "react-hot-toast";
 
 interface Message {
   id: string;
@@ -47,6 +48,16 @@ export function SocialChatWidget() {
   const [showRequestsOnly, setShowRequestsOnly] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const allMessagesRef = useRef<Message[]>([]);
+  const rawPerfilesRef = useRef<any[]>([]);
+  const isOpenRef = useRef(false);
+  const activeChatRef = useRef<string | null>(null);
+
+  useEffect(() => { allMessagesRef.current = allMessages; }, [allMessages]);
+  useEffect(() => { rawPerfilesRef.current = rawPerfiles; }, [rawPerfiles]);
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
   // Escuchar evento global para abrir chat de partido desde cualquier página
   useEffect(() => {
@@ -104,6 +115,79 @@ export function SocialChatWidget() {
             if (exists) return prev;
             return [...prev, newMsg];
           });
+
+          // Notificación premium en tiempo real si el mensaje lo recibimos nosotros
+          if (newMsg.receptor_telefono === profile.telefono) {
+            const isMensajesPage = typeof window !== 'undefined' && window.location.pathname === '/mensajes';
+            if (isMensajesPage) return;
+
+            const existingMsgs = allMessagesRef.current.filter(m => m.emisor_telefono === newMsg.emisor_telefono || m.receptor_telefono === newMsg.emisor_telefono);
+            const myMsgs = existingMsgs.filter(m => m.emisor_telefono === profile.telefono);
+            const isRequest = myMsgs.length === 0;
+
+            if (isRequest && newMsg.contenido !== '__CHAT_ACCEPTED__') {
+              const senderProfile = rawPerfilesRef.current.find(p => p.telefono === newMsg.emisor_telefono);
+              const senderName = senderProfile ? `${senderProfile.nombre} ${senderProfile.apellido || ''}`.trim() : newMsg.emisor_telefono;
+              toast.custom((t) => (
+                <div
+                  className={`${
+                    t.visible ? 'animate-enter' : 'animate-leave'
+                  } max-w-md w-full bg-[#1a2235] shadow-lg rounded-2xl pointer-events-auto flex border border-green-500/20 p-4 cursor-pointer`}
+                  onClick={() => {
+                    setIsOpen(true);
+                    setActiveTab('private');
+                    setShowRequestsOnly(true);
+                    toast.dismiss(t.id);
+                  }}
+                >
+                  <div className="flex-1 w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-green-400 font-sans">Nueva solicitud de mensaje</p>
+                    <p className="text-sm font-bold text-white mt-1 font-sans">{senderName}</p>
+                    <p className="text-xs text-zinc-400 mt-1 truncate font-sans">{newMsg.contenido}</p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toast.dismiss(t.id);
+                    }}
+                    className="ml-4 shrink-0 text-zinc-500 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ), { duration: 5000 });
+            } else if (!isRequest && newMsg.contenido !== '__CHAT_ACCEPTED__' && (!isOpenRef.current || activeChatRef.current !== newMsg.emisor_telefono)) {
+              const senderProfile = rawPerfilesRef.current.find(p => p.telefono === newMsg.emisor_telefono);
+              const senderName = senderProfile ? `${senderProfile.nombre} ${senderProfile.apellido || ''}`.trim() : newMsg.emisor_telefono;
+              toast.custom((t) => (
+                <div
+                  className={`${
+                    t.visible ? 'animate-enter' : 'animate-leave'
+                  } max-w-md w-full bg-[#1a2235] shadow-lg rounded-2xl pointer-events-auto flex border border-white/10 p-4 cursor-pointer`}
+                  onClick={() => {
+                    setIsOpen(true);
+                    setActiveTab('private');
+                    setActiveChat(newMsg.emisor_telefono);
+                    toast.dismiss(t.id);
+                  }}
+                >
+                  <div className="flex-1 w-0">
+                    <p className="text-xs font-bold text-[var(--primary)] font-sans">Nuevo mensaje de {senderName}</p>
+                    <p className="text-xs text-zinc-300 mt-1 truncate font-sans">{newMsg.contenido}</p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toast.dismiss(t.id);
+                    }}
+                    className="ml-4 shrink-0 text-zinc-500 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ), { duration: 4000 });
+            }
+          }
         }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'mensajes' }, (payload) => {
@@ -202,9 +286,10 @@ export function SocialChatWidget() {
   const activeMessages = allMessages.filter(m => m.emisor_telefono === activeChat || m.receptor_telefono === activeChat);
   const isGroupChat = activeContact?.type === 'group' && groupMatch;
   const displayedMessages = isGroupChat ? mensajesGrupos.filter(m => m.partido_id === groupMatch.id) : activeMessages;
+  const requestUnread = requestChats.reduce((acc, c) => acc + c.unread, 0);
   const privateUnread = privateChats.reduce((acc, c) => acc + c.unread, 0);
   const groupUnread = groupContacts.reduce((acc, c) => acc + c.unread, 0);
-  const totalUnread = privateUnread + groupUnread;
+  const totalUnread = privateUnread + groupUnread + requestChats.length;
 
   useEffect(() => {
     if (activeChat && profile?.telefono) {
@@ -299,9 +384,9 @@ export function SocialChatWidget() {
                 >
                   <Users className="w-3.5 h-3.5" />
                   <span className="text-xs font-bold tracking-wide">Privado</span>
-                  {privateUnread > 0 && (
+                  {(privateUnread > 0 || requestChats.length > 0) && (
                     <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">
-                      {privateUnread}
+                      {privateUnread + requestChats.length}
                     </span>
                   )}
                 </button>
