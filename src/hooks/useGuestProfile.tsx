@@ -51,16 +51,32 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveProfile = async (newProfile: UserProfile) => {
-    const profileWithUid = {
-      ...newProfile,
-      uid: newProfile.uid || profile?.uid || generateUUID()
-    };
-    setProfile(profileWithUid);
-    localStorage.setItem('paddle_guest_info', JSON.stringify(profileWithUid));
-
-    // Sincronizar con Supabase para que el admin pueda verlo
     try {
       const { supabase } = await import('@/lib/supabase');
+      
+      // Si el usuario ingresa un teléfono que ya existe, usamos ese ID para sobreescribirlo
+      const { data: existingProfile } = await supabase
+        .from('perfiles')
+        .select('id')
+        .eq('telefono', newProfile.telefono)
+        .maybeSingle();
+
+      let targetUid = newProfile.uid || profile?.uid;
+
+      if (existingProfile) {
+        targetUid = existingProfile.id;
+      } else if (!targetUid) {
+        targetUid = generateUUID();
+      }
+
+      const profileWithUid = {
+        ...newProfile,
+        uid: targetUid
+      };
+
+      setProfile(profileWithUid);
+      localStorage.setItem('paddle_guest_info', JSON.stringify(profileWithUid));
+
       const { error } = await supabase.from('perfiles').upsert({
         id: profileWithUid.uid,
         nombre: profileWithUid.nombre,
