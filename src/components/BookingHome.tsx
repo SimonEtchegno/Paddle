@@ -241,18 +241,19 @@ function PadelHeroVisual() {
         className="absolute inset-4 rounded-full bg-gradient-to-tr from-primary via-purple-600 to-cyan-500 blur-3xl transition-all duration-300"
       />
 
-      {/* The 3D tilting Card with Official Trophy Icon */}
+      {/* The 3D tilting Official Trophy Icon */}
       <motion.div
         animate={{
           rotateY: coords.x * 45,
           rotateX: coords.y * -45,
+          scale: isHovered ? 1.15 : 1,
           z: isHovered ? 40 : 0
         }}
         transition={{ type: "spring", stiffness: 100, damping: 15 }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative w-44 h-44 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md shadow-2xl flex items-center justify-center"
+        className="relative flex items-center justify-center"
       >
-        <Trophy size={64} className="text-primary stroke-[1.5] drop-shadow-[0_0_15px_rgba(136,130,220,0.5)]" />
+        <Trophy size={80} className="text-primary stroke-[1.5] drop-shadow-[0_0_20px_rgba(136,130,220,0.6)]" />
       </motion.div>
       
       {/* Floating particles */}
@@ -315,18 +316,19 @@ function FutbolHeroVisual() {
         className="absolute inset-4 rounded-full bg-gradient-to-tr from-green-500 via-emerald-600 to-teal-400 blur-3xl transition-all duration-300"
       />
 
-      {/* The 3D tilting Card with Official Activity Icon */}
+      {/* The 3D tilting Official Activity Icon */}
       <motion.div
         animate={{
           rotateY: coords.x * 45,
           rotateX: coords.y * -45,
+          scale: isHovered ? 1.15 : 1,
           z: isHovered ? 40 : 0
         }}
         transition={{ type: "spring", stiffness: 100, damping: 15 }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative w-44 h-44 rounded-3xl border border-green-500/20 bg-white/[0.03] backdrop-blur-md shadow-2xl flex items-center justify-center"
+        className="relative flex items-center justify-center"
       >
-        <Activity size={64} className="text-green-400 stroke-[1.5] drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+        <Activity size={80} className="text-green-400 stroke-[1.5] drop-shadow-[0_0_20px_rgba(34,197,94,0.6)]" />
       </motion.div>
 
       {/* Floating particles */}
