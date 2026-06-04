@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, MessageCircle, MessageSquareText, X, Send, ArrowLeft, CheckCheck, Users, Bot } from "lucide-react";
+import { MessageSquare, MessageCircle, MessageSquareText, X, Send, ArrowLeft, CheckCheck, Users, Bot, Trash2, Search } from "lucide-react";
 import { useGuestProfile } from "@/hooks/useGuestProfile";
 import { supabase } from "@/lib/supabase";
 import { Chatbot } from "@/components/Chatbot";
@@ -39,6 +39,7 @@ export function SocialChatWidget() {
   const [newMessage, setNewMessage] = useState("");
   const [groupMatch, setGroupMatch] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'ai' | 'private' | 'group'>('private');
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -191,6 +192,20 @@ export function SocialChatWidget() {
     }
   }, [displayedMessages, activeChat, isOpen]);
 
+  const handleDeleteMessage = async (msgId: string, isGroupChat: boolean) => {
+    try {
+      if (isGroupChat) {
+        setMensajesGrupos(prev => prev.filter(m => m.id !== msgId));
+        await supabase.from('mensajes_partido').delete().eq('id', msgId);
+      } else {
+        setAllMessages(prev => prev.filter(m => m.id !== msgId));
+        await supabase.from('mensajes').delete().eq('id', msgId);
+      }
+    } catch (e) {
+      console.error("Error deleting message", e);
+    }
+  };
+
             // Sending messages
             const handleSendMessage = async (e: React.FormEvent) => {
               e.preventDefault();
@@ -303,10 +318,23 @@ export function SocialChatWidget() {
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: -100, opacity: 0 }}
                       transition={{ type: 'tween', duration: 0.2 }}
-                      className="absolute inset-0 overflow-y-auto custom-scrollbar p-2"
+                      className="absolute inset-0 flex flex-col"
                     >
-                      {allContacts.filter(c => c.type === 'private').length > 0 ? (
-                        allContacts.filter(c => c.type === 'private').map(c => (
+                      <div className="p-3 pb-1 shrink-0 bg-[#0f1423] z-10 sticky top-0">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                          <input
+                            type="text"
+                            placeholder="Buscar jugador..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-[#1a2235] text-sm text-white placeholder-zinc-500 border border-[var(--border)] rounded-full pl-9 pr-4 py-2 focus:outline-none focus:border-[var(--primary)] transition-colors"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 pt-0">
+                      {allContacts.filter(c => c.type === 'private' && c.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
+                        allContacts.filter(c => c.type === 'private' && c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(c => (
                           <div
                             key={c.id}
                             onClick={() => setActiveChat(c.id)}
@@ -332,9 +360,10 @@ export function SocialChatWidget() {
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-50 space-y-2">
                           <MessageSquare className="w-10 h-10 text-zinc-500" />
-                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">No hay chats aún</p>
+                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">No se encontraron jugadores</p>
                         </div>
                       )}
+                      </div>
                     </motion.div>
                   )}
 
@@ -407,9 +436,20 @@ export function SocialChatWidget() {
                               }`}>
                                 <p style={{ wordBreak: 'break-word' }} className={isMe ? 'font-medium' : ''}>{msg.contenido}</p>
                               </div>
-                              <span className="text-[9px] text-zinc-600 mt-1 font-bold">
-                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[9px] text-zinc-600 font-bold">
+                                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {isMe && (
+                                  <button 
+                                    onClick={() => handleDeleteMessage(msg.id, !!isGroupChat)}
+                                    className="text-zinc-600 hover:text-red-400 transition-colors"
+                                    title="Eliminar mensaje"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
