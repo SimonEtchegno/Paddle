@@ -54,28 +54,30 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     try {
       const { supabase } = await import('@/lib/supabase');
       
-      // Si el usuario ingresa un teléfono que ya existe, usamos ese ID para sobreescribirlo
-      const { data: existingProfile } = await supabase
-        .from('perfiles')
-        .select('id')
-        .eq('telefono', newProfile.telefono)
-        .maybeSingle();
-
+      const cleanTelefono = newProfile.telefono ? newProfile.telefono.replace(/\D/g, '') : '';
       let targetUid = newProfile.uid || profile?.uid;
 
-      if (existingProfile) {
-        targetUid = existingProfile.id;
-      } else if (!targetUid) {
+      if (cleanTelefono !== "") {
+        // Si el usuario ingresa un teléfono que ya existe, usamos ese ID para sobreescribirlo
+        const { data: existingProfiles } = await supabase
+          .from('perfiles')
+          .select('id')
+          .eq('telefono', cleanTelefono);
+
+        if (existingProfiles && existingProfiles.length > 0) {
+          targetUid = existingProfiles[0].id;
+        }
+      }
+
+      if (!targetUid) {
         targetUid = generateUUID();
       }
 
       const profileWithUid = {
         ...newProfile,
+        telefono: cleanTelefono,
         uid: targetUid
       };
-
-      setProfile(profileWithUid);
-      localStorage.setItem('paddle_guest_info', JSON.stringify(profileWithUid));
 
       const { error } = await supabase.from('perfiles').upsert({
         id: profileWithUid.uid,
@@ -90,6 +92,9 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }, { onConflict: 'id' });
       
       if (error) throw error;
+
+      setProfile(profileWithUid);
+      localStorage.setItem('paddle_guest_info', JSON.stringify(profileWithUid));
     } catch (e) {
       console.error('Error syncing profile:', e);
       throw e;
