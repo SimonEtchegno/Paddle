@@ -55,27 +55,73 @@ export function LoadingPro() {
         {/* Center Sport-Specific Animated Icon */}
         <div className="absolute inset-0 m-auto w-12 h-12 flex items-center justify-center">
           {isFutbol ? (
-            /* Futuristic glowing soccer ball */
-            <motion.svg 
-              animate={{ 
-                rotate: 360,
-                scale: [0.95, 1.05, 0.95]
-              }}
-              transition={{ 
-                rotate: { duration: 6, repeat: Infinity, ease: "linear" },
-                scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-              }}
-              className="w-10 h-10 text-[var(--primary)]"
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="1.5"
-              style={{ filter: 'drop-shadow(0 0 5px var(--primary))' }}
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-              <polygon points="12,9 14.5,10.5 14.5,13.5 12,15 9.5,13.5 9.5,10.5" />
-            </motion.svg>
+            /* Premium swinging soccer shoe hitting a bouncing ball in perfect sync */
+            <div className="relative w-16 h-16 flex items-center justify-center">
+              {/* Soccer Boot SVG */}
+              <motion.svg 
+                animate={{ 
+                  y: [4, -2, 4],
+                  rotate: [-10, 10, -10]
+                }}
+                transition={{ 
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                viewBox="0 0 100 100" 
+                className="w-14 h-14 text-[var(--primary)] drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]"
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2"
+              >
+                {/* Boot main body */}
+                <path d="M15,65 C20,50 35,45 50,48 L72,53 C80,55 83,60 76,63 L15,65 Z" fill="none" stroke="currentColor" strokeWidth="3" />
+                
+                {/* Studs (tapones) */}
+                <line x1="25" y1="65" x2="25" y2="68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+                <line x1="40" y1="65" x2="40" y2="68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+                <line x1="55" y1="65" x2="55" y2="68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+                
+                {/* Sock / Leg entrance */}
+                <path d="M40,46 L35,32 L45,32 L47,47" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                
+                {/* Boot design stripes */}
+                <path d="M48,49 C55,54 60,56 68,55" stroke="currentColor" strokeWidth="1" />
+                <path d="M49,52 C56,57 61,59 69,58" stroke="currentColor" strokeWidth="1" />
+              </motion.svg>
+              
+              {/* Bouncing Soccer Ball with texture and spin */}
+              <motion.div 
+                animate={{ 
+                  y: [-28, -2, -28],
+                  x: [-8, 8, -8],
+                  rotate: [0, 180, 360]
+                }}
+                transition={{ 
+                  duration: 0.75, // hits twice per boot cycle (1.5s)
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute w-3.5 h-3.5 rounded-full bg-[var(--primary)] overflow-hidden"
+                style={{ 
+                  boxShadow: '0 0 12px var(--primary), inset 0 0 5px rgba(0,0,0,0.5)',
+                  top: '30%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                {/* Soccer ball texture overlay */}
+                <svg className="absolute w-full h-full text-black/30" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="6" />
+                  <polygon points="50,30 65,42 60,60 40,60 35,42" fill="currentColor" />
+                  <line x1="50" y1="30" x2="50" y2="2" stroke="currentColor" strokeWidth="6" />
+                  <line x1="65" y1="42" x2="95" y2="35" stroke="currentColor" strokeWidth="6" />
+                  <line x1="60" y1="60" x2="80" y2="90" stroke="currentColor" strokeWidth="6" />
+                  <line x1="40" y1="60" x2="20" y2="90" stroke="currentColor" strokeWidth="6" />
+                  <line x1="35" y1="42" x2="5" y2="35" stroke="currentColor" strokeWidth="6" />
+                </svg>
+              </motion.div>
+            </div>
           ) : (
             /* Premium swinging Padel racket hitting a bouncing ball in perfect sync */
             <div className="relative w-16 h-16 flex items-center justify-center">
