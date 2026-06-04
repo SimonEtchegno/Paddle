@@ -30,6 +30,7 @@ interface Contact {
   matchData?: any;
   isRequest?: boolean;
   isPending?: boolean;
+  activo?: boolean;
 }
 
 export function SocialChatWidget() {
@@ -219,7 +220,33 @@ export function SocialChatWidget() {
     };
   }, [profile?.telefono]);
 
-  const contacts: Contact[] = rawPerfiles.map(p => {
+  // Obtener teléfonos de personas con las que tenemos mensajes
+  const partnersWithMessages = Array.from(new Set(
+    allMessages.map(m => m.emisor_telefono === profile?.telefono ? m.receptor_telefono : m.emisor_telefono)
+  )).filter(tel => tel && tel !== profile?.telefono);
+
+  // Identificar cuáles de esos teléfonos no existen en perfiles activos
+  const inactivePartners = partnersWithMessages.filter(tel => !rawPerfiles.some(p => p.telefono === tel));
+
+  const activeContactsList = rawPerfiles.map(p => ({
+    telefono: p.telefono,
+    nombre: p.nombre,
+    apellido: p.apellido,
+    avatar_url: p.avatar_url,
+    activo: true
+  }));
+
+  const inactiveContactsList = inactivePartners.map(tel => ({
+    telefono: tel,
+    nombre: "Usuario",
+    apellido: "Dado de Baja",
+    avatar_url: `https://ui-avatars.com/api/?name=U+B&background=71717a&color=fff`,
+    activo: false
+  }));
+
+  const combinedPerfiles = [...activeContactsList, ...inactiveContactsList];
+
+  const contacts: Contact[] = combinedPerfiles.map(p => {
     const msgs = allMessages.filter(m => m.emisor_telefono === p.telefono || m.receptor_telefono === p.telefono);
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
     const unread = msgs.filter(m => m.receptor_telefono === profile?.telefono && !m.leido).length;
@@ -244,7 +271,8 @@ export function SocialChatWidget() {
       lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
       type: 'private',
       isRequest,
-      isPending
+      isPending,
+      activo: p.activo
     };
   });
 
@@ -679,6 +707,10 @@ export function SocialChatWidget() {
                               Rechazar
                             </button>
                           </div>
+                        </div>
+                      ) : activeContact?.activo === false ? (
+                        <div className="p-4 bg-[#1a2235]/40 border-t border-[var(--border)] text-center text-[10px] text-zinc-500 font-black uppercase tracking-wider select-none shrink-0">
+                          Usuario dado de baja
                         </div>
                       ) : (
                         <div className="p-3 bg-[#1a2235] border-t border-[var(--border)] z-10">

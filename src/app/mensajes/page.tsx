@@ -25,6 +25,7 @@ interface Contact {
   lastMsgTime: number;
   isRequest?: boolean;
   isPending?: boolean;
+  activo?: boolean;
 }
 
 export default function MensajesPage() {
@@ -80,8 +81,36 @@ export default function MensajesPage() {
     };
   }, [profile?.telefono]);
 
+  // Obtener teléfonos de personas con las que tenemos mensajes
+  const partnersWithMessages = Array.from(new Set(
+    allMessages.map(m => m.emisor_telefono === profile?.telefono ? m.receptor_telefono : m.emisor_telefono)
+  )).filter(tel => tel && tel !== profile?.telefono);
+
+  // Identificar cuáles de esos teléfonos no existen en perfiles activos
+  const inactivePartners = partnersWithMessages.filter(tel => !rawPerfiles.some(p => p.telefono === tel));
+
+  const activeContactsList = rawPerfiles.map(p => ({
+    telefono: p.telefono,
+    nombre: p.nombre,
+    apellido: p.apellido,
+    avatar_url: p.avatar_url,
+    categoria: p.categoria,
+    activo: true
+  }));
+
+  const inactiveContactsList = inactivePartners.map(tel => ({
+    telefono: tel,
+    nombre: "Usuario",
+    apellido: "Dado de Baja",
+    avatar_url: `https://ui-avatars.com/api/?name=U+B&background=71717a&color=fff`,
+    categoria: "Inactivo",
+    activo: false
+  }));
+
+  const combinedPerfiles = [...activeContactsList, ...inactiveContactsList];
+
   // Procesar contactos basados en los perfiles y mensajes
-  const contacts: Contact[] = rawPerfiles.map(p => {
+  const contacts: Contact[] = combinedPerfiles.map(p => {
     const msgs = allMessages.filter(m => m.emisor_telefono === p.telefono || m.receptor_telefono === p.telefono);
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
     const unread = msgs.filter(m => m.receptor_telefono === profile?.telefono && !m.leido).length;
@@ -106,7 +135,8 @@ export default function MensajesPage() {
       unread,
       lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
       isRequest,
-      isPending
+      isPending,
+      activo: p.activo
     };
   });
 
@@ -380,6 +410,10 @@ export default function MensajesPage() {
                     Rechazar
                   </button>
                 </div>
+              </div>
+            ) : activeContact?.activo === false ? (
+              <div className="p-6 border-t border-zinc-800 bg-zinc-950/90 text-center text-xs text-zinc-500 font-black uppercase tracking-widest select-none shrink-0">
+                Este usuario ha sido dado de baja. No se pueden enviar mensajes.
               </div>
             ) : (
               <div className="p-5 border-t border-zinc-800/60 bg-zinc-950/90 backdrop-blur-md">
