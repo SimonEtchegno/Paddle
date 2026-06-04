@@ -6,6 +6,7 @@ import { MessageSquare, MessageCircle, MessageSquareText, X, Send, ArrowLeft, Ch
 import { useGuestProfile } from "@/hooks/useGuestProfile";
 import { supabase } from "@/lib/supabase";
 import { Chatbot } from "@/components/Chatbot";
+import { useSport } from "@/hooks/useSport";
 
 interface Message {
   id: string;
@@ -30,6 +31,7 @@ interface Contact {
 
 export function SocialChatWidget() {
   const { profile } = useGuestProfile();
+  const { sport } = useSport();
   const [isOpen, setIsOpen] = useState(false);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [allMessages, setAllMessages] = useState<Message[]>([]);
@@ -147,7 +149,9 @@ export function SocialChatWidget() {
     };
   });
 
-  const groupContacts: Contact[] = misPartidos.map(p => {
+  const groupContacts: Contact[] = misPartidos
+    .filter(p => p.deporte === (sport || 'padel'))
+    .map(p => {
     const msgs = mensajesGrupos.filter(m => m.partido_id === p.id);
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
     
