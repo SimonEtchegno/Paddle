@@ -38,7 +38,7 @@ export function SocialChatWidget() {
   const [mensajesGrupos, setMensajesGrupos] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [groupMatch, setGroupMatch] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'ai' | 'private' | 'group'>('private');
+  const [activeTab, setActiveTab] = useState<'ai' | 'private' | 'group'>('ai');
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
