@@ -28,6 +28,22 @@ interface Contact {
   activo?: boolean;
 }
 
+function formatMessageTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  if (msgDate.getTime() === today.getTime()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else if (msgDate.getTime() === yesterday.getTime()) {
+    return 'Ayer';
+  } else {
+    return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+  }
+}
+
 export default function MensajesPage() {
   const { profile, loading } = useGuestProfile();
   const [activeChat, setActiveChat] = useState<string | null>(null);
@@ -100,8 +116,8 @@ export default function MensajesPage() {
 
   const inactiveContactsList = inactivePartners.map(tel => ({
     telefono: tel,
-    nombre: "Usuario",
-    apellido: "Dado de Baja",
+    nombre: "Usuario Dado de Baja",
+    apellido: `(...${tel.slice(-4)})`,
     avatar_url: `https://ui-avatars.com/api/?name=U+B&background=71717a&color=fff`,
     categoria: "Inactivo",
     activo: false
@@ -131,7 +147,7 @@ export default function MensajesPage() {
       avatar: p.avatar_url || `https://ui-avatars.com/api/?name=${p.nombre}+${p.apellido}&background=random&color=fff`,
       level: p.categoria || "Sin categoría",
       lastMessage: lastMsgText,
-      time: lastMsg ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+      time: lastMsg ? formatMessageTime(lastMsg.created_at) : undefined,
       unread,
       lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
       isRequest,
