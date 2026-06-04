@@ -401,9 +401,10 @@ export function SocialChatWidget() {
                           </div>
                         ))
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-50 space-y-2">
-                          <MessageSquare className="w-10 h-10 text-zinc-500" />
-                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">No hay chats de partidos</p>
+                        <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-60 space-y-2">
+                          <MessageSquare className="w-10 h-10 text-zinc-500 mb-1" />
+                          <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Sin partidos activos</h4>
+                          <p className="text-[11px] text-zinc-500 max-w-[200px] mx-auto leading-normal">Para chatear aquí debes unirte a un partido existente o crear uno nuevo.</p>
                         </div>
                       )}
                     </motion.div>
