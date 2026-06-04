@@ -104,11 +104,21 @@ export function SocialChatWidget() {
           });
         }
       })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'mensajes' }, (payload) => {
+        if (payload.old?.id) {
+          setAllMessages(prev => prev.filter(m => m.id !== payload.old.id));
+        }
+      })
       .subscribe();
 
     const channelGroup = supabase.channel('mensajes_partido_widget')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes_partido' }, (payload) => {
         setMensajesGrupos(prev => [...prev, payload.new]);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'mensajes_partido' }, (payload) => {
+        if (payload.old?.id) {
+          setMensajesGrupos(prev => prev.filter(m => m.id !== payload.old.id));
+        }
       })
       .subscribe();
 
