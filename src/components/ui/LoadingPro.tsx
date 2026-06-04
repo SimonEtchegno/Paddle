@@ -55,57 +55,57 @@ export function LoadingPro() {
         {/* Center Sport-Specific Animated Icon */}
         <div className="absolute inset-0 m-auto w-12 h-12 flex items-center justify-center">
           {isFutbol ? (
-            /* Premium swinging soccer shoe hitting a bouncing ball in perfect sync */
+            /* Premium perspective football pitch and bouncing ball in perfect sync */
             <div className="relative w-16 h-16 flex items-center justify-center">
-              {/* Soccer Boot SVG */}
+              {/* Football Pitch SVG */}
               <motion.svg 
                 animate={{ 
-                  y: [4, -2, 4],
-                  rotate: [-10, 10, -10]
+                  scale: [0.98, 1.02, 0.98],
+                  opacity: [0.7, 0.9, 0.7]
                 }}
                 transition={{ 
-                  duration: 1.5,
+                  duration: 3,
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
                 viewBox="0 0 100 100" 
-                className="w-14 h-14 text-[var(--primary)] drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]"
+                className="w-14 h-14 text-[var(--primary)] drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]"
                 fill="none" 
                 stroke="currentColor" 
                 strokeWidth="2"
               >
-                {/* Boot main body */}
-                <path d="M15,65 C20,50 35,45 50,48 L72,53 C80,55 83,60 76,63 L15,65 Z" fill="none" stroke="currentColor" strokeWidth="3" />
+                {/* Field outline (perspective trapezoid) */}
+                <polygon points="15,70 32,40 68,40 85,70" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
                 
-                {/* Studs (tapones) */}
-                <line x1="25" y1="65" x2="25" y2="68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
-                <line x1="40" y1="65" x2="40" y2="68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
-                <line x1="55" y1="65" x2="55" y2="68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+                {/* Midfield line */}
+                <line x1="50" y1="40" x2="50" y2="70" stroke="currentColor" strokeWidth="2" />
                 
-                {/* Sock / Leg entrance */}
-                <path d="M40,46 L35,32 L45,32 L47,47" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                {/* Center circle (ellipse due to perspective) */}
+                <ellipse cx="50" cy="55" rx="12" ry="5" stroke="currentColor" strokeWidth="1.5" />
                 
-                {/* Boot design stripes */}
-                <path d="M48,49 C55,54 60,56 68,55" stroke="currentColor" strokeWidth="1" />
-                <path d="M49,52 C56,57 61,59 69,58" stroke="currentColor" strokeWidth="1" />
+                {/* Penalty area bottom */}
+                <path d="M 28,70 L 34,58 L 66,58 L 72,70" stroke="currentColor" strokeWidth="1.5" />
+                
+                {/* Penalty area top */}
+                <path d="M 38,40 L 42,48 L 58,48 L 62,40" stroke="currentColor" strokeWidth="1.5" />
               </motion.svg>
               
-              {/* Bouncing Soccer Ball with texture and spin */}
+              {/* Bouncing Soccer Ball on center circle */}
               <motion.div 
                 animate={{ 
-                  y: [-28, -2, -28],
-                  x: [-8, 8, -8],
-                  rotate: [0, 180, 360]
+                  y: [-30, -5, -30],
+                  scale: [1.1, 0.9, 1.1],
+                  rotate: 360
                 }}
                 transition={{ 
-                  duration: 0.75, // hits twice per boot cycle (1.5s)
+                  duration: 1.2,
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="absolute w-3.5 h-3.5 rounded-full bg-[var(--primary)] overflow-hidden"
+                className="absolute w-4.5 h-4.5 rounded-full bg-[var(--primary)] overflow-hidden"
                 style={{ 
                   boxShadow: '0 0 12px var(--primary), inset 0 0 5px rgba(0,0,0,0.5)',
-                  top: '30%',
+                  top: '55%',
                   left: '50%',
                   transform: 'translate(-50%, -50%)'
                 }}
@@ -121,6 +121,25 @@ export function LoadingPro() {
                   <line x1="35" y1="42" x2="5" y2="35" stroke="currentColor" strokeWidth="6" />
                 </svg>
               </motion.div>
+
+              {/* Pulsing bounce shockwave/impact ring on center circle */}
+              <motion.div
+                animate={{
+                  scale: [0.2, 1.2, 0.2],
+                  opacity: [0.8, 0, 0.8]
+                }}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute w-8 h-3 border border-[var(--primary)] rounded-full"
+                style={{
+                  top: '56%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)'
+                }}
+              />
             </div>
           ) : (
             /* Premium swinging Padel racket hitting a bouncing ball in perfect sync */
