@@ -19,11 +19,15 @@ export function useNotifications() {
 
   // Cargar IDs notificados previamente (para no repetir Toasts)
   useEffect(() => {
+    if (!profile?.telefono) {
+      notifiedIds.current = new Set();
+      return;
+    }
     try {
-      const stored = localStorage.getItem('notified_toast_ids');
+      const stored = localStorage.getItem(`notified_toast_ids_${profile.telefono}`);
       if (stored) notifiedIds.current = new Set(JSON.parse(stored));
     } catch(e) {}
-  }, []);
+  }, [profile?.telefono]);
 
   useEffect(() => {
     if (!profile?.telefono) return;
@@ -98,7 +102,8 @@ export function useNotifications() {
 
         if (resData) {
           const currentResIds = new Set(resData.map((r: any) => r.id));
-          const trackedStr = localStorage.getItem('tracked_reservas');
+          const trackedKey = `tracked_reservas_${profile.telefono}`;
+          const trackedStr = localStorage.getItem(trackedKey);
           
           if (trackedStr) {
             const tracked = JSON.parse(trackedStr);
@@ -126,7 +131,7 @@ export function useNotifications() {
               }
             });
           }
-          localStorage.setItem('tracked_reservas', JSON.stringify(resData));
+          localStorage.setItem(trackedKey, JSON.stringify(resData));
         }
 
         // 4. Chequear mensajes de sistema
@@ -137,8 +142,25 @@ export function useNotifications() {
           .limit(5);
 
         if (sysData) {
+          const toastIdsKey = `notified_toast_ids_${profile.telefono}`;
+          const dismissedKey = `dismissed_notifs_${profile.telefono}`;
+          const isFirstRunForPhone = !localStorage.getItem(toastIdsKey);
+          
+          let dismissedList: string[] = [];
+          try {
+            dismissedList = JSON.parse(localStorage.getItem(dismissedKey) || '[]');
+          } catch(e) {}
+          const dismissed = new Set(dismissedList);
+
           sysData.forEach((s: any) => {
             const notifId = `sys_${s.id}`;
+            
+            if (isFirstRunForPhone) {
+              // Si es la primera vez que inicia sesión con este teléfono, 
+              // descartamos las notificaciones de sistema existentes para que no aparezcan como pendientes.
+              dismissed.add(notifId);
+            }
+
             newNotifs.push({
               id: notifId,
               type: 'sistema',
@@ -150,9 +172,18 @@ export function useNotifications() {
             if (!notifiedIds.current.has(notifId)) {
               notifiedIds.current.add(notifId);
               hasNewToasts = true;
-              toast(s.mensaje, { icon: '📢', position: 'top-center', duration: 3000 });
+              
+              // Solo mostrar Toast si la notificación es reciente (últimas 24 horas)
+              const isRecent = new Date(s.created_at).getTime() > Date.now() - 24 * 60 * 60 * 1000;
+              if (!isFirstRunForPhone && isRecent) {
+                toast(s.mensaje, { icon: '📢', position: 'top-center', duration: 3000 });
+              }
             }
           });
+
+          if (isFirstRunForPhone && sysData.length > 0) {
+            localStorage.setItem(dismissedKey, JSON.stringify(Array.from(dismissed)));
+          }
         }
 
         // 5. Chequear participaciones canceladas (borradas por el creador)
@@ -164,7 +195,8 @@ export function useNotifications() {
 
         if (currentJoins) {
           const currentJoinIds = new Set(currentJoins.map((j: any) => j.id));
-          const trackedJoinsStr = localStorage.getItem('tracked_match_joins');
+          const trackedJoinsKey = `tracked_match_joins_${profile.telefono}`;
+          const trackedJoinsStr = localStorage.getItem(trackedJoinsKey);
           
           if (trackedJoinsStr) {
             const trackedJoins = JSON.parse(trackedJoinsStr);
@@ -188,7 +220,7 @@ export function useNotifications() {
               }
             });
           }
-          localStorage.setItem('tracked_match_joins', JSON.stringify(currentJoins));
+          localStorage.setItem(trackedJoinsKey, JSON.stringify(currentJoins));
         }
 
         // 6. Chequear inscripciones a torneos canceladas
@@ -199,7 +231,8 @@ export function useNotifications() {
 
         if (currentInsc) {
           const currentInscIds = new Set(currentInsc.map((i: any) => i.id));
-          const trackedInscStr = localStorage.getItem('tracked_torneo_inscs');
+          const trackedInscKey = `tracked_torneo_inscs_${profile.telefono}`;
+          const trackedInscStr = localStorage.getItem(trackedInscKey);
 
           if (trackedInscStr) {
             const trackedInsc = JSON.parse(trackedInscStr);
@@ -223,7 +256,7 @@ export function useNotifications() {
               }
             });
           }
-          localStorage.setItem('tracked_torneo_inscs', JSON.stringify(currentInsc));
+          localStorage.setItem(trackedInscKey, JSON.stringify(currentInsc));
         }
 
         // 7. Chequear reservas propias (Confirmación de turno)
@@ -278,12 +311,13 @@ export function useNotifications() {
         }
 
         if (hasNewToasts) {
-          localStorage.setItem('notified_toast_ids', JSON.stringify(Array.from(notifiedIds.current)));
+          localStorage.setItem(`notified_toast_ids_${profile.telefono}`, JSON.stringify(Array.from(notifiedIds.current)));
         }
 
         // Aplicar estado de lectura desde localStorage
         try {
-          const dismissed = new Set(JSON.parse(localStorage.getItem('dismissed_notifs') || '[]'));
+          const dismissedKey = `dismissed_notifs_${profile.telefono}`;
+          const dismissed = new Set(JSON.parse(localStorage.getItem(dismissedKey) || '[]'));
           const finalNotifs = newNotifs
             .filter(n => !dismissed.has(n.id))
             .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
@@ -314,19 +348,23 @@ export function useNotifications() {
   }, [profile?.telefono]);
 
   const dismissNotification = (id: string) => {
+    if (!profile?.telefono) return;
     setNotifications(prev => prev.filter(n => n.id !== id));
     try {
-      const dismissed = new Set(JSON.parse(localStorage.getItem('dismissed_notifs') || '[]'));
+      const dismissedKey = `dismissed_notifs_${profile.telefono}`;
+      const dismissed = new Set(JSON.parse(localStorage.getItem(dismissedKey) || '[]'));
       dismissed.add(id);
-      localStorage.setItem('dismissed_notifs', JSON.stringify(Array.from(dismissed)));
+      localStorage.setItem(dismissedKey, JSON.stringify(Array.from(dismissed)));
     } catch(e) {}
   };
 
   const clearAllNotifications = () => {
+    if (!profile?.telefono) return;
     try {
-      const dismissed = new Set(JSON.parse(localStorage.getItem('dismissed_notifs') || '[]'));
+      const dismissedKey = `dismissed_notifs_${profile.telefono}`;
+      const dismissed = new Set(JSON.parse(localStorage.getItem(dismissedKey) || '[]'));
       notifications.forEach(n => dismissed.add(n.id));
-      localStorage.setItem('dismissed_notifs', JSON.stringify(Array.from(dismissed)));
+      localStorage.setItem(dismissedKey, JSON.stringify(Array.from(dismissed)));
       setNotifications([]);
     } catch(e) {}
   };

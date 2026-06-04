@@ -164,12 +164,17 @@ export function SocialChatWidget() {
   const activeMessages = allMessages.filter(m => m.emisor_telefono === activeChat || m.receptor_telefono === activeChat);
   const isGroupChat = activeContact?.type === 'group' && groupMatch;
   const displayedMessages = isGroupChat ? mensajesGrupos.filter(m => m.partido_id === groupMatch.id) : activeMessages;
+  
   const totalUnread = allContacts.reduce((acc, c) => acc + c.unread, 0);
+  const privateUnread = contacts.reduce((acc, c) => acc + c.unread, 0);
+  const groupUnread = groupContacts.reduce((acc, c) => acc + c.unread, 0);
 
   useEffect(() => {
     if (activeChat && profile?.telefono) {
-      // Mark messages as read only for private chats
-      if (activeContact?.type !== 'group') {
+      if (activeContact?.type === 'group' && groupMatch) {
+        // Marcar chat grupal como leído localmente
+        localStorage.setItem(`chat_read_${groupMatch.id}`, new Date().toISOString());
+      } else if (activeContact?.type !== 'group') {
         const unreadMsgs = activeMessages.filter(m => m.receptor_telefono === profile.telefono && !m.leido);
         if (unreadMsgs.length > 0) {
           supabase.from('mensajes')
@@ -183,7 +188,7 @@ export function SocialChatWidget() {
         }
       }
     }
-  }, [activeChat, activeMessages, profile?.telefono]);
+  }, [activeChat, activeMessages, mensajesGrupos, profile?.telefono, activeContact, groupMatch]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -263,17 +268,27 @@ export function SocialChatWidget() {
                 </button>
                 <button
                   onClick={() => { setActiveTab('private'); setActiveChat(null); setGroupMatch(null); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${activeTab === 'private' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'private' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
                 >
                   <Users className="w-3.5 h-3.5" />
                   <span className="text-xs font-bold tracking-wide">Privado</span>
+                  {privateUnread > 0 && (
+                    <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">
+                      {privateUnread}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => { setActiveTab('group'); setActiveChat(null); setGroupMatch(null); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${activeTab === 'group' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'group' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span className="text-xs font-bold tracking-wide">Partidos</span>
+                  {groupUnread > 0 && (
+                    <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">
+                      {groupUnread}
+                    </span>
+                  )}
                 </button>
               </div>
 
