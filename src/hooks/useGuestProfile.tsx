@@ -40,9 +40,60 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('paddle_guest_info', JSON.stringify(parsed));
         }
         setProfile(parsed);
-        // Sincronización automática en segundo plano para usuarios que ya tenían perfil local
-        // Esto hace que aparezcan en el admin sin tener que volver a guardar manualmente
-        setTimeout(() => saveProfile(parsed), 1000);
+        
+        // Sincronización inteligente en segundo plano (Read-first)
+        const syncProfile = async () => {
+          try {
+            const { supabase } = await import('@/lib/supabase');
+            
+            // 1. Intentar buscar por ID
+            let { data: dbProfile } = await supabase
+              .from('perfiles')
+              .select('*')
+              .eq('id', parsed.uid)
+              .maybeSingle();
+              
+            // 2. Si no se encuentra por ID, intentar buscar por teléfono limpio
+            if (!dbProfile && parsed.telefono) {
+              const cleanTel = parsed.telefono.replace(/\D/g, '');
+              if (cleanTel) {
+                const { data: telProfile } = await supabase
+                  .from('perfiles')
+                  .select('*')
+                  .eq('telefono', cleanTel)
+                  .limit(1);
+                if (telProfile && telProfile.length > 0) {
+                  dbProfile = telProfile[0];
+                }
+              }
+            }
+            
+            if (dbProfile) {
+              // Si existe en la BD, usamos la versión de la BD como fuente de verdad
+              const updatedProfile = {
+                uid: dbProfile.id,
+                nombre: dbProfile.nombre || '',
+                apellido: dbProfile.apellido || '',
+                telefono: dbProfile.telefono || '',
+                localidad: dbProfile.localidad || '',
+                categoria: dbProfile.categoria || '7ma',
+                posicion: dbProfile.posicion || 'Drive',
+                avatar_url: dbProfile.avatar_url || '',
+                paleta: dbProfile.paleta || '',
+                paleta_modelo: dbProfile.paleta_modelo || 'carbono'
+              };
+              setProfile(updatedProfile);
+              localStorage.setItem('paddle_guest_info', JSON.stringify(updatedProfile));
+            } else {
+              // Si no existe en la BD, lo creamos
+              await saveProfile(parsed);
+            }
+          } catch (err) {
+            console.error('Error in syncProfile:', err);
+          }
+        };
+
+        setTimeout(syncProfile, 1000);
       } catch (e) {
         console.error('Error parsing profile', e);
       }
@@ -56,17 +107,38 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       
       const cleanTelefono = newProfile.telefono ? newProfile.telefono.replace(/\D/g, '') : '';
       let targetUid = newProfile.uid || profile?.uid;
+      let existingDbProfile: any = null;
 
       if (cleanTelefono !== "") {
-        // Si el usuario ingresa un teléfono que ya existe, usamos ese ID para sobreescribirlo
+        // Buscar si existe un perfil con este teléfono
         const { data: existingProfiles } = await supabase
           .from('perfiles')
-          .select('id')
+          .select('*')
           .eq('telefono', cleanTelefono);
 
         if (existingProfiles && existingProfiles.length > 0) {
-          targetUid = existingProfiles[0].id;
+          existingDbProfile = existingProfiles[0];
+          targetUid = existingDbProfile.id;
         }
+      }
+
+      // Si el teléfono pertenece a otra cuenta en la BD, cargamos esa cuenta existente en lugar de sobreescribirla
+      if (existingDbProfile && existingDbProfile.id !== (profile?.uid || newProfile.uid)) {
+        const loadedProfile = {
+          uid: existingDbProfile.id,
+          nombre: existingDbProfile.nombre || '',
+          apellido: existingDbProfile.apellido || '',
+          telefono: existingDbProfile.telefono || '',
+          localidad: existingDbProfile.localidad || '',
+          categoria: existingDbProfile.categoria || '7ma',
+          posicion: existingDbProfile.posicion || 'Drive',
+          avatar_url: existingDbProfile.avatar_url || '',
+          paleta: existingDbProfile.paleta || '',
+          paleta_modelo: existingDbProfile.paleta_modelo || 'carbono'
+        };
+        setProfile(loadedProfile);
+        localStorage.setItem('paddle_guest_info', JSON.stringify(loadedProfile));
+        return; // Detener el guardado y cargar el perfil existente
       }
 
       if (!targetUid) {
