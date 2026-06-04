@@ -95,11 +95,8 @@ export function SocialChatWidget() {
         const newMsg = payload.new as Message;
         if (newMsg.emisor_telefono === profile.telefono || newMsg.receptor_telefono === profile.telefono) {
           setAllMessages(prev => {
-            const exists = prev.find(m => 
-              m.id === newMsg.id || 
-              (m.emisor_telefono === newMsg.emisor_telefono && m.contenido === newMsg.contenido && Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 3000)
-            );
-            if (exists) return prev.map(m => m.contenido === newMsg.contenido ? newMsg : m);
+            const exists = prev.some(m => m.id === newMsg.id);
+            if (exists) return prev;
             return [...prev, newMsg];
           });
         }
@@ -113,7 +110,12 @@ export function SocialChatWidget() {
 
     const channelGroup = supabase.channel('mensajes_partido_widget')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes_partido' }, (payload) => {
-        setMensajesGrupos(prev => [...prev, payload.new]);
+        const newMsg = payload.new;
+        setMensajesGrupos(prev => {
+          const exists = prev.some(m => m.id === newMsg.id);
+          if (exists) return prev;
+          return [...prev, newMsg];
+        });
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'mensajes_partido' }, (payload) => {
         if (payload.old?.id) {
@@ -227,17 +229,9 @@ export function SocialChatWidget() {
               if (!newMessage.trim() || !profile?.telefono) return;
               const msgText = newMessage.trim();
               setNewMessage("");
-              const tempMsg: any = {
-                id: Date.now().toString(),
-                emisor_telefono: profile.telefono,
-                contenido: msgText,
-                created_at: new Date().toISOString(),
-                leido: false
-              };
+
               if (activeContact?.type === 'group' && groupMatch) {
                 // Group chat
-                const groupTemp = { ...tempMsg, partido_id: groupMatch.id };
-                setMensajesGrupos(prev => [...prev, groupTemp]);
                 await supabase.from('mensajes_partido').insert({
                   partido_id: groupMatch.id,
                   emisor_telefono: profile.telefono,
@@ -245,8 +239,6 @@ export function SocialChatWidget() {
                 });
               } else {
                 // Private chat
-                const privateTemp = { ...tempMsg, receptor_telefono: activeChat };
-                setAllMessages(prev => [...prev, privateTemp]);
                 await supabase.from('mensajes').insert({
                   emisor_telefono: profile.telefono,
                   receptor_telefono: activeChat,
