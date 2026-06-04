@@ -58,16 +58,15 @@ export default function MensajesPage() {
         // Solo nos importan los mensajes donde somos emisor o receptor
         if (newMsg.emisor_telefono === profile.telefono || newMsg.receptor_telefono === profile.telefono) {
           setAllMessages(prev => {
-            // Evitar duplicados por la UI optimista
-            const exists = prev.find(m => 
-              m.id === newMsg.id || 
-              (m.emisor_telefono === newMsg.emisor_telefono && m.contenido === newMsg.contenido && Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 3000)
-            );
-            if (exists) {
-              return prev.map(m => m.contenido === newMsg.contenido ? newMsg : m);
-            }
+            const exists = prev.some(m => m.id === newMsg.id);
+            if (exists) return prev;
             return [...prev, newMsg];
           });
+        }
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'mensajes' }, (payload) => {
+        if (payload.old?.id) {
+          setAllMessages(prev => prev.filter(m => m.id !== payload.old.id));
         }
       })
       .subscribe();
@@ -126,17 +125,6 @@ export default function MensajesPage() {
 
     const msgText = newMessage.trim();
     setNewMessage("");
-
-    // UI Optimista
-    const tempMsg: Message = {
-      id: Date.now().toString(),
-      emisor_telefono: profile.telefono,
-      receptor_telefono: activeChat,
-      contenido: msgText,
-      created_at: new Date().toISOString(),
-      leido: false
-    };
-    setAllMessages(prev => [...prev, tempMsg]);
 
     // DB Insert
     await supabase.from('mensajes').insert({

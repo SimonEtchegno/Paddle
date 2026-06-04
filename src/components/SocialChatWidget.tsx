@@ -176,10 +176,9 @@ export function SocialChatWidget() {
   const activeMessages = allMessages.filter(m => m.emisor_telefono === activeChat || m.receptor_telefono === activeChat);
   const isGroupChat = activeContact?.type === 'group' && groupMatch;
   const displayedMessages = isGroupChat ? mensajesGrupos.filter(m => m.partido_id === groupMatch.id) : activeMessages;
-  
-  const totalUnread = allContacts.reduce((acc, c) => acc + c.unread, 0);
-  const privateUnread = contacts.reduce((acc, c) => acc + c.unread, 0);
+  const privateUnread = allMessages.filter(m => m.receptor_telefono === profile?.telefono && !m.leido).length;
   const groupUnread = groupContacts.reduce((acc, c) => acc + c.unread, 0);
+  const totalUnread = privateUnread + groupUnread;
 
   useEffect(() => {
     if (activeChat && profile?.telefono) {
