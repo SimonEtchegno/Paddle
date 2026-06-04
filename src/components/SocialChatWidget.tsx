@@ -27,6 +27,8 @@ interface Contact {
   lastMsgTime: number;
   type: 'private' | 'group';
   matchData?: any;
+  isRequest?: boolean;
+  isPending?: boolean;
 }
 
 export function SocialChatWidget() {
@@ -42,6 +44,7 @@ export function SocialChatWidget() {
   const [groupMatch, setGroupMatch] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'ai' | 'private' | 'group'>('ai');
   const [searchQuery, setSearchQuery] = useState("");
+  const [showRequestsOnly, setShowRequestsOnly] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -137,15 +140,27 @@ export function SocialChatWidget() {
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
     const unread = msgs.filter(m => m.receptor_telefono === profile?.telefono && !m.leido).length;
     
+    const myMsgs = msgs.filter(m => m.emisor_telefono === profile?.telefono);
+    const theirMsgs = msgs.filter(m => m.emisor_telefono === p.telefono);
+    const isRequest = theirMsgs.length > 0 && myMsgs.length === 0;
+    const isPending = myMsgs.length > 0 && theirMsgs.length === 0;
+
+    let lastMsgText = lastMsg?.contenido;
+    if (lastMsgText === '__CHAT_ACCEPTED__') {
+      lastMsgText = 'Solicitud aceptada';
+    }
+
     return {
       id: p.telefono,
       name: `${p.nombre} ${p.apellido || ''}`.trim(),
       avatar: p.avatar_url || `https://ui-avatars.com/api/?name=${p.nombre}+${p.apellido}&background=random&color=fff`,
-      lastMessage: lastMsg?.contenido,
+      lastMessage: lastMsgText,
       time: lastMsg ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
       unread,
       lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
-      type: 'private'
+      type: 'private',
+      isRequest,
+      isPending
     };
   });
 
@@ -174,13 +189,20 @@ export function SocialChatWidget() {
     };
   });
 
+  const privateChats = contacts.filter(c => !c.isRequest && (c.lastMsgTime > 0 || c.id === activeChat));
+  const requestChats = contacts.filter(c => c.isRequest);
+
+  const displayedPrivateChats = searchQuery.trim() !== ''
+    ? contacts.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : (showRequestsOnly ? requestChats : privateChats);
+
   const allContacts = [...contacts, ...groupContacts].sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const activeContact = allContacts.find(c => c.id === activeChat);
   const activeMessages = allMessages.filter(m => m.emisor_telefono === activeChat || m.receptor_telefono === activeChat);
   const isGroupChat = activeContact?.type === 'group' && groupMatch;
   const displayedMessages = isGroupChat ? mensajesGrupos.filter(m => m.partido_id === groupMatch.id) : activeMessages;
-  const privateUnread = allMessages.filter(m => m.receptor_telefono === profile?.telefono && !m.leido).length;
+  const privateUnread = privateChats.reduce((acc, c) => acc + c.unread, 0);
   const groupUnread = groupContacts.reduce((acc, c) => acc + c.unread, 0);
   const totalUnread = privateUnread + groupUnread;
 
@@ -265,14 +287,14 @@ export function SocialChatWidget() {
               <div className="flex items-center gap-4">
                 {/* Tab Buttons */}
                 <button
-                  onClick={() => { setActiveTab('ai'); setActiveChat(null); setGroupMatch(null); }}
+                  onClick={() => { setActiveTab('ai'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${activeTab === 'ai' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
                 >
                   <Bot className="w-3.5 h-3.5" />
                   <span className="text-xs font-bold tracking-wide">IA</span>
                 </button>
                 <button
-                  onClick={() => { setActiveTab('private'); setActiveChat(null); setGroupMatch(null); }}
+                  onClick={() => { setActiveTab('private'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'private' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
                 >
                   <Users className="w-3.5 h-3.5" />
@@ -284,7 +306,7 @@ export function SocialChatWidget() {
                   )}
                 </button>
                 <button
-                  onClick={() => { setActiveTab('group'); setActiveChat(null); setGroupMatch(null); }}
+                  onClick={() => { setActiveTab('group'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'group' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
@@ -340,49 +362,93 @@ export function SocialChatWidget() {
                       transition={{ type: 'tween', duration: 0.2 }}
                       className="absolute inset-0 flex flex-col"
                     >
-                      <div className="p-3 pb-1 shrink-0 bg-[#0f1423] z-10 sticky top-0">
+                      <div className="p-3 pb-1 shrink-0 bg-[#0f1423] z-10 sticky top-0 space-y-2">
+                        {showRequestsOnly && (
+                          <button
+                            onClick={() => setShowRequestsOnly(false)}
+                            className="flex items-center gap-1.5 text-xs text-[var(--primary)] font-bold hover:underline mb-1"
+                          >
+                            <ArrowLeft className="w-3.5 h-3.5" /> Volver a chats
+                          </button>
+                        )}
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                           <input
                             type="text"
                             placeholder="Buscar jugador..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                              setSearchQuery(e.target.value);
+                              if (e.target.value.trim() !== '') {
+                                setShowRequestsOnly(false);
+                              }
+                            }}
                             className="w-full bg-[#1a2235] text-sm text-white placeholder-zinc-500 border border-[var(--border)] rounded-full pl-9 pr-4 py-2 focus:outline-none focus:border-[var(--primary)] transition-colors"
                           />
                         </div>
                       </div>
                       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 pt-0">
-                      {allContacts.filter(c => c.type === 'private' && c.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
-                        allContacts.filter(c => c.type === 'private' && c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(c => (
+                        {/* Solicitudes de mensaje banner */}
+                        {!showRequestsOnly && searchQuery.trim() === '' && requestChats.length > 0 && (
                           <div
-                            key={c.id}
-                            onClick={() => setActiveChat(c.id)}
-                            className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-colors"
+                            onClick={() => setShowRequestsOnly(true)}
+                            className="flex items-center justify-between p-3 mb-2 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 border border-[var(--primary)]/20 rounded-xl cursor-pointer transition-colors"
                           >
-                            <div className="relative shrink-0">
-                              <img src={c.avatar} alt="" className="w-10 h-10 rounded-full object-cover border border-white/10" />
-                              {c.unread > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full">
-                                  {c.unread}
-                                </span>
-                              )}
+                            <div className="flex items-center gap-2">
+                              <MessageSquareText className="w-4 h-4 text-[var(--primary)]" />
+                              <span className="text-xs font-black text-white uppercase tracking-wider">Solicitudes de mensaje</span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-center">
-                                <h4 className="text-sm font-semibold text-white truncate">{c.name}</h4>
-                                {c.time && <span className="text-[10px] text-zinc-500">{c.time}</span>}
-                              </div>
-                              <p className="text-xs text-zinc-400 truncate">{c.lastMessage || 'Toca para iniciar chat'}</p>
-                            </div>
+                            <span className="min-w-[18px] h-[18px] px-1 bg-[var(--primary)] text-black text-[10px] font-black flex items-center justify-center rounded-full">
+                              {requestChats.length}
+                            </span>
                           </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-50 space-y-2">
-                          <MessageSquare className="w-10 h-10 text-zinc-500" />
-                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">No se encontraron jugadores</p>
-                        </div>
-                      )}
+                        )}
+
+                        {showRequestsOnly && (
+                          <div className="px-3 py-1 mb-2">
+                            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Solicitudes Pendientes</span>
+                          </div>
+                        )}
+
+                        {displayedPrivateChats.length > 0 ? (
+                          displayedPrivateChats.map(c => (
+                            <div
+                              key={c.id}
+                              onClick={() => setActiveChat(c.id)}
+                              className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-colors"
+                            >
+                              <div className="relative shrink-0">
+                                <img src={c.avatar} alt="" className="w-10 h-10 rounded-full object-cover border border-white/10" />
+                                {c.unread > 0 && (
+                                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full">
+                                    {c.unread}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-center">
+                                  <h4 className="text-sm font-semibold text-white truncate flex items-center gap-1.5">
+                                    {c.name}
+                                    {c.isPending && (
+                                      <span className="text-[8px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-500 px-1 py-0.5 rounded">Pendiente</span>
+                                    )}
+                                  </h4>
+                                  {c.time && <span className="text-[10px] text-zinc-500">{c.time}</span>}
+                                </div>
+                                <p className="text-xs text-zinc-400 truncate">
+                                  {c.isPending ? 'Pendiente de aceptación' : (c.lastMessage || 'Toca para iniciar chat')}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-50 space-y-2">
+                            <MessageSquare className="w-10 h-10 text-zinc-500" />
+                            <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                              {showRequestsOnly ? 'No hay solicitudes' : 'No se encontraron jugadores'}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -443,6 +509,15 @@ export function SocialChatWidget() {
                       <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-[url('/noise.png')] bg-repeat opacity-95">
                         {displayedMessages.map((msg) => {
                           const isMe = msg.emisor_telefono === profile?.telefono;
+                          if (msg.contenido === '__CHAT_ACCEPTED__') {
+                            return (
+                              <div key={msg.id} className="flex justify-center my-2">
+                                <span className="text-[10px] bg-zinc-800 text-zinc-400 px-3 py-1 rounded-full border border-zinc-700/50 uppercase tracking-wider font-bold">
+                                  Solicitud aceptada
+                                </span>
+                              </div>
+                            );
+                          }
                           return (
                             <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                               {isGroupChat && !isMe && (
@@ -476,25 +551,60 @@ export function SocialChatWidget() {
                         })}
                         <div ref={messagesEndRef} />
                       </div>
-                      <div className="p-3 bg-[#1a2235] border-t border-[var(--border)] z-10">
-                        <form onSubmit={handleSendMessage} className="flex gap-2 relative">
-                          <input
-                            ref={inputRef}
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Mensaje..."
-                            className="flex-1 bg-[#0f1423] text-sm text-white placeholder-gray-500 border border-[var(--border)] rounded-full pl-4 pr-10 py-2 focus:outline-none focus:border-blue-500 transition-colors"
-                          />
-                          <button
-                            type="submit"
-                            disabled={!newMessage.trim()}
-                            className="absolute right-1 top-1 bottom-1 w-8 bg-blue-500 text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-all shrink-0"
-                          >
-                            <Send className="w-3.5 h-3.5 ml-0.5" />
-                          </button>
-                        </form>
-                      </div>
+                      
+                      {activeContact?.isRequest ? (
+                        <div className="p-4 bg-[#1a2235] border-t border-[var(--border)] text-center space-y-3 z-10 shrink-0">
+                          <p className="text-xs text-zinc-300">¿Quieres chatear con {activeContact.name}?</p>
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={async () => {
+                                if (!profile?.telefono) return;
+                                await supabase.from('mensajes').insert({
+                                  emisor_telefono: profile.telefono,
+                                  receptor_telefono: activeChat,
+                                  contenido: '__CHAT_ACCEPTED__'
+                                });
+                              }}
+                              className="px-4 py-1.5 bg-green-500 hover:bg-green-400 text-black text-xs font-black rounded-xl transition-all shadow-md active:scale-95"
+                            >
+                              Aceptar
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!profile?.telefono || !activeChat) return;
+                                await Promise.all([
+                                  supabase.from('mensajes').delete().eq('emisor_telefono', profile.telefono).eq('receptor_telefono', activeChat),
+                                  supabase.from('mensajes').delete().eq('emisor_telefono', activeChat).eq('receptor_telefono', profile.telefono)
+                                ]);
+                                setActiveChat(null);
+                              }}
+                              className="px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-black rounded-xl transition-all"
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-[#1a2235] border-t border-[var(--border)] z-10">
+                          <form onSubmit={handleSendMessage} className="flex gap-2 relative">
+                            <input
+                              ref={inputRef}
+                              type="text"
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              placeholder="Mensaje..."
+                              className="flex-1 bg-[#0f1423] text-sm text-white placeholder-gray-500 border border-[var(--border)] rounded-full pl-4 pr-10 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                            />
+                            <button
+                              type="submit"
+                              disabled={!newMessage.trim()}
+                              className="absolute right-1 top-1 bottom-1 w-8 bg-blue-500 text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-all shrink-0"
+                            >
+                              <Send className="w-3.5 h-3.5 ml-0.5" />
+                            </button>
+                          </form>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

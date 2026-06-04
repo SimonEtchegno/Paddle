@@ -23,6 +23,8 @@ interface Contact {
   time?: string;
   unread: number;
   lastMsgTime: number;
+  isRequest?: boolean;
+  isPending?: boolean;
 }
 
 export default function MensajesPage() {
@@ -31,6 +33,8 @@ export default function MensajesPage() {
   const [allMessages, setAllMessages] = useState<Message[]>([]);
   const [rawPerfiles, setRawPerfiles] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showRequestsOnly, setShowRequestsOnly] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Cargar datos
@@ -82,17 +86,36 @@ export default function MensajesPage() {
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
     const unread = msgs.filter(m => m.receptor_telefono === profile?.telefono && !m.leido).length;
     
+    const myMsgs = msgs.filter(m => m.emisor_telefono === profile?.telefono);
+    const theirMsgs = msgs.filter(m => m.emisor_telefono === p.telefono);
+    const isRequest = theirMsgs.length > 0 && myMsgs.length === 0;
+    const isPending = myMsgs.length > 0 && theirMsgs.length === 0;
+
+    let lastMsgText = lastMsg?.contenido;
+    if (lastMsgText === '__CHAT_ACCEPTED__') {
+      lastMsgText = 'Solicitud aceptada';
+    }
+
     return {
       id: p.telefono,
       name: `${p.nombre} ${p.apellido || ''}`.trim(),
       avatar: p.avatar_url || `https://ui-avatars.com/api/?name=${p.nombre}+${p.apellido}&background=random&color=fff`,
       level: p.categoria || "Sin categoría",
-      lastMessage: lastMsg?.contenido,
+      lastMessage: lastMsgText,
       time: lastMsg ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
       unread,
       lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
+      isRequest,
+      isPending
     };
-  }).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+  });
+
+  const privateChats = contacts.filter(c => !c.isRequest && (c.lastMsgTime > 0 || c.id === activeChat));
+  const requestChats = contacts.filter(c => c.isRequest);
+
+  const displayedContacts = searchQuery.trim() !== ''
+    ? contacts.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : (showRequestsOnly ? requestChats : privateChats).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const activeContact = contacts.find(c => c.id === activeChat);
   const activeMessages = allMessages.filter(m => m.emisor_telefono === activeChat || m.receptor_telefono === activeChat);
@@ -162,13 +185,50 @@ export default function MensajesPage() {
             <input 
               type="text" 
               placeholder="Buscar jugadores..." 
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value.trim() !== '') {
+                  setShowRequestsOnly(false);
+                }
+              }}
               className="w-full bg-zinc-900/80 border border-zinc-800 text-white rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all placeholder:text-zinc-500"
             />
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-          {contacts.map((contact) => (
+          {showRequestsOnly && (
+            <button
+              onClick={() => setShowRequestsOnly(false)}
+              className="flex items-center gap-1.5 text-xs text-green-400 font-bold hover:underline mb-2"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Volver a chats
+            </button>
+          )}
+
+          {!showRequestsOnly && searchQuery.trim() === '' && requestChats.length > 0 && (
+            <div
+              onClick={() => setShowRequestsOnly(true)}
+              className="flex items-center justify-between p-3 mb-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-2xl cursor-pointer transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-green-400" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider">Solicitudes de mensaje</span>
+              </div>
+              <span className="min-w-[20px] h-[20px] px-1.5 bg-green-500 text-black text-xs font-black flex items-center justify-center rounded-full">
+                {requestChats.length}
+              </span>
+            </div>
+          )}
+
+          {showRequestsOnly && (
+            <div className="px-3 py-1 mb-1">
+              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Solicitudes Pendientes</span>
+            </div>
+          )}
+
+          {displayedContacts.map((contact) => (
             <motion.div
               key={contact.id}
               whileHover={{ scale: 1.02 }}
@@ -176,24 +236,31 @@ export default function MensajesPage() {
               onClick={() => setActiveChat(contact.id)}
               className={`flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all ${activeChat === contact.id ? 'bg-zinc-800/80 shadow-lg' : 'hover:bg-zinc-900/50'}`}
             >
-              <div className="relative">
+              <div className="relative shrink-0">
                 <img src={contact.avatar} alt={contact.name} className="w-14 h-14 rounded-full object-cover border border-zinc-700" />
+                {contact.unread > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-black text-[10px] font-black flex items-center justify-center rounded-full">
+                    {contact.unread}
+                  </span>
+                )}
               </div>
               
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-1">
-                  <h3 className="text-white font-semibold truncate">{contact.name}</h3>
+                  <h3 className="text-white font-semibold truncate flex items-center gap-1.5">
+                    {contact.name}
+                    {contact.isPending && (
+                      <span className="text-[8px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-500 px-1 py-0.5 rounded">Pendiente</span>
+                    )}
+                  </h3>
                   <span className={`text-xs ${contact.unread > 0 ? 'text-green-400 font-medium' : 'text-zinc-500'}`}>
                     {contact.time}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <p className="text-zinc-400 text-sm truncate pr-2">{contact.lastMessage || 'Toca para iniciar el chat'}</p>
-                  {contact.unread > 0 && (
-                    <span className="bg-green-500 text-black text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shrink-0">
-                      {contact.unread}
-                    </span>
-                  )}
+                  <p className="text-zinc-400 text-sm truncate pr-2">
+                    {contact.isPending ? 'Pendiente de aceptación' : (contact.lastMessage || 'Toca para iniciar el chat')}
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -234,6 +301,16 @@ export default function MensajesPage() {
                   const isMe = msg.emisor_telefono === profile?.telefono;
                   const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+                  if (msg.contenido === '__CHAT_ACCEPTED__') {
+                    return (
+                      <div key={msg.id} className="flex justify-center my-2">
+                        <span className="text-xs bg-zinc-900 text-zinc-500 px-3 py-1 rounded-full border border-zinc-800 uppercase tracking-wider font-bold">
+                          Solicitud aceptada
+                        </span>
+                      </div>
+                    );
+                  }
+
                   return (
                     <motion.div 
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -260,33 +337,67 @@ export default function MensajesPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* MESSAGE INPUT */}
-            <div className="p-5 border-t border-zinc-800/60 bg-zinc-950/90 backdrop-blur-md">
-              <form onSubmit={handleSendMessage} className="flex items-center gap-3 max-w-4xl mx-auto">
-                <button type="button" className="p-3 text-zinc-400 hover:text-green-400 hover:bg-zinc-800 rounded-xl transition-all">
-                  <Paperclip className="w-5 h-5" />
-                </button>
-                <div className="flex-1 relative">
-                  <input 
-                    type="text" 
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Escribe un mensaje..." 
-                    className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-2xl py-3.5 pl-5 pr-12 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all placeholder:text-zinc-500"
-                  />
-                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-green-400 transition-colors">
-                    <Smile className="w-5 h-5" />
+            {/* MESSAGE INPUT OR ACCEPT/REJECT CARD */}
+            {activeContact?.isRequest ? (
+              <div className="p-6 border-t border-zinc-800 bg-zinc-950/90 text-center space-y-4 shrink-0">
+                <p className="text-sm text-zinc-400">¿Quieres chatear con {activeContact.name}?</p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={async () => {
+                      if (!profile?.telefono) return;
+                      await supabase.from('mensajes').insert({
+                        emisor_telefono: profile.telefono,
+                        receptor_telefono: activeChat,
+                        contenido: '__CHAT_ACCEPTED__'
+                      });
+                    }}
+                    className="px-6 py-2.5 bg-green-500 hover:bg-green-400 text-black text-sm font-black rounded-2xl transition-all shadow-lg active:scale-95 cursor-pointer"
+                  >
+                    Aceptar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!profile?.telefono || !activeChat) return;
+                      await Promise.all([
+                        supabase.from('mensajes').delete().eq('emisor_telefono', profile.telefono).eq('receptor_telefono', activeChat),
+                        supabase.from('mensajes').delete().eq('emisor_telefono', activeChat).eq('receptor_telefono', profile.telefono)
+                      ]);
+                      setActiveChat(null);
+                    }}
+                    className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-black rounded-2xl transition-all cursor-pointer"
+                  >
+                    Rechazar
                   </button>
                 </div>
-                <button 
-                  type="submit" 
-                  disabled={!newMessage.trim()}
-                  className="p-3.5 bg-green-500 text-black rounded-2xl hover:bg-green-400 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-lg shadow-green-500/20"
-                >
-                  <Send className="w-5 h-5 ml-1" />
-                </button>
-              </form>
-            </div>
+              </div>
+            ) : (
+              <div className="p-5 border-t border-zinc-800/60 bg-zinc-950/90 backdrop-blur-md">
+                <form onSubmit={handleSendMessage} className="flex items-center gap-3 max-w-4xl mx-auto">
+                  <button type="button" className="p-3 text-zinc-400 hover:text-green-400 hover:bg-zinc-800 rounded-xl transition-all">
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  <div className="flex-1 relative">
+                    <input 
+                      type="text" 
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Escribe un mensaje..." 
+                      className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-2xl py-3.5 pl-5 pr-12 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all placeholder:text-zinc-500"
+                    />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-green-400 transition-colors">
+                      <Smile className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={!newMessage.trim()}
+                    className="p-3.5 bg-green-500 text-black rounded-2xl hover:bg-green-400 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-lg shadow-green-500/20"
+                  >
+                    <Send className="w-5 h-5 ml-1" />
+                  </button>
+                </form>
+              </div>
+            )}
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 p-8 hidden md:flex">
