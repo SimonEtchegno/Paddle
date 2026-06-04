@@ -110,12 +110,12 @@ export default function MensajesPage() {
     };
   });
 
-  const privateChats = contacts.filter(c => !c.isRequest && (c.lastMsgTime > 0 || c.id === activeChat));
-  const requestChats = contacts.filter(c => c.isRequest);
+  const privateChats = contacts.filter(c => !c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+  const requestChats = contacts.filter(c => c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const displayedContacts = searchQuery.trim() !== ''
-    ? contacts.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : (showRequestsOnly ? requestChats : privateChats).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+    ? contacts.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => b.lastMsgTime - a.lastMsgTime)
+    : (showRequestsOnly ? requestChats : privateChats);
 
   const activeContact = contacts.find(c => c.id === activeChat);
   const activeMessages = allMessages.filter(m => m.emisor_telefono === activeChat || m.receptor_telefono === activeChat);
@@ -344,12 +344,19 @@ export default function MensajesPage() {
                 <div className="flex gap-3 justify-center">
                   <button
                     onClick={async () => {
-                      if (!profile?.telefono) return;
-                      await supabase.from('mensajes').insert({
+                      if (!profile?.telefono || !activeChat) return;
+                      const { data, error } = await supabase.from('mensajes').insert({
                         emisor_telefono: profile.telefono,
                         receptor_telefono: activeChat,
                         contenido: '__CHAT_ACCEPTED__'
-                      });
+                      }).select();
+                      if (data && data.length > 0) {
+                        setAllMessages(prev => {
+                          const exists = prev.some(m => m.id === data[0].id);
+                          if (exists) return prev;
+                          return [...prev, data[0]];
+                        });
+                      }
                     }}
                     className="px-6 py-2.5 bg-green-500 hover:bg-green-400 text-black text-sm font-black rounded-2xl transition-all shadow-lg active:scale-95 cursor-pointer"
                   >
@@ -358,11 +365,15 @@ export default function MensajesPage() {
                   <button
                     onClick={async () => {
                       if (!profile?.telefono || !activeChat) return;
+                      setAllMessages(prev => prev.filter(m => 
+                        !(m.emisor_telefono === profile.telefono && m.receptor_telefono === activeChat) &&
+                        !(m.emisor_telefono === activeChat && m.receptor_telefono === profile.telefono)
+                      ));
+                      setActiveChat(null);
                       await Promise.all([
                         supabase.from('mensajes').delete().eq('emisor_telefono', profile.telefono).eq('receptor_telefono', activeChat),
                         supabase.from('mensajes').delete().eq('emisor_telefono', activeChat).eq('receptor_telefono', profile.telefono)
                       ]);
-                      setActiveChat(null);
                     }}
                     className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-black rounded-2xl transition-all cursor-pointer"
                   >

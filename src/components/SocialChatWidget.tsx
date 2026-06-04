@@ -189,11 +189,11 @@ export function SocialChatWidget() {
     };
   });
 
-  const privateChats = contacts.filter(c => !c.isRequest && (c.lastMsgTime > 0 || c.id === activeChat));
-  const requestChats = contacts.filter(c => c.isRequest);
+  const privateChats = contacts.filter(c => !c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+  const requestChats = contacts.filter(c => c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const displayedPrivateChats = searchQuery.trim() !== ''
-    ? contacts.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? contacts.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => b.lastMsgTime - a.lastMsgTime)
     : (showRequestsOnly ? requestChats : privateChats);
 
   const allContacts = [...contacts, ...groupContacts].sort((a, b) => b.lastMsgTime - a.lastMsgTime);
@@ -558,27 +558,38 @@ export function SocialChatWidget() {
                           <div className="flex gap-2 justify-center">
                             <button
                               onClick={async () => {
-                                if (!profile?.telefono) return;
-                                await supabase.from('mensajes').insert({
+                                if (!profile?.telefono || !activeChat) return;
+                                const { data, error } = await supabase.from('mensajes').insert({
                                   emisor_telefono: profile.telefono,
                                   receptor_telefono: activeChat,
                                   contenido: '__CHAT_ACCEPTED__'
-                                });
+                                }).select();
+                                if (data && data.length > 0) {
+                                  setAllMessages(prev => {
+                                    const exists = prev.some(m => m.id === data[0].id);
+                                    if (exists) return prev;
+                                    return [...prev, data[0]];
+                                  });
+                                }
                               }}
-                              className="px-4 py-1.5 bg-green-500 hover:bg-green-400 text-black text-xs font-black rounded-xl transition-all shadow-md active:scale-95"
+                              className="px-4 py-1.5 bg-green-500 hover:bg-green-400 text-black text-xs font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
                             >
                               Aceptar
                             </button>
                             <button
                               onClick={async () => {
                                 if (!profile?.telefono || !activeChat) return;
+                                setAllMessages(prev => prev.filter(m => 
+                                  !(m.emisor_telefono === profile.telefono && m.receptor_telefono === activeChat) &&
+                                  !(m.emisor_telefono === activeChat && m.receptor_telefono === profile.telefono)
+                                ));
+                                setActiveChat(null);
                                 await Promise.all([
                                   supabase.from('mensajes').delete().eq('emisor_telefono', profile.telefono).eq('receptor_telefono', activeChat),
                                   supabase.from('mensajes').delete().eq('emisor_telefono', activeChat).eq('receptor_telefono', profile.telefono)
                                 ]);
-                                setActiveChat(null);
                               }}
-                              className="px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-black rounded-xl transition-all"
+                              className="px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-black rounded-xl transition-all cursor-pointer"
                             >
                               Rechazar
                             </button>
