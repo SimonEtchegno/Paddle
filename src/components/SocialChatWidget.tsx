@@ -317,7 +317,7 @@ export function SocialChatWidget() {
     };
   });
 
-  const privateChats = contacts.filter(c => !c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+  const privateChats = contacts.filter(c => !c.isRequest && c.lastMsgTime > 0).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
   const requestChats = contacts.filter(c => c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const displayedPrivateChats = searchQuery.trim() !== ''
@@ -374,6 +374,27 @@ export function SocialChatWidget() {
       }
     } catch (e) {
       console.error("Error deleting message", e);
+    }
+  };
+
+  const handleClearChat = async () => {
+    if (!profile?.telefono || !activeChat) return;
+    await handleClearChatWith(activeChat);
+  };
+
+  const handleClearChatWith = async (partnerPhone: string) => {
+    if (!profile?.telefono || !partnerPhone) return;
+    try {
+      setAllMessages(prev => prev.filter(m => 
+        !(m.emisor_telefono === profile.telefono && m.receptor_telefono === partnerPhone) &&
+        !(m.emisor_telefono === partnerPhone && m.receptor_telefono === profile.telefono)
+      ));
+      await Promise.all([
+        supabase.from('mensajes').delete().eq('emisor_telefono', profile.telefono).eq('receptor_telefono', partnerPhone),
+        supabase.from('mensajes').delete().eq('emisor_telefono', partnerPhone).eq('receptor_telefono', profile.telefono)
+      ]);
+    } catch (e) {
+      console.error("Error clearing chat", e);
     }
   };
 
@@ -449,12 +470,28 @@ export function SocialChatWidget() {
               </div>
 
               {activeChat ? (
+                <div className="flex items-center gap-1.5">
+                  {!isGroupChat && (
+                    <button
+                      onClick={async () => {
+                        if (confirm("¿Eliminar esta conversación?")) {
+                          await handleClearChat();
+                          setActiveChat(null);
+                        }
+                      }}
+                      className="p-1.5 hover:bg-red-500/10 rounded-full transition-colors text-zinc-400 hover:text-red-400 cursor-pointer"
+                      title="Eliminar chat"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                   <button 
                     onClick={() => { setActiveChat(null); setGroupMatch(null); }}
                     className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-zinc-400"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
+                </div>
               ) : (
                 <button 
                   onClick={() => setIsOpen(false)}
@@ -544,7 +581,7 @@ export function SocialChatWidget() {
                             <div
                               key={c.id}
                               onClick={() => setActiveChat(c.id)}
-                              className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-colors"
+                              className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-colors group relative"
                             >
                               <div className="relative shrink-0">
                                 <img src={c.avatar} alt="" className="w-10 h-10 rounded-full object-cover border border-white/10" />
@@ -554,7 +591,7 @@ export function SocialChatWidget() {
                                   </span>
                                 )}
                               </div>
-                              <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0 pr-6">
                                 <div className="flex justify-between items-center">
                                   <h4 className="text-sm font-semibold text-white truncate flex items-center gap-1.5">
                                     {c.name}
@@ -562,12 +599,28 @@ export function SocialChatWidget() {
                                       <span className="text-[8px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-500 px-1 py-0.5 rounded">Pendiente</span>
                                     )}
                                   </h4>
-                                  {c.time && <span className="text-[10px] text-zinc-500">{c.time}</span>}
+                                  {c.time && <span className="text-[10px] text-zinc-500 group-hover:opacity-0 transition-opacity">{c.time}</span>}
                                 </div>
                                 <p className="text-xs text-zinc-400 truncate">
                                   {c.isPending ? 'Pendiente de aceptación' : (c.lastMessage || 'Toca para iniciar chat')}
                                 </p>
                               </div>
+                              
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`¿Eliminar conversación con ${c.name}?`)) {
+                                    await handleClearChatWith(c.id);
+                                    if (activeChat === c.id) {
+                                      setActiveChat(null);
+                                    }
+                                  }
+                                }}
+                                className="absolute right-[6px] top-1/2 -translate-y-1/2 p-1.5 opacity-40 md:opacity-0 group-hover:opacity-100 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all z-10 cursor-pointer"
+                                title="Eliminar chat"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           ))
                         ) : (
@@ -648,33 +701,42 @@ export function SocialChatWidget() {
                             );
                           }
                           return (
-                            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group`}>
                               {isGroupChat && !isMe && (
                                 <span className="text-[10px] font-bold text-zinc-500 ml-2 mb-1 uppercase tracking-wider">
                                   {msg.emisor_telefono}
                                 </span>
                               )}
-                              <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
-                                isMe 
-                                  ? 'bg-blue-500 text-white rounded-tr-sm' 
-                                  : 'bg-[#1a2235] border border-[var(--border)] text-gray-200 rounded-tl-sm'
-                              }`}>
-                                <p style={{ wordBreak: 'break-word' }} className={isMe ? 'font-medium' : ''}>{msg.contenido}</p>
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[9px] text-zinc-600 font-bold">
-                                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                              <div className="flex items-center gap-1.5 max-w-[85%]">
+                                {!isMe && (
+                                  <button 
+                                    onClick={() => handleDeleteMessage(msg.id, !!isGroupChat)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-500 hover:text-red-500 hover:bg-white/5 rounded-full shrink-0 cursor-pointer"
+                                    title="Eliminar mensaje"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <div className={`px-3 py-2 rounded-2xl text-sm ${
+                                  isMe 
+                                    ? 'bg-blue-500 text-white rounded-tr-sm' 
+                                    : 'bg-[#1a2235] border border-[var(--border)] text-gray-200 rounded-tl-sm'
+                                }`}>
+                                  <p style={{ wordBreak: 'break-word' }} className={isMe ? 'font-medium' : ''}>{msg.contenido}</p>
+                                </div>
                                 {isMe && (
                                   <button 
                                     onClick={() => handleDeleteMessage(msg.id, !!isGroupChat)}
-                                    className="text-zinc-600 hover:text-red-400 transition-colors"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-500 hover:text-red-500 hover:bg-white/5 rounded-full shrink-0 cursor-pointer"
                                     title="Eliminar mensaje"
                                   >
-                                    <Trash2 className="w-3 h-3" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
                               </div>
+                              <span className="text-[9px] text-zinc-600 mt-1 font-bold">
+                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
                             </div>
                           );
                         })}

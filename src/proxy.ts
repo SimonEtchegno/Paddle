@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+const ALLOWED_ADMINS = ['setchegno@etman.com.ar', 'octavioducos24@gmail.com'];
+
+export async function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
 
   // 1. Extraer el subdominio (ej: penarol.padelmanager.com -> penarol)
@@ -26,6 +28,39 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   if (slug) {
     requestHeaders.set('x-active-club-slug', slug);
+  }
+
+  // 3. Proteger la ruta de admin verificando el JWT (CRIT-02)
+  if (request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname !== '/admin-login') {
+    const token = request.cookies.get('sb-access-token')?.value;
+    let isAuthorized = false;
+
+    if (token) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://rtiwwhnoaiiwvgivtcko.supabase.co';
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0aXd3aG5vYWlpd3ZnaXZ0Y2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NTU1MzksImV4cCI6MjA5MjQzMTUzOX0.wHiAM-sCSs_yzBfTDxwBB882lJcw6q-QVo7dcsxXYl8';
+      
+      try {
+        const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            apikey: supabaseAnonKey,
+          },
+        });
+        
+        if (res.ok) {
+          const user = await res.json();
+          if (user && user.email && ALLOWED_ADMINS.includes(user.email.toLowerCase())) {
+            isAuthorized = true;
+          }
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.redirect(new URL('/admin-login', request.url));
+    }
   }
 
   return NextResponse.next({

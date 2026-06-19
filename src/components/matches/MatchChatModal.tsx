@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, MessageCircle } from "lucide-react";
+import { X, Send, MessageCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PartidoAbierto } from "@/types";
 
@@ -100,6 +100,16 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
           }
         }
       })
+      .on('postgres_changes', { 
+        event: 'DELETE', 
+        schema: 'public', 
+        table: 'mensajes_partido',
+        filter: `partido_id=eq.${partido.id}`
+      }, (payload) => {
+        if (payload.old?.id) {
+          setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+        }
+      })
       .subscribe();
 
     return () => {
@@ -144,6 +154,11 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
       emisor_telefono: profile.telefono,
       contenido: msgText
     });
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    await supabase.from('mensajes_partido').delete().eq('id', msgId);
   };
 
   return (
@@ -202,18 +217,38 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
                   const showHeader = i === 0 || messages[i-1].emisor_telefono !== msg.emisor_telefono;
 
                   return (
-                    <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group`}>
                       {showHeader && !isMe && (
                         <span className="text-[10px] font-bold text-zinc-500 ml-2 mb-1 uppercase tracking-wider">
                           {senderName}
                         </span>
                       )}
-                      <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm ${
-                        isMe 
-                          ? 'bg-green-500 text-black rounded-tr-sm shadow-[0_4px_15px_rgba(34,197,94,0.2)]' 
-                          : 'bg-[#1a2235] border border-[var(--border)] text-gray-200 rounded-tl-sm'
-                      }`}>
-                        <p style={{ wordBreak: 'break-word' }} className={isMe ? 'font-medium' : ''}>{msg.contenido}</p>
+                      <div className="flex items-center gap-2 max-w-[85%]">
+                        {!isMe && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-zinc-500 hover:text-red-500 hover:bg-zinc-900 rounded-full shrink-0 cursor-pointer"
+                            title="Eliminar mensaje"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <div className={`px-4 py-2.5 rounded-2xl text-sm ${
+                          isMe 
+                            ? 'bg-green-500 text-black rounded-tr-sm shadow-[0_4px_15px_rgba(34,197,94,0.2)]' 
+                            : 'bg-[#1a2235] border border-[var(--border)] text-gray-200 rounded-tl-sm'
+                        }`}>
+                          <p style={{ wordBreak: 'break-word' }} className={isMe ? 'font-medium' : ''}>{msg.contenido}</p>
+                        </div>
+                        {isMe && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-zinc-500 hover:text-red-500 hover:bg-zinc-900 rounded-full shrink-0 cursor-pointer"
+                            title="Eliminar mensaje"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                       <span className="text-[9px] text-zinc-600 mt-1 font-bold">
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

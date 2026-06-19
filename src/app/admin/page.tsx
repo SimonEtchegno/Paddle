@@ -63,7 +63,7 @@ function InscriptionGroup({ torneoNombre, inscriptos, deleteInscription }: any) 
             </div>
             <div className="flex gap-2 opacity-40 group-hover/insc:opacity-100 transition-all">
               <a
-                href={`https://wa.me/${i.telefono_contacto}`}
+                href={`https://wa.me/${String(i.telefono_contacto || '').replace(/\D/g, '')}`}
                 target="_blank"
                 rel="noreferrer"
                 className="p-3 bg-primary/10 text-primary rounded-xl border border-primary/20 hover:bg-primary/20 transition-all"
@@ -283,6 +283,11 @@ export default function AdminPage() {
       });
 
       if (error) throw error;
+      
+      // Guardar token en cookie para el middleware
+      if (data.session) {
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=86400; SameSite=Lax; Secure`;
+      }
 
       setIsLoggedIn(true);
       toast.success('Bienvenido, Admin');
@@ -295,6 +300,8 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // Limpiar cookie
+    document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     setIsLoggedIn(false);
   };
 
@@ -1162,7 +1169,7 @@ export default function AdminPage() {
                           </button>
                         )}
                         <a
-                          href={`https://wa.me/${r.telefono}`}
+                          href={`https://wa.me/${String(r.telefono || '').replace(/\D/g, '')}`}
                           target="_blank"
                           className="px-8 py-3 border border-primary text-primary rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary hover:text-black transition-all"
                         >

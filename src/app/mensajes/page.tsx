@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, CheckCheck, MoreVertical, Paperclip, Smile, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Search, Send, CheckCheck, MoreVertical, Paperclip, Smile, ArrowLeft, MessageSquare, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useGuestProfile } from '@/hooks/useGuestProfile';
@@ -52,6 +52,8 @@ export default function MensajesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showRequestsOnly, setShowRequestsOnly] = useState(false);
+  const [showChatMenu, setShowChatMenu] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Cargar datos
@@ -156,7 +158,7 @@ export default function MensajesPage() {
     };
   });
 
-  const privateChats = contacts.filter(c => !c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+  const privateChats = contacts.filter(c => !c.isRequest && c.lastMsgTime > 0).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
   const requestChats = contacts.filter(c => c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const displayedContacts = searchQuery.trim() !== ''
@@ -201,6 +203,30 @@ export default function MensajesPage() {
       receptor_telefono: activeChat,
       contenido: msgText
     });
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    setAllMessages(prev => prev.filter(m => m.id !== messageId));
+    await supabase.from('mensajes').delete().eq('id', messageId);
+  };
+
+  const handleClearChat = async () => {
+    if (!profile?.telefono || !activeChat) return;
+    await handleClearChatWith(activeChat);
+  };
+
+  const handleClearChatWith = async (partnerPhone: string) => {
+    if (!profile?.telefono || !partnerPhone) return;
+
+    setAllMessages(prev => prev.filter(m => 
+      !(m.emisor_telefono === profile.telefono && m.receptor_telefono === partnerPhone) &&
+      !(m.emisor_telefono === partnerPhone && m.receptor_telefono === profile.telefono)
+    ));
+
+    await Promise.all([
+      supabase.from('mensajes').delete().eq('emisor_telefono', profile.telefono).eq('receptor_telefono', partnerPhone),
+      supabase.from('mensajes').delete().eq('emisor_telefono', partnerPhone).eq('receptor_telefono', profile.telefono)
+    ]);
   };
 
   if (loading) return null;
@@ -280,7 +306,7 @@ export default function MensajesPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setActiveChat(contact.id)}
-              className={`flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all ${activeChat === contact.id ? 'bg-zinc-800/80 shadow-lg' : 'hover:bg-zinc-900/50'}`}
+              className={`flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all group relative ${activeChat === contact.id ? 'bg-zinc-800/80 shadow-lg' : 'hover:bg-zinc-900/50'}`}
             >
               <div className="relative shrink-0">
                 <img src={contact.avatar} alt={contact.name} className="w-14 h-14 rounded-full object-cover border border-zinc-700" />
@@ -291,7 +317,7 @@ export default function MensajesPage() {
                 )}
               </div>
               
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-8">
                 <div className="flex justify-between items-center mb-1">
                   <h3 className="text-white font-semibold truncate flex items-center gap-1.5">
                     {contact.name}
@@ -299,7 +325,7 @@ export default function MensajesPage() {
                       <span className="text-[8px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-500 px-1 py-0.5 rounded">Pendiente</span>
                     )}
                   </h3>
-                  <span className={`text-xs ${contact.unread > 0 ? 'text-green-400 font-medium' : 'text-zinc-500'}`}>
+                  <span className={`text-xs group-hover:opacity-0 transition-opacity ${contact.unread > 0 ? 'text-green-400 font-medium' : 'text-zinc-500'}`}>
                     {contact.time}
                   </span>
                 </div>
@@ -309,6 +335,22 @@ export default function MensajesPage() {
                   </p>
                 </div>
               </div>
+
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (confirm(`¿Eliminar conversación con ${contact.name}?`)) {
+                    await handleClearChatWith(contact.id);
+                    if (activeChat === contact.id) {
+                      setActiveChat(null);
+                    }
+                  }
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 opacity-40 md:opacity-0 group-hover:opacity-100 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all z-10 cursor-pointer"
+                title="Eliminar chat"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </motion.div>
           ))}
         </div>
@@ -333,10 +375,30 @@ export default function MensajesPage() {
                   <p className="text-green-400 text-sm font-medium">{activeContact.level}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-full transition-all">
+              <div className="flex items-center gap-3 relative">
+                <button 
+                  onClick={() => setShowChatMenu(!showChatMenu)}
+                  className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-full transition-all"
+                >
                   <MoreVertical className="w-5 h-5" />
                 </button>
+                {showChatMenu && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setShowChatMenu(false)} />
+                    <div className="absolute right-0 top-12 w-48 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl py-1 z-40">
+                      <button
+                        onClick={() => {
+                          setShowChatMenu(false);
+                          setShowClearConfirm(true);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 font-medium transition-colors flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar chat
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -363,14 +425,34 @@ export default function MensajesPage() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ duration: 0.2 }}
                       key={msg.id} 
-                      className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                      className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group`}
                     >
-                      <div className={`max-w-[75%] px-5 py-3.5 rounded-2xl relative group shadow-sm ${
-                        isMe 
-                          ? 'bg-gradient-to-br from-green-500 to-green-600 text-black rounded-br-sm' 
-                          : 'bg-zinc-800/80 text-white rounded-bl-sm border border-zinc-700/50'
-                      }`}>
-                        <p className="text-[15px] leading-relaxed">{msg.contenido}</p>
+                      <div className="flex items-center gap-2 max-w-[75%]">
+                        {!isMe && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-900 rounded-full shrink-0 cursor-pointer"
+                            title="Eliminar mensaje"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        <div className={`px-5 py-3.5 rounded-2xl relative shadow-sm ${
+                          isMe 
+                            ? 'bg-gradient-to-br from-green-500 to-green-600 text-black rounded-br-sm' 
+                            : 'bg-zinc-800/80 text-white rounded-bl-sm border border-zinc-700/50'
+                        }`}>
+                          <p className="text-[15px] leading-relaxed">{msg.contenido}</p>
+                        </div>
+                        {isMe && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-900 rounded-full shrink-0 cursor-pointer"
+                            title="Eliminar mensaje"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className="text-xs text-zinc-500 font-medium">{timeStr}</span>
@@ -471,6 +553,52 @@ export default function MensajesPage() {
         )}
       </div>
 
+      {/* CONFIRM CLEAR CHAT MODAL */}
+      <AnimatePresence>
+        {showClearConfirm && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowClearConfirm(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 max-w-md w-full relative z-[160] shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-red-400">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">¿Eliminar conversación?</h3>
+              <p className="text-zinc-400 text-sm mb-6">
+                Esto eliminará permanentemente todos los mensajes con <strong>{activeContact?.name}</strong>. Esta acción no se puede deshacer y el chat desaparecerá de tu lista.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-sm font-bold rounded-xl transition-all cursor-pointer flex-1"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    setShowClearConfirm(false);
+                    await handleClearChat();
+                    setActiveChat(null);
+                  }}
+                  className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex-1"
+                >
+                  Eliminar Chat
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
