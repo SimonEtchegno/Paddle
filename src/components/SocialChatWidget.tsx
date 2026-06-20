@@ -704,8 +704,11 @@ export function SocialChatWidget() {
                       className="absolute inset-0 flex flex-col"
                     >
                       <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-[url('/noise.png')] bg-repeat opacity-95">
-                        {displayedMessages.map((msg) => {
+                        {displayedMessages.map((msg, i) => {
                           const isMe = msg.emisor_telefono === profile?.telefono;
+                          const sender = rawPerfiles.find(p => p.telefono === msg.emisor_telefono);
+                          const senderName = sender ? `${sender.nombre}` : msg.emisor_telefono;
+                          const showHeader = i === 0 || displayedMessages[i-1].emisor_telefono !== msg.emisor_telefono;
                           if (msg.contenido === '__CHAT_ACCEPTED__') {
                             return (
                               <div key={msg.id} className="flex justify-center my-2">
