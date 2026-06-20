@@ -564,16 +564,35 @@ export function SocialChatWidget() {
                   {(!isGroupChat || (isGroupChat && groupMatch?.contacto_whatsapp === profile?.telefono)) && (
                     <button
                       onClick={async () => {
-                        if (confirm("¿Eliminar esta conversación?")) {
-                          if (isGroupChat) {
-                            if (!profile?.telefono || !groupMatch?.id) return;
-                            setMensajesGrupos(prev => prev.filter(m => m.partido_id !== groupMatch.id));
-                            await supabase.from('mensajes_partido').delete().eq('partido_id', groupMatch.id);
-                          } else {
-                            await handleClearChat();
-                          }
-                          setActiveChat(null);
-                        }
+                        toast.custom((t) => (
+                          <div className="bg-[#1a2235] border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-3 min-w-[250px]">
+                            <p className="text-sm font-bold text-white text-center">¿Eliminar esta conversación?</p>
+                            <div className="flex gap-2 justify-center">
+                              <button 
+                                onClick={() => toast.dismiss(t.id)}
+                                className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  toast.dismiss(t.id);
+                                  if (isGroupChat) {
+                                    if (!profile?.telefono || !groupMatch?.id) return;
+                                    setMensajesGrupos(prev => prev.filter(m => m.partido_id !== groupMatch.id));
+                                    await supabase.from('mensajes_partido').delete().eq('partido_id', groupMatch.id);
+                                  } else {
+                                    await handleClearChat();
+                                  }
+                                  setActiveChat(null);
+                                }}
+                                className="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        ), { duration: Infinity, position: 'top-center' });
                       }}
                       className="p-1.5 hover:bg-red-500/10 rounded-full transition-colors text-zinc-400 hover:text-red-400 cursor-pointer"
                       title="Eliminar chat"

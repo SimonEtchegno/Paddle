@@ -208,13 +208,32 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
               <div className="flex items-center gap-2">
                 {partido?.contacto_whatsapp === profile?.telefono && (
                   <button 
-                    onClick={async () => {
-                      if (confirm("¿Seguro que quieres borrar el historial de este chat?")) {
-                        setMessages([]);
-                        if (partido?.id) {
-                          await supabase.from('mensajes_partido').delete().eq('partido_id', partido.id);
-                        }
-                      }
+                    onClick={() => {
+                      toast.custom((t) => (
+                        <div className="bg-[#1a2235] border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-3 min-w-[250px]">
+                          <p className="text-sm font-bold text-white text-center">¿Vaciar este chat?</p>
+                          <div className="flex gap-2 justify-center">
+                            <button 
+                              onClick={() => toast.dismiss(t.id)}
+                              className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                toast.dismiss(t.id);
+                                setMessages([]);
+                                if (partido?.id) {
+                                  await supabase.from('mensajes_partido').delete().eq('partido_id', partido.id);
+                                }
+                              }}
+                              className="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      ), { duration: Infinity, position: 'top-center' });
                     }}
                     className="p-2 hover:bg-red-500/10 rounded-xl transition-colors text-zinc-400 hover:text-red-400"
                     title="Vaciar chat"
