@@ -293,7 +293,7 @@ export function SocialChatWidget() {
   });
 
   const groupContacts: Contact[] = misPartidos
-    .filter(p => p.deporte === (sport || 'padel'))
+    .filter(p => (p.deporte || 'padel') === (sport || 'padel'))
     .map(p => {
     const msgs = mensajesGrupos.filter(m => m.partido_id === p.id);
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
