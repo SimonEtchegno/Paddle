@@ -23,7 +23,7 @@ export function Navbar({ club }: { club?: any }) {
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Activar notificaciones en tiempo real
-  const { notifications, unreadCount, dismissNotification, clearAllNotifications } = useNotifications();
+  const { notifications, unreadCount, dismissNotification, clearAllNotifications, markAllAsRead } = useNotifications();
 
   // Cerrar menú al cambiar de ruta
   useEffect(() => {
@@ -133,7 +133,10 @@ export function Navbar({ club }: { club?: any }) {
             {profile && (
               <div className="relative" ref={notifRef}>
                 <button
-                  onClick={() => setShowNotifs(!showNotifs)}
+                  onClick={() => {
+                    if (!showNotifs) markAllAsRead();
+                    setShowNotifs(!showNotifs);
+                  }}
                   className="p-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all relative"
                 >
                   <Bell size={18} className={unreadCount > 0 ? 'text-primary' : 'text-white/60'} />
@@ -194,7 +197,7 @@ export function Navbar({ club }: { club?: any }) {
                                   )}
                                   <p className="text-xs font-bold text-white/90 leading-snug">{n.message}</p>
                                 </div>
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5 shadow-[0_0_8px_rgba(200,255,0,0.6)]" />
+                                {!n.isRead && <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5 shadow-[0_0_8px_rgba(200,255,0,0.6)]" />}
                               </div>
                               <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mt-1">
                                 {new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

@@ -318,8 +318,12 @@ export function useNotifications() {
         try {
           const dismissedKey = `dismissed_notifs_${profile.telefono}`;
           const dismissed = new Set(JSON.parse(localStorage.getItem(dismissedKey) || '[]'));
+          const readKey = `read_notifs_${profile.telefono}`;
+          const readSet = new Set(JSON.parse(localStorage.getItem(readKey) || '[]'));
+          
           const finalNotifs = newNotifs
             .filter(n => !dismissed.has(n.id))
+            .map(n => ({ ...n, isRead: readSet.has(n.id) }))
             .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
           
           // Sonido si hay nuevas notificaciones (comparando longitud)
@@ -369,10 +373,22 @@ export function useNotifications() {
     } catch(e) {}
   };
 
+  const markAllAsRead = () => {
+    if (!profile?.telefono) return;
+    try {
+      const readKey = `read_notifs_${profile.telefono}`;
+      const readSet = new Set(JSON.parse(localStorage.getItem(readKey) || '[]'));
+      notifications.forEach(n => readSet.add(n.id));
+      localStorage.setItem(readKey, JSON.stringify(Array.from(readSet)));
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch(e) {}
+  };
+
   return {
     notifications,
-    unreadCount: notifications.length,
+    unreadCount: notifications.filter(n => !n.isRead).length,
     dismissNotification,
-    clearAllNotifications
+    clearAllNotifications,
+    markAllAsRead
   };
 }
