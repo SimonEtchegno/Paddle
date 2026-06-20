@@ -355,7 +355,7 @@ export default function PartidosPage() {
                       >
                         <Check size={16} /> Confirmar
                       </button>
-                      <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 border border-white/10 px-4 py-3 rounded-xl hover:bg-error/20 hover:border-error transition-colors text-error uppercase font-black text-[10px] tracking-widest">
+                      <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 border border-white/10 px-4 py-3 rounded-xl hover:bg-error/20 hover:border-error transition-colors text-error uppercase font-black text-[10px] tracking-widest" title="Rechazar solicitud">
                         <X size={16} />
                       </button>
                     </div>
@@ -625,6 +625,7 @@ export default function PartidosPage() {
                             <button
                               onClick={() => handleDeleteMatch(p.id)}
                               className="p-3 bg-error/10 text-error rounded-2xl hover:bg-error hover:text-white transition-all border border-error/20"
+                              title="Cancelar partido"
                             >
                               <Trash2 size={20} />
                             </button>
@@ -702,7 +703,7 @@ export default function PartidosPage() {
                 <AlertTriangle size={40} className="text-error" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-black uppercase tracking-tight italic text-white">¿Borrar Partido?</h3>
+                <h3 className="text-2xl font-black uppercase tracking-tight italic text-white">¿Cancelar Partido?</h3>
                 <p className="text-xs font-bold uppercase tracking-widest opacity-40">Esta acción no se puede deshacer.</p>
               </div>
               <div className="grid grid-cols-2 gap-4 pt-4">
@@ -710,13 +711,13 @@ export default function PartidosPage() {
                   onClick={() => setMatchToDelete(null)}
                   className="bg-white/5 border border-white/10 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all text-white"
                 >
-                  Cancelar
+                  Volver
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="bg-error text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)]"
                 >
-                  Sí, Borrar
+                  Sí, Cancelar Partido
                 </button>
               </div>
             </motion.div>
