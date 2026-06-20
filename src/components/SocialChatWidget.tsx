@@ -345,7 +345,7 @@ export function SocialChatWidget() {
   const totalUnread = privateUnread + groupUnread + requestChats.length;
 
   useEffect(() => {
-    if (activeChat && profile?.telefono) {
+    if (activeChat && profile?.telefono && isOpen) {
       if (activeContact?.type === 'group' && groupMatch) {
         // Marcar chat grupal como leído localmente
         localStorage.setItem(`chat_read_${groupMatch.id}`, new Date().toISOString());
@@ -363,7 +363,7 @@ export function SocialChatWidget() {
         }
       }
     }
-  }, [activeChat, activeMessages, mensajesGrupos, profile?.telefono, activeContact, groupMatch]);
+  }, [activeChat, activeMessages, mensajesGrupos, profile?.telefono, activeContact, groupMatch, isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
