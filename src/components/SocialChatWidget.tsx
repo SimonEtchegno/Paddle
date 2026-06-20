@@ -49,6 +49,15 @@ function formatMessageTime(dateString: string): string {
   }
 }
 
+const nameColors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
+function getColorForName(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return nameColors[Math.abs(hash) % nameColors.length];
+}
+
 export function SocialChatWidget() {
   const { profile } = useGuestProfile();
   const { sport } = useSport();
@@ -471,11 +480,17 @@ export function SocialChatWidget() {
 
               {activeChat ? (
                 <div className="flex items-center gap-1.5">
-                  {!isGroupChat && (
+                  {(!isGroupChat || (isGroupChat && groupMatch?.contacto_whatsapp === profile?.telefono)) && (
                     <button
                       onClick={async () => {
                         if (confirm("¿Eliminar esta conversación?")) {
-                          await handleClearChat();
+                          if (isGroupChat) {
+                            if (!profile?.telefono || !groupMatch?.id) return;
+                            setMensajesGrupos(prev => prev.filter(m => m.partido_id !== groupMatch.id));
+                            await supabase.from('mensajes_partido').delete().eq('partido_id', groupMatch.id);
+                          } else {
+                            await handleClearChat();
+                          }
                           setActiveChat(null);
                         }
                       }}
@@ -703,7 +718,7 @@ export function SocialChatWidget() {
                           return (
                             <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group`}>
                               {isGroupChat && !isMe && showHeader && (
-                                <span className="text-[10px] font-bold text-zinc-500 ml-2 mb-1 uppercase tracking-wider">
+                                <span className="text-[10px] font-bold ml-2 mb-1 uppercase tracking-wider" style={{ color: getColorForName(senderName) }}>
                                   {senderName}
                                 </span>
                               )}

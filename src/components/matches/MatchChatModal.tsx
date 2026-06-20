@@ -14,6 +14,15 @@ interface Message {
   created_at: string;
 }
 
+const nameColors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
+function getColorForName(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return nameColors[Math.abs(hash) % nameColors.length];
+}
+
 interface MatchChatModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -190,12 +199,30 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
                   <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{partido?.hora} hs • {partido?.fecha}</p>
                 </div>
               </div>
-              <button 
-                onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors text-zinc-400"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                {partido?.contacto_whatsapp === profile?.telefono && (
+                  <button 
+                    onClick={async () => {
+                      if (confirm("¿Seguro que quieres borrar el historial de este chat?")) {
+                        setMessages([]);
+                        if (partido?.id) {
+                          await supabase.from('mensajes_partido').delete().eq('partido_id', partido.id);
+                        }
+                      }
+                    }}
+                    className="p-2 hover:bg-red-500/10 rounded-xl transition-colors text-zinc-400 hover:text-red-400"
+                    title="Vaciar chat"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                )}
+                <button 
+                  onClick={onClose}
+                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-zinc-400"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Chat Body */}
@@ -219,7 +246,7 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
                   return (
                     <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group`}>
                       {showHeader && !isMe && (
-                        <span className="text-[10px] font-bold text-zinc-500 ml-2 mb-1 uppercase tracking-wider">
+                        <span className="text-[10px] font-bold ml-2 mb-1 uppercase tracking-wider" style={{ color: getColorForName(senderName) }}>
                           {senderName}
                         </span>
                       )}
