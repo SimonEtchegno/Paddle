@@ -201,11 +201,15 @@ export default function PartidosPage() {
 
       toast.success('¡Solicitud enviada!');
       fetchData(true);
+      const msgText = `¡Hola! Me gustaría sumarme a tu partido de ${sport === 'futbol' ? 'Fútbol 5' : 'Pádel'} del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`;
+      
       await supabase.from('mensajes').insert({
         emisor_telefono: profile.telefono,
         receptor_telefono: p.contacto_whatsapp,
-        contenido: `¡Hola! Me gustaría sumarme a tu partido de ${sport === 'futbol' ? 'Fútbol 5' : 'Pádel'} del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`
+        contenido: msgText
       });
+
+      window.open(`https://wa.me/${p.contacto_whatsapp}?text=${encodeURIComponent(msgText)}`, '_blank');
     } catch (e) {
       toast.error('Error al unirse');
     }
@@ -248,11 +252,15 @@ export default function PartidosPage() {
       toast.success('Jugador confirmado');
 
       // Mensaje automático
+      const msgText = `¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! ${sport === 'futbol' ? '⚽' : '🎾'}`;
+      
       await supabase.from('mensajes').insert({
         emisor_telefono: profile?.telefono || '',
         receptor_telefono: u.whatsapp_interesado,
-        contenido: `¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! ${sport === 'futbol' ? '⚽' : '🎾'}`
+        contenido: msgText
       });
+
+      window.open(`https://wa.me/${u.whatsapp_interesado}?text=${encodeURIComponent(msgText)}`, '_blank');
 
       fetchData();
     } catch (e) {
