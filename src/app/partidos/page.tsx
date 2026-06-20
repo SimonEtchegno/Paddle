@@ -30,6 +30,7 @@ export default function PartidosPage() {
   const [filterLevel, setFilterLevel] = useState('Todos');
   const [mensajesCount, setMensajesCount] = useState<Record<string, number>>({});
   const [chatPartido, setChatPartido] = useState<PartidoAbierto | null>(null);
+  const [perfilesMap, setPerfilesMap] = useState<Record<string, string>>({});
 
   const { sport } = useSport();
   const CATEGORIES = sport === 'futbol'
@@ -142,6 +143,14 @@ export default function PartidosPage() {
         // Ignorar si la tabla no existe aún
       }
 
+      // 6. Cargar Perfiles para las fotos
+      const { data: perfs } = await supabase.from('perfiles').select('telefono, avatar_url');
+      if (perfs) {
+        const map: Record<string, string> = {};
+        perfs.forEach(p => { if (p.avatar_url) map[p.telefono] = p.avatar_url });
+        setPerfilesMap(map);
+      }
+
     } catch (e: any) {
       console.error('Error en fetchData:', e);
       if (!isBackground) toast.error('Error al cargar datos: ' + e.message);
@@ -192,8 +201,11 @@ export default function PartidosPage() {
 
       toast.success('¡Solicitud enviada!');
       fetchData(true);
-      const msg = encodeURIComponent(`¡Hola! Me gustaría sumarme a tu partido de ${sport === 'futbol' ? 'Fútbol 5' : 'Pádel'} del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`);
-      window.open(`https://wa.me/${p.contacto_whatsapp}?text=${msg}`, '_blank');
+      await supabase.from('mensajes').insert({
+        emisor_telefono: profile.telefono,
+        receptor_telefono: p.contacto_whatsapp,
+        contenido: `¡Hola! Me gustaría sumarme a tu partido de ${sport === 'futbol' ? 'Fútbol 5' : 'Pádel'} del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`
+      });
     } catch (e) {
       toast.error('Error al unirse');
     }
@@ -235,9 +247,12 @@ export default function PartidosPage() {
         .eq('id', u.partido_id);
       toast.success('Jugador confirmado');
 
-      // Aviso por WhatsApp al interesado
-      const msg = encodeURIComponent(`¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! ${sport === 'futbol' ? '⚽' : '🎾'}`);
-      window.open(`https://wa.me/${u.whatsapp_interesado}?text=${msg}`, '_blank');
+      // Mensaje automático
+      await supabase.from('mensajes').insert({
+        emisor_telefono: profile?.telefono || '',
+        receptor_telefono: u.whatsapp_interesado,
+        contenido: `¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! ${sport === 'futbol' ? '⚽' : '🎾'}`
+      });
 
       fetchData();
     } catch (e) {
@@ -533,9 +548,9 @@ export default function PartidosPage() {
                               "w-16 h-16 bg-zinc-900 rounded-full border-2 backdrop-blur-xl flex items-center justify-center relative z-10 shadow-2xl transition-all duration-500 overflow-hidden",
                               ringBorder
                             )}>
-                              {(esMio ? profile?.avatar_url : p.avatar_url) ? (
+                              {(esMio ? profile?.avatar_url : (perfilesMap[p.contacto_whatsapp] || p.avatar_url)) ? (
                                 <img
-                                  src={esMio ? profile?.avatar_url : p.avatar_url}
+                                  src={esMio ? profile?.avatar_url : (perfilesMap[p.contacto_whatsapp] || p.avatar_url)}
                                   alt="Avatar"
                                   className="w-full h-full object-cover"
                                 />
@@ -618,18 +633,20 @@ export default function PartidosPage() {
 
                         {!esMio && (
                           <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-                            <button
-                              onClick={() => setChatPartido(p)}
-                              className="p-3 bg-white/5 text-white/80 rounded-2xl hover:bg-white/10 transition-all border border-white/10 relative shrink-0"
-                              title="Chat Grupal"
-                            >
-                              <MessageCircle size={20} />
-                              {(mensajesCount[p.id] || 0) > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
-                                  {mensajesCount[p.id]}
-                                </span>
-                              )}
-                            </button>
+                            {isConfirmed && (
+                              <button
+                                onClick={() => setChatPartido(p)}
+                                className="p-3 bg-white/5 text-white/80 rounded-2xl hover:bg-white/10 transition-all border border-white/10 relative shrink-0"
+                                title="Chat Grupal"
+                              >
+                                <MessageCircle size={20} />
+                                {(mensajesCount[p.id] || 0) > 0 && (
+                                  <span className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
+                                    {mensajesCount[p.id]}
+                                  </span>
+                                )}
+                              </button>
+                            )}
 
                             {isConfirmed ? (
                               <div className="flex-1 sm:flex-none px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest bg-success/20 text-success border border-success/30 flex items-center justify-center gap-2">

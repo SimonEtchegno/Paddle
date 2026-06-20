@@ -108,7 +108,7 @@ export function SocialChatWidget() {
       if (resPartidos.data) {
         const misP = resPartidos.data.filter(p => 
           p.contacto_whatsapp === profile.telefono || 
-          p.uniones_partidos?.some((u: any) => u.whatsapp_interesado === profile.telefono)
+          p.uniones_partidos?.some((u: any) => u.whatsapp_interesado === profile.telefono && u.estado === 'confirmado')
         );
         setMisPartidos(misP);
         
@@ -828,6 +828,7 @@ export function SocialChatWidget() {
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
             onClick={() => setIsOpen(true)}
+            id="chat-widget-button"
             className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-[var(--primary)] text-[#0a0b0e] rounded-full shadow-lg shadow-[var(--primary)]/40 flex items-center justify-center hover:scale-105 transition-all z-[9999] border-4 border-[#0a0b0e] hover:shadow-[var(--primary)]/60"
           >
             <MessageSquareText className="w-6 h-6 stroke-[2.5]" />
