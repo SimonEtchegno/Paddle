@@ -114,7 +114,13 @@ export function SocialChatWidget() {
       ]);
 
       if (resPerfiles.data) setRawPerfiles(resPerfiles.data);
-      if (resMensajes.data) setAllMessages(resMensajes.data);
+      if (resMensajes.data) {
+        setAllMessages(resMensajes.data.map((m: any) => ({
+          ...m,
+          emisor_telefono: m.emisor_telefono ? m.emisor_telefono.replace(/\D/g, '') : '',
+          receptor_telefono: m.receptor_telefono ? m.receptor_telefono.replace(/\D/g, '') : ''
+        })));
+      }
       
       if (resPartidos.data) {
         const misP = resPartidos.data.filter(p => 
@@ -136,7 +142,13 @@ export function SocialChatWidget() {
 
     const channel = supabase.channel('mensajes_widget')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes' }, (payload) => {
-        const newMsg = payload.new as Message;
+        const rawMsg = payload.new as Message;
+        const newMsg = {
+          ...rawMsg,
+          emisor_telefono: rawMsg.emisor_telefono ? rawMsg.emisor_telefono.replace(/\D/g, '') : '',
+          receptor_telefono: rawMsg.receptor_telefono ? rawMsg.receptor_telefono.replace(/\D/g, '') : ''
+        };
+        
         if (newMsg.emisor_telefono === profile.telefono || newMsg.receptor_telefono === profile.telefono) {
           setAllMessages(prev => {
             const exists = prev.some(m => m.id === newMsg.id);
