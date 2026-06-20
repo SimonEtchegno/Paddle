@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 
 export interface AppNotification {
   id: string;
-  type: 'confirmacion' | 'solicitud' | 'cancelacion' | 'sistema';
+  type: 'confirmacion' | 'solicitud' | 'cancelacion' | 'sistema' | 'mensaje';
   message: string;
   time: string;
   isRead: boolean;
