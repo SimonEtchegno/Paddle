@@ -702,9 +702,9 @@ export function SocialChatWidget() {
                           }
                           return (
                             <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group`}>
-                              {isGroupChat && !isMe && (
+                              {isGroupChat && !isMe && showHeader && (
                                 <span className="text-[10px] font-bold text-zinc-500 ml-2 mb-1 uppercase tracking-wider">
-                                  {msg.emisor_telefono}
+                                  {senderName}
                                 </span>
                               )}
                               <div className="flex items-center gap-1.5 max-w-[85%]">
