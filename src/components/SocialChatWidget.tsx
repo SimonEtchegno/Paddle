@@ -79,11 +79,13 @@ export function SocialChatWidget() {
   const rawPerfilesRef = useRef<any[]>([]);
   const isOpenRef = useRef(false);
   const activeChatRef = useRef<string | null>(null);
+  const misPartidosRef = useRef<any[]>([]);
 
   useEffect(() => { allMessagesRef.current = allMessages; }, [allMessages]);
   useEffect(() => { rawPerfilesRef.current = rawPerfiles; }, [rawPerfiles]);
   useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
+  useEffect(() => { misPartidosRef.current = misPartidos; }, [misPartidos]);
 
   // Escuchar evento global para abrir chat de partido desde cualquier página
   useEffect(() => {
@@ -231,6 +233,43 @@ export function SocialChatWidget() {
           if (exists) return prev;
           return [...prev, newMsg];
         });
+
+        if (newMsg.emisor_telefono !== profile.telefono) {
+          const isChatOpen = isOpenRef.current && activeChatRef.current === `match_${newMsg.partido_id}`;
+          if (!isChatOpen) {
+            const sender = rawPerfilesRef.current.find(p => p.telefono === newMsg.emisor_telefono);
+            const senderName = sender ? sender.nombre : newMsg.emisor_telefono;
+            const match = misPartidosRef.current.find(p => p.id === newMsg.partido_id);
+            const matchName = match ? `${match.hora}hs` : 'Grupo';
+
+            toast.custom((t) => (
+              <div 
+                className={`max-w-md w-full bg-[#1a2235] border border-white/10 shadow-lg rounded-xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 p-4 cursor-pointer hover:bg-white/5 transition-colors`}
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  setIsOpen(true);
+                  setActiveTab('group');
+                  setActiveChat(`match_${newMsg.partido_id}`);
+                  if (match) setGroupMatch(match);
+                }}
+              >
+                <div className="flex-1 w-0">
+                  <p className="text-xs font-bold text-[var(--primary)] font-sans">Partido {matchName}: {senderName}</p>
+                  <p className="text-xs text-zinc-300 mt-1 truncate font-sans">{newMsg.contenido}</p>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.dismiss(t.id);
+                  }}
+                  className="ml-4 shrink-0 text-zinc-500 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ), { duration: 4000 });
+          }
+        }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'mensajes_partido' }, (payload) => {
         if (payload.old?.id) {
