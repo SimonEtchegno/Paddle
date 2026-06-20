@@ -310,7 +310,11 @@ export function SocialChatWidget() {
     let unread = 0;
     const lastRead = localStorage.getItem(`chat_read_${p.id}`);
     if (msgs.length > 0) {
-      unread = msgs.filter(m => !lastRead || new Date(m.created_at) > new Date(lastRead)).length;
+      // Filtrar mensajes que no sean míos y que sean posteriores al lastRead
+      unread = msgs.filter(m => 
+        m.emisor_telefono !== profile?.telefono && 
+        (!lastRead || new Date(m.created_at) > new Date(lastRead))
+      ).length;
     }
 
     return {
@@ -347,8 +351,13 @@ export function SocialChatWidget() {
   useEffect(() => {
     if (activeChat && profile?.telefono && isOpen) {
       if (activeContact?.type === 'group' && groupMatch) {
-        // Marcar chat grupal como leído localmente
-        localStorage.setItem(`chat_read_${groupMatch.id}`, new Date().toISOString());
+        // Marcar chat grupal como leído localmente usando el tiempo del último mensaje
+        const msgsForGroup = mensajesGrupos.filter(m => m.partido_id === groupMatch.id);
+        if (msgsForGroup.length > 0) {
+          localStorage.setItem(`chat_read_${groupMatch.id}`, msgsForGroup[msgsForGroup.length - 1].created_at);
+        } else {
+          localStorage.setItem(`chat_read_${groupMatch.id}`, new Date().toISOString());
+        }
       } else if (activeContact?.type !== 'group') {
         const unreadMsgs = activeMessages.filter(m => m.receptor_telefono === profile.telefono && !m.leido);
         if (unreadMsgs.length > 0) {

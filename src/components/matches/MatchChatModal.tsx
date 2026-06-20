@@ -40,8 +40,12 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
   useEffect(() => {
     if (!isOpen || !partido?.id) return;
 
-    // Actualizar última lectura al abrir
-    localStorage.setItem(`chat_read_${partido.id}`, new Date().toISOString());
+    // Marcar como leído
+    if (messages.length > 0) {
+      localStorage.setItem(`chat_read_${partido.id}`, messages[messages.length - 1].created_at);
+    } else {
+      localStorage.setItem(`chat_read_${partido.id}`, new Date().toISOString());
+    }
     window.dispatchEvent(new Event('chat_read_updated'));
 
     const loadChat = async () => {
@@ -88,17 +92,19 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
             Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 5000 &&
             !m.id.includes('-') // los IDs de Supabase son UUIDs con guiones; los temp son timestamps sin guiones
           );
-          if (tempIndex !== -1) {
+          
+          if (tempIndex >= 0) {
             const updated = [...prev];
             updated[tempIndex] = newMsg;
             return updated;
           }
-          // Si no hay temp, es un mensaje de otro usuario → agregar normalmente
-          const alreadyExists = prev.some(m => m.id === newMsg.id);
-          if (alreadyExists) return prev;
+
+          // Evitar duplicados
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          
           return [...prev, newMsg];
         });
-        localStorage.setItem(`chat_read_${partido!.id}`, new Date().toISOString());
+        localStorage.setItem(`chat_read_${partido!.id}`, newMsg.created_at);
         window.dispatchEvent(new Event('chat_read_updated'));
         
         // Si no tenemos el perfil, lo buscamos
