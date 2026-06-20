@@ -356,11 +356,22 @@ export function SocialChatWidget() {
       ).length;
     }
 
+    let lastMessageText = lastMsg?.contenido;
+    if (lastMsg) {
+      if (lastMsg.emisor_telefono === profile?.telefono) {
+        lastMessageText = `Tú: ${lastMsg.contenido}`;
+      } else {
+        const sender = rawPerfiles.find(p => p.telefono === lastMsg.emisor_telefono);
+        const senderName = sender ? sender.nombre : 'Alguien';
+        lastMessageText = `${senderName}: ${lastMsg.contenido}`;
+      }
+    }
+
     return {
       id: `match_${p.id}`,
       name: `Partido ${p.hora}hs`,
       avatar: 'https://ui-avatars.com/api/?name=P&background=22c55e&color=fff',
-      lastMessage: lastMsg?.contenido,
+      lastMessage: lastMessageText,
       time: lastMsg ? formatMessageTime(lastMsg.created_at) : p.fecha,
       unread,
       lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : new Date(p.created_at).getTime(),
