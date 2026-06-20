@@ -392,7 +392,17 @@ export function SocialChatWidget() {
     };
   });
 
-  const privateChats = contacts.filter(c => !c.isRequest && c.lastMsgTime > 0).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+  const privateChats = contacts
+    .filter(c => !c.isRequest)
+    .sort((a, b) => {
+      // Si ambos no tienen mensajes, ordenar alfabéticamente
+      if (a.lastMsgTime === 0 && b.lastMsgTime === 0) {
+        return a.name.localeCompare(b.name);
+      }
+      // Sino, ordenar por tiempo de último mensaje
+      return b.lastMsgTime - a.lastMsgTime;
+    });
+
   const requestChats = contacts.filter(c => c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const displayedPrivateChats = searchQuery.trim() !== ''
