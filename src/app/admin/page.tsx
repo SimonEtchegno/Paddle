@@ -132,6 +132,7 @@ export default function AdminPage() {
     cancha: 1,
     nombre: ''
   });
+  const [editingFixedTurnId, setEditingFixedTurnId] = useState<string | null>(null);
 
   const fetchFixedTurns = async () => {
     setFixedTurnsLoading(true);
@@ -173,13 +174,20 @@ export default function AdminPage() {
     if (!newFixedTurn.nombre) return toast.error('Ingresá el nombre');
     setLoading(true);
     try {
-      const { error } = await supabase.from('turnos_fijos').insert([newFixedTurn]);
-      if (error) throw error;
-      toast.success('Turno fijo creado');
-      setNewFixedTurn({ ...newFixedTurn, nombre: '' });
+      if (editingFixedTurnId) {
+        const { error } = await supabase.from('turnos_fijos').update(newFixedTurn).eq('id', editingFixedTurnId);
+        if (error) throw error;
+        toast.success('Turno fijo actualizado');
+        setEditingFixedTurnId(null);
+      } else {
+        const { error } = await supabase.from('turnos_fijos').insert([newFixedTurn]);
+        if (error) throw error;
+        toast.success('Turno fijo creado');
+      }
+      setNewFixedTurn({ dia_semana: 1, hora: '19:00', cancha: 1, nombre: '' });
       fetchFixedTurns();
     } catch (e: any) {
-      toast.error('Error al crear: ' + e.message);
+      toast.error('Error: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -1184,9 +1192,24 @@ export default function AdminPage() {
         ) : activeTab === 'fijos' ? (
           <div className="space-y-8">
             <div className="glass p-10 rounded-[3rem] border border-white/5 space-y-8">
-              <div className="flex items-center gap-3">
-                <Crown className="text-primary" size={24} />
-                <h3 className="text-xl font-black uppercase tracking-tighter italic">Nuevo Turno Fijo</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Crown className="text-primary" size={24} />
+                  <h3 className="text-xl font-black uppercase tracking-tighter italic">
+                    {editingFixedTurnId ? 'Editar Turno Fijo' : 'Nuevo Turno Fijo'}
+                  </h3>
+                </div>
+                {editingFixedTurnId && (
+                  <button
+                    onClick={() => {
+                      setEditingFixedTurnId(null);
+                      setNewFixedTurn({ dia_semana: 1, hora: '19:00', cancha: 1, nombre: '' });
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
               <form onSubmit={createFixedTurn} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div className="space-y-1">
@@ -1246,7 +1269,7 @@ export default function AdminPage() {
                     disabled={loading}
                     className="bg-primary text-black px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(76,175,80,0.2)] disabled:opacity-50"
                   >
-                    Agregar Turno Fijo
+                    {editingFixedTurnId ? 'Guardar Cambios' : 'Agregar Turno Fijo'}
                   </button>
                 </div>
               </form>
@@ -1280,12 +1303,31 @@ export default function AdminPage() {
                             {f.cancha === 10 ? 'Cancha F5' : `Cancha ${f.cancha}`} <span className="opacity-30">|</span> {f.nombre}
                           </p>
                         </div>
-                        <button
-                          onClick={() => deleteFixedTurn(f.id)}
-                          className="p-3 bg-error/10 text-error rounded-xl border border-error/20 hover:bg-error/20 transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingFixedTurnId(f.id);
+                              setNewFixedTurn({
+                                dia_semana: f.dia_semana,
+                                hora: f.hora,
+                                cancha: f.cancha,
+                                nombre: f.nombre
+                              });
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="p-3 bg-white/5 text-white/60 rounded-xl border border-white/10 hover:bg-white/10 transition-all"
+                            title="Editar Turno Fijo"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => deleteFixedTurn(f.id)}
+                            className="p-3 bg-error/10 text-error rounded-xl border border-error/20 hover:bg-error/20 transition-all"
+                            title="Eliminar Turno Fijo"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </motion.div>
                     );
                   })}
