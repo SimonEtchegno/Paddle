@@ -49,10 +49,6 @@ export default function BookingHome() {
     setSelectedDate(format(date, 'yyyy-MM-dd'));
   };
 
-  const handleDateChange = (date: Date) => {
-    setSelectedDate(format(date, 'yyyy-MM-dd'));
-  };
-
   if (isLoading) return null;
 
   return (
