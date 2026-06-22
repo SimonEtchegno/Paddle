@@ -88,15 +88,15 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess, 
       }
 
       toast.success('¡Turno reservado correctamente!');
-      
+
       // Dispatch custom event for real-time live updates in the UI
       window.dispatchEvent(new CustomEvent('reserva_modificada', { detail: { fecha } }));
-      
+
       // Notify WhatsApp (Optional, usually better to let user click)
       const canchaName = sport === 'futbol' ? 'Cancha F5' : `Cancha ${cancha}`;
       const msg = encodeURIComponent(`¡Hola! Reservé el ${fecha} a las ${hora} hs (${canchaName}). Nombre: ${nombre}.`);
       window.open(`https://wa.me/2923460902?text=${msg}`, '_blank');
-      
+
       onSuccess();
       onClose();
     } catch (e: any) {
@@ -111,15 +111,15 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess, 
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
           className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         />
-        
-        <motion.div 
+
+        <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -144,8 +144,8 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess, 
               <label className="text-[10px] font-bold uppercase tracking-widest text-primary/70 ml-1">Tu Nombre</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Ej: Juan Pérez"
@@ -159,8 +159,8 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess, 
               <label className="text-[10px] font-bold uppercase tracking-widest text-primary/70 ml-1">WhatsApp</label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
                   placeholder="Ej: 2923000000"
@@ -170,8 +170,8 @@ export function BookingModal({ hora, cancha, fecha, isOpen, onClose, onSuccess, 
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={submitting}
               className="w-full bg-primary text-black py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
             >

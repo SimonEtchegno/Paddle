@@ -121,19 +121,19 @@ export function SocialChatWidget() {
           receptor_telefono: m.receptor_telefono ? m.receptor_telefono.replace(/\D/g, '') : ''
         })));
       }
-      
+
       if (resPartidos.data) {
-        const misP = resPartidos.data.filter(p => 
-          p.contacto_whatsapp === profile.telefono || 
+        const misP = resPartidos.data.filter(p =>
+          p.contacto_whatsapp === profile.telefono ||
           p.uniones_partidos?.some((u: any) => u.whatsapp_interesado === profile.telefono && u.estado === 'confirmado')
         );
         setMisPartidos(misP);
-        
+
         if (misP.length > 0) {
           try {
             const { data: mData } = await supabase.from('mensajes_partido').select('*').in('partido_id', misP.map(p => p.id));
             if (mData) setMensajesGrupos(mData);
-          } catch(e) {}
+          } catch (e) { }
         }
       }
     };
@@ -148,7 +148,7 @@ export function SocialChatWidget() {
           emisor_telefono: rawMsg.emisor_telefono ? rawMsg.emisor_telefono.replace(/\D/g, '') : '',
           receptor_telefono: rawMsg.receptor_telefono ? rawMsg.receptor_telefono.replace(/\D/g, '') : ''
         };
-        
+
         if (newMsg.emisor_telefono === profile.telefono || newMsg.receptor_telefono === profile.telefono) {
           setAllMessages(prev => {
             const exists = prev.some(m => m.id === newMsg.id);
@@ -170,9 +170,8 @@ export function SocialChatWidget() {
               const senderName = senderProfile ? `${senderProfile.nombre} ${senderProfile.apellido || ''}`.trim() : newMsg.emisor_telefono;
               toast.custom((t) => (
                 <div
-                  className={`${
-                    t.visible ? 'animate-enter' : 'animate-leave'
-                  } max-w-md w-full bg-[#1a2235] shadow-lg rounded-2xl pointer-events-auto flex border border-green-500/20 p-4 cursor-pointer`}
+                  className={`${t.visible ? 'animate-enter' : 'animate-leave'
+                    } max-w-md w-full bg-[#1a2235] shadow-lg rounded-2xl pointer-events-auto flex border border-green-500/20 p-4 cursor-pointer`}
                   onClick={() => {
                     setIsOpen(true);
                     setActiveTab('private');
@@ -201,9 +200,8 @@ export function SocialChatWidget() {
               const senderName = senderProfile ? `${senderProfile.nombre} ${senderProfile.apellido || ''}`.trim() : newMsg.emisor_telefono;
               toast.custom((t) => (
                 <div
-                  className={`${
-                    t.visible ? 'animate-enter' : 'animate-leave'
-                  } max-w-md w-full bg-[#1a2235] shadow-lg rounded-2xl pointer-events-auto flex border border-white/10 p-4 cursor-pointer`}
+                  className={`${t.visible ? 'animate-enter' : 'animate-leave'
+                    } max-w-md w-full bg-[#1a2235] shadow-lg rounded-2xl pointer-events-auto flex border border-white/10 p-4 cursor-pointer`}
                   onClick={() => {
                     setIsOpen(true);
                     setActiveTab('private');
@@ -255,7 +253,7 @@ export function SocialChatWidget() {
             const matchName = match ? `${match.hora}hs` : 'Grupo';
 
             toast.custom((t) => (
-              <div 
+              <div
                 className={`max-w-md w-full bg-[#1a2235] border border-white/10 shadow-lg rounded-xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 p-4 cursor-pointer hover:bg-white/5 transition-colors`}
                 onClick={() => {
                   toast.dismiss(t.id);
@@ -326,7 +324,7 @@ export function SocialChatWidget() {
     const msgs = allMessages.filter(m => m.emisor_telefono === p.telefono || m.receptor_telefono === p.telefono);
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
     const unread = msgs.filter(m => m.receptor_telefono === profile?.telefono && !m.leido).length;
-    
+
     const myMsgs = msgs.filter(m => m.emisor_telefono === profile?.telefono);
     const theirMsgs = msgs.filter(m => m.emisor_telefono === p.telefono);
     const isRequest = theirMsgs.length > 0 && myMsgs.length === 0;
@@ -355,54 +353,44 @@ export function SocialChatWidget() {
   const groupContacts: Contact[] = misPartidos
     .filter(p => (p.deporte || 'padel') === (sport || 'padel'))
     .map(p => {
-    const msgs = mensajesGrupos.filter(m => m.partido_id === p.id);
-    const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-    
-    let unread = 0;
-    const lastRead = localStorage.getItem(`chat_read_${p.id}`);
-    if (msgs.length > 0) {
-      // Filtrar mensajes que no sean míos y que sean posteriores al lastRead
-      unread = msgs.filter(m => 
-        m.emisor_telefono !== profile?.telefono && 
-        (!lastRead || new Date(m.created_at) > new Date(lastRead))
-      ).length;
-    }
+      const msgs = mensajesGrupos.filter(m => m.partido_id === p.id);
+      const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
 
-    let lastMessageText = lastMsg?.contenido;
-    if (lastMsg) {
-      if (lastMsg.emisor_telefono === profile?.telefono) {
-        lastMessageText = `Tú: ${lastMsg.contenido}`;
-      } else {
-        const sender = rawPerfiles.find(p => p.telefono === lastMsg.emisor_telefono);
-        const senderName = sender ? sender.nombre : 'Alguien';
-        lastMessageText = `${senderName}: ${lastMsg.contenido}`;
+      let unread = 0;
+      const lastRead = localStorage.getItem(`chat_read_${p.id}`);
+      if (msgs.length > 0) {
+        // Filtrar mensajes que no sean míos y que sean posteriores al lastRead
+        unread = msgs.filter(m =>
+          m.emisor_telefono !== profile?.telefono &&
+          (!lastRead || new Date(m.created_at) > new Date(lastRead))
+        ).length;
       }
-    }
 
-    return {
-      id: `match_${p.id}`,
-      name: `Partido ${p.hora}hs`,
-      avatar: 'https://ui-avatars.com/api/?name=P&background=22c55e&color=fff',
-      lastMessage: lastMessageText,
-      time: lastMsg ? formatMessageTime(lastMsg.created_at) : p.fecha,
-      unread,
-      lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : new Date(p.created_at).getTime(),
-      type: 'group',
-      matchData: p
-    };
-  });
-
-  const privateChats = contacts
-    .filter(c => !c.isRequest)
-    .sort((a, b) => {
-      // Si ambos no tienen mensajes, ordenar alfabéticamente
-      if (a.lastMsgTime === 0 && b.lastMsgTime === 0) {
-        return a.name.localeCompare(b.name);
+      let lastMessageText = lastMsg?.contenido;
+      if (lastMsg) {
+        if (lastMsg.emisor_telefono === profile?.telefono) {
+          lastMessageText = `Tú: ${lastMsg.contenido}`;
+        } else {
+          const sender = rawPerfiles.find(p => p.telefono === lastMsg.emisor_telefono);
+          const senderName = sender ? sender.nombre : 'Alguien';
+          lastMessageText = `${senderName}: ${lastMsg.contenido}`;
+        }
       }
-      // Sino, ordenar por tiempo de último mensaje
-      return b.lastMsgTime - a.lastMsgTime;
+
+      return {
+        id: `match_${p.id}`,
+        name: `Partido ${p.hora}hs`,
+        avatar: 'https://ui-avatars.com/api/?name=P&background=22c55e&color=fff',
+        lastMessage: lastMessageText,
+        time: lastMsg ? formatMessageTime(lastMsg.created_at) : p.fecha,
+        unread,
+        lastMsgTime: lastMsg ? new Date(lastMsg.created_at).getTime() : new Date(p.created_at).getTime(),
+        type: 'group',
+        matchData: p
+      };
     });
 
+  const privateChats = contacts.filter(c => !c.isRequest && c.lastMsgTime > 0).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
   const requestChats = contacts.filter(c => c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const displayedPrivateChats = searchQuery.trim() !== ''
@@ -437,7 +425,7 @@ export function SocialChatWidget() {
             .update({ leido: true })
             .in('id', unreadMsgs.map(m => m.id))
             .then(() => {
-              setAllMessages(prev => prev.map(m => 
+              setAllMessages(prev => prev.map(m =>
                 (m.receptor_telefono === profile.telefono && m.emisor_telefono === activeChat) ? { ...m, leido: true } : m
               ));
             });
@@ -475,7 +463,7 @@ export function SocialChatWidget() {
   const handleClearChatWith = async (partnerPhone: string) => {
     if (!profile?.telefono || !partnerPhone) return;
     try {
-      setAllMessages(prev => prev.filter(m => 
+      setAllMessages(prev => prev.filter(m =>
         !(m.emisor_telefono === profile.telefono && m.receptor_telefono === partnerPhone) &&
         !(m.emisor_telefono === partnerPhone && m.receptor_telefono === profile.telefono)
       ));
@@ -488,29 +476,29 @@ export function SocialChatWidget() {
     }
   };
 
-            // Sending messages
-            const handleSendMessage = async (e: React.FormEvent) => {
-              e.preventDefault();
-              if (!newMessage.trim() || !profile?.telefono) return;
-              const msgText = newMessage.trim();
-              setNewMessage("");
+  // Sending messages
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !profile?.telefono) return;
+    const msgText = newMessage.trim();
+    setNewMessage("");
 
-              if (activeContact?.type === 'group' && groupMatch) {
-                // Group chat
-                await supabase.from('mensajes_partido').insert({
-                  partido_id: groupMatch.id,
-                  emisor_telefono: profile.telefono,
-                  contenido: msgText
-                });
-              } else {
-                // Private chat
-                await supabase.from('mensajes').insert({
-                  emisor_telefono: profile.telefono,
-                  receptor_telefono: activeChat,
-                  contenido: msgText
-                });
-              }
-            };
+    if (activeContact?.type === 'group' && groupMatch) {
+      // Group chat
+      await supabase.from('mensajes_partido').insert({
+        partido_id: groupMatch.id,
+        emisor_telefono: profile.telefono,
+        contenido: msgText
+      });
+    } else {
+      // Private chat
+      await supabase.from('mensajes').insert({
+        emisor_telefono: profile.telefono,
+        receptor_telefono: activeChat,
+        contenido: msgText
+      });
+    }
+  };
 
   return (
     <>
@@ -564,35 +552,16 @@ export function SocialChatWidget() {
                   {(!isGroupChat || (isGroupChat && groupMatch?.contacto_whatsapp === profile?.telefono)) && (
                     <button
                       onClick={async () => {
-                        toast.custom((t) => (
-                          <div className="bg-[#1a2235] border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-3 min-w-[250px]">
-                            <p className="text-sm font-bold text-white text-center">¿Eliminar esta conversación?</p>
-                            <div className="flex gap-2 justify-center">
-                              <button 
-                                onClick={() => toast.dismiss(t.id)}
-                                className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors"
-                              >
-                                Cancelar
-                              </button>
-                              <button 
-                                onClick={async () => {
-                                  toast.dismiss(t.id);
-                                  if (isGroupChat) {
-                                    if (!profile?.telefono || !groupMatch?.id) return;
-                                    setMensajesGrupos(prev => prev.filter(m => m.partido_id !== groupMatch.id));
-                                    await supabase.from('mensajes_partido').delete().eq('partido_id', groupMatch.id);
-                                  } else {
-                                    await handleClearChat();
-                                  }
-                                  setActiveChat(null);
-                                }}
-                                className="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </div>
-                        ), { duration: Infinity, position: 'top-center' });
+                        if (confirm("¿Eliminar esta conversación?")) {
+                          if (isGroupChat) {
+                            if (!profile?.telefono || !groupMatch?.id) return;
+                            setMensajesGrupos(prev => prev.filter(m => m.partido_id !== groupMatch.id));
+                            await supabase.from('mensajes_partido').delete().eq('partido_id', groupMatch.id);
+                          } else {
+                            await handleClearChat();
+                          }
+                          setActiveChat(null);
+                        }
                       }}
                       className="p-1.5 hover:bg-red-500/10 rounded-full transition-colors text-zinc-400 hover:text-red-400 cursor-pointer"
                       title="Eliminar chat"
@@ -600,7 +569,7 @@ export function SocialChatWidget() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
-                  <button 
+                  <button
                     onClick={() => { setActiveChat(null); setGroupMatch(null); }}
                     className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-zinc-400"
                   >
@@ -608,7 +577,7 @@ export function SocialChatWidget() {
                   </button>
                 </div>
               ) : (
-                <button 
+                <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-gray-400 hover:text-white"
                 >
@@ -720,7 +689,7 @@ export function SocialChatWidget() {
                                   {c.isPending ? 'Pendiente de aceptación' : (c.lastMessage || 'Toca para iniciar chat')}
                                 </p>
                               </div>
-                              
+
                               <button
                                 onClick={async (e) => {
                                   e.stopPropagation();
@@ -808,7 +777,7 @@ export function SocialChatWidget() {
                           const isMe = msg.emisor_telefono === profile?.telefono;
                           const sender = rawPerfiles.find(p => p.telefono === msg.emisor_telefono);
                           const senderName = sender ? `${sender.nombre}` : msg.emisor_telefono;
-                          const showHeader = i === 0 || displayedMessages[i-1].emisor_telefono !== msg.emisor_telefono;
+                          const showHeader = i === 0 || displayedMessages[i - 1].emisor_telefono !== msg.emisor_telefono;
                           if (msg.contenido === '__CHAT_ACCEPTED__') {
                             return (
                               <div key={msg.id} className="flex justify-center my-2">
@@ -827,7 +796,7 @@ export function SocialChatWidget() {
                               )}
                               <div className="flex items-center gap-1.5 max-w-[85%]">
                                 {!isMe && (
-                                  <button 
+                                  <button
                                     onClick={() => handleDeleteMessage(msg.id, !!isGroupChat)}
                                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-500 hover:text-red-500 hover:bg-white/5 rounded-full shrink-0 cursor-pointer"
                                     title="Eliminar mensaje"
@@ -835,15 +804,14 @@ export function SocialChatWidget() {
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
-                                <div className={`px-3 py-2 rounded-2xl text-sm ${
-                                  isMe 
-                                    ? 'bg-blue-500 text-white rounded-tr-sm' 
+                                <div className={`px-3 py-2 rounded-2xl text-sm ${isMe
+                                    ? 'bg-blue-500 text-white rounded-tr-sm'
                                     : 'bg-[#1a2235] border border-[var(--border)] text-gray-200 rounded-tl-sm'
-                                }`}>
+                                  }`}>
                                   <p style={{ wordBreak: 'break-word' }} className={isMe ? 'font-medium' : ''}>{msg.contenido}</p>
                                 </div>
                                 {isMe && (
-                                  <button 
+                                  <button
                                     onClick={() => handleDeleteMessage(msg.id, !!isGroupChat)}
                                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-500 hover:text-red-500 hover:bg-white/5 rounded-full shrink-0 cursor-pointer"
                                     title="Eliminar mensaje"
@@ -860,7 +828,7 @@ export function SocialChatWidget() {
                         })}
                         <div ref={messagesEndRef} />
                       </div>
-                      
+
                       {activeContact?.isRequest ? (
                         <div className="p-4 bg-[#1a2235] border-t border-[var(--border)] text-center space-y-3 z-10 shrink-0">
                           <p className="text-xs text-zinc-300">¿Quieres chatear con {activeContact.name}?</p>
@@ -888,7 +856,7 @@ export function SocialChatWidget() {
                             <button
                               onClick={async () => {
                                 if (!profile?.telefono || !activeChat) return;
-                                setAllMessages(prev => prev.filter(m => 
+                                setAllMessages(prev => prev.filter(m =>
                                   !(m.emisor_telefono === profile.telefono && m.receptor_telefono === activeChat) &&
                                   !(m.emisor_telefono === activeChat && m.receptor_telefono === profile.telefono)
                                 ));

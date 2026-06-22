@@ -49,9 +49,8 @@ export default function BookingHome() {
     setSelectedDate(format(date, 'yyyy-MM-dd'));
   };
 
-  const handleChangeSport = () => {
-    setSport(null);
-    router.push('/');
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(format(date, 'yyyy-MM-dd'));
   };
 
   if (isLoading) return null;
@@ -110,7 +109,7 @@ export default function BookingHome() {
                   </div>
                   <div className="flex items-center gap-2.5 bg-white/[0.03] backdrop-blur-md text-white px-5 py-2.5 rounded-full border border-white/5 shadow-inner">
                     <Info size={12} className={sport === 'futbol' ? 'text-green-400' : 'text-primary'} />
-                    <span className="opacity-90">Precio: {sport === 'futbol' ? '$20.000' : '$34.000'}</span>
+                    <span className="opacity-90">Precio: {sport === 'futbol' ? '$20.000' : '$40.000'}</span>
                   </div>
                   <button 
                     onClick={() => setIsTutorialOpen(true)}
@@ -161,17 +160,6 @@ export default function BookingHome() {
             <main id="tutorial-grid" className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 gap-4">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-2 sm:mb-0">Horarios Disponibles</h3>
-                <button
-                  onClick={handleChangeSport}
-                  className="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/40 transition-all flex items-center justify-center gap-3 backdrop-blur-md shadow-lg group"
-                >
-                  <span className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                    <span>🎾</span>
-                    <span className="text-white/20 mx-0.5">/</span>
-                    <span>⚽</span>
-                  </span>
-                  Cambiar Deporte
-                </button>
               </div>
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-40 space-y-4">

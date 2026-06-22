@@ -36,7 +36,7 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
           .order('hora', { ascending: true })
           .limit(1)
           .single();
-        
+
         if (data) {
           const resDate = new Date(`${data.fecha}T${data.hora}:00`);
           if (resDate >= new Date()) {
@@ -53,7 +53,7 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return toast.error('Completá tu perfil primero');
-    
+
     setLoading(true);
     try {
       const hoy = format(new Date(), 'yyyy-MM-dd');
@@ -107,15 +107,15 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
-          
-          <motion.div 
+
+          <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -135,8 +135,8 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Fecha</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={16} />
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         value={fecha}
                         onChange={(e) => setFecha(e.target.value)}
                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary color-scheme-dark"
@@ -148,8 +148,8 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Hora</label>
                     <div className="relative">
                       <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={16} />
-                      <input 
-                        type="time" 
+                      <input
+                        type="time"
                         value={hora}
                         onChange={(e) => setHora(e.target.value)}
                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary color-scheme-dark"
@@ -163,7 +163,7 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Nivel Aproximado</label>
                   <div className="relative">
                     <Trophy className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={16} />
-                    <select 
+                    <select
                       value={nivel}
                       onChange={(e) => setNivel(e.target.value)}
                       className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
@@ -195,13 +195,13 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">¿Cuántos jugadores faltan?</label>
                   <div className="relative">
                     <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={16} />
-                    <select 
+                    <select
                       value={faltan}
                       onChange={(e) => setFaltan(Number(e.target.value))}
                       className="w-full bg-[#1a1d23] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-xs font-bold focus:outline-none focus:border-primary appearance-none text-white"
                     >
                       {sport === 'futbol' ? (
-                        Array.from({length: 9}, (_, i) => i + 1).map(n => (
+                        Array.from({ length: 9 }, (_, i) => i + 1).map(n => (
                           <option key={n} className="bg-[#1a1d23]" value={n}>Falta{n === 1 ? '' : 'n'} {n} jugador{n === 1 ? '' : 'es'}</option>
                         ))
                       ) : (
@@ -216,7 +216,7 @@ export function CreateMatchModal({ isOpen, onClose, onSuccess, profile }: Create
                 </div>
 
                 <div className="pt-4">
-                  <button 
+                  <button
                     disabled={loading}
                     className="w-full bg-primary text-black py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(76,175,80,0.2)] disabled:opacity-50"
                   >

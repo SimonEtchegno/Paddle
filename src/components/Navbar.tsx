@@ -116,7 +116,21 @@ export function Navbar({ club }: { club?: any }) {
           {/* Profile & Notifications Section */}
           <div className="flex items-center gap-2 sm:gap-4">
 
-
+            {/* Cambiar Deporte Button (Desktop) */}
+            <button
+              onClick={() => {
+                setSport(null);
+                router.push('/');
+              }}
+              className="hidden md:flex px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/40 transition-all items-center justify-center gap-2 backdrop-blur-md shadow-lg group"
+            >
+              <span className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                <span>🎾</span>
+                <span className="text-white/20 mx-0.5">/</span>
+                <span>⚽</span>
+              </span>
+              Cambiar Deporte
+            </button>
 
             {/* Install App Button (Desktop) */}
             <InstallAppButton className="hidden sm:flex" />
@@ -310,7 +324,22 @@ export function Navbar({ club }: { club?: any }) {
 
 
 
-              <div className="p-4 border-t border-white/5">
+              <div className="p-4 border-t border-white/5 space-y-3">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setSport(null);
+                    router.push('/');
+                  }}
+                  className="w-full px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/40 transition-all flex items-center justify-center gap-3 backdrop-blur-md shadow-lg group"
+                >
+                  <span className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <span>🎾</span>
+                    <span className="text-white/20 mx-0.5">/</span>
+                    <span>⚽</span>
+                  </span>
+                  Cambiar Deporte
+                </button>
                 <InstallAppButton className="w-full justify-center py-3" />
               </div>
 

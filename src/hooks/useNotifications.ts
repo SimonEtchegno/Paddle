@@ -13,7 +13,7 @@ export interface AppNotification {
 
 export function useNotifications() {
   const { profile } = useGuestProfile();
-  
+
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const notifiedIds = useRef<Set<string>>(new Set());
 
@@ -26,7 +26,7 @@ export function useNotifications() {
     try {
       const stored = localStorage.getItem(`notified_toast_ids_${profile.telefono}`);
       if (stored) notifiedIds.current = new Set(JSON.parse(stored));
-    } catch(e) {}
+    } catch (e) { }
   }, [profile?.telefono]);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function useNotifications() {
           .eq('estado', 'pendiente');
 
         if (uData) {
-          const misSolicitudes = uData.filter((u: any) => 
+          const misSolicitudes = uData.filter((u: any) =>
             u.partidos_abiertos && u.partidos_abiertos.contacto_whatsapp === profile.telefono
           );
 
@@ -104,7 +104,7 @@ export function useNotifications() {
           const currentResIds = new Set(resData.map((r: any) => r.id));
           const trackedKey = `tracked_reservas_${profile.telefono}`;
           const trackedStr = localStorage.getItem(trackedKey);
-          
+
           if (trackedStr) {
             const tracked = JSON.parse(trackedStr);
             tracked.forEach((oldRes: any) => {
@@ -145,16 +145,16 @@ export function useNotifications() {
           const toastIdsKey = `notified_toast_ids_${profile.telefono}`;
           const dismissedKey = `dismissed_notifs_${profile.telefono}`;
           const isFirstRunForPhone = !localStorage.getItem(toastIdsKey);
-          
+
           let dismissedList: string[] = [];
           try {
             dismissedList = JSON.parse(localStorage.getItem(dismissedKey) || '[]');
-          } catch(e) {}
+          } catch (e) { }
           const dismissed = new Set(dismissedList);
 
           sysData.forEach((s: any) => {
             const notifId = `sys_${s.id}`;
-            
+
             if (isFirstRunForPhone) {
               // Si es la primera vez que inicia sesión con este teléfono, 
               // descartamos las notificaciones de sistema existentes para que no aparezcan como pendientes.
@@ -172,7 +172,7 @@ export function useNotifications() {
             if (!notifiedIds.current.has(notifId)) {
               notifiedIds.current.add(notifId);
               hasNewToasts = true;
-              
+
               // Solo mostrar Toast si la notificación es reciente (últimas 24 horas)
               const isRecent = new Date(s.created_at).getTime() > Date.now() - 24 * 60 * 60 * 1000;
               if (!isFirstRunForPhone && isRecent) {
@@ -197,7 +197,7 @@ export function useNotifications() {
           const currentJoinIds = new Set(currentJoins.map((j: any) => j.id));
           const trackedJoinsKey = `tracked_match_joins_${profile.telefono}`;
           const trackedJoinsStr = localStorage.getItem(trackedJoinsKey);
-          
+
           if (trackedJoinsStr) {
             const trackedJoins = JSON.parse(trackedJoinsStr);
             trackedJoins.forEach((oldJoin: any) => {
@@ -320,22 +320,22 @@ export function useNotifications() {
           const dismissed = new Set(JSON.parse(localStorage.getItem(dismissedKey) || '[]'));
           const readKey = `read_notifs_${profile.telefono}`;
           const readSet = new Set(JSON.parse(localStorage.getItem(readKey) || '[]'));
-          
+
           const finalNotifs = newNotifs
             .filter(n => !dismissed.has(n.id))
             .map(n => ({ ...n, isRead: readSet.has(n.id) }))
             .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-          
+
           // Sonido si hay nuevas notificaciones (comparando longitud)
           setNotifications(prev => {
             if (finalNotifs.length > prev.length) {
               const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
               audio.volume = 0.4;
-              audio.play().catch(() => {}); // Ignorar errores si el usuario no interactuó aún
+              audio.play().catch(() => { }); // Ignorar errores si el usuario no interactuó aún
             }
             return finalNotifs;
           });
-        } catch(e) {}
+        } catch (e) { }
 
       } catch (error) {
         console.error('Error checking notifications', error);
@@ -343,7 +343,7 @@ export function useNotifications() {
     };
 
     const timeout = setTimeout(checkNotifications, 1000);
-    const interval = setInterval(checkNotifications, 10000); 
+    const interval = setInterval(checkNotifications, 10000);
 
     return () => {
       clearTimeout(timeout);
@@ -359,7 +359,7 @@ export function useNotifications() {
       const dismissed = new Set(JSON.parse(localStorage.getItem(dismissedKey) || '[]'));
       dismissed.add(id);
       localStorage.setItem(dismissedKey, JSON.stringify(Array.from(dismissed)));
-    } catch(e) {}
+    } catch (e) { }
   };
 
   const clearAllNotifications = () => {
@@ -370,7 +370,7 @@ export function useNotifications() {
       notifications.forEach(n => dismissed.add(n.id));
       localStorage.setItem(dismissedKey, JSON.stringify(Array.from(dismissed)));
       setNotifications([]);
-    } catch(e) {}
+    } catch (e) { }
   };
 
   const markAllAsRead = () => {
@@ -381,7 +381,7 @@ export function useNotifications() {
       notifications.forEach(n => readSet.add(n.id));
       localStorage.setItem(readKey, JSON.stringify(Array.from(readSet)));
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    } catch(e) {}
+    } catch (e) { }
   };
 
   return {

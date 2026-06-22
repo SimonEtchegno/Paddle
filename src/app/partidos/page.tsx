@@ -128,7 +128,7 @@ export default function PartidosPage() {
         const { data: mData, error: mError } = await supabase
           .from('mensajes_partido')
           .select('partido_id, created_at');
-          
+
         if (!mError && mData) {
           const counts: Record<string, number> = {};
           mData.forEach((m: any) => {
@@ -202,7 +202,7 @@ export default function PartidosPage() {
       toast.success('¡Solicitud enviada!');
       fetchData(true);
       const msgText = `¡Hola! Me gustaría sumarme a tu partido de ${sport === 'futbol' ? 'Fútbol 5' : 'Pádel'} del ${p.fecha} a las ${p.hora} hs. ¿Me confirmás?`;
-      
+
       await supabase.from('mensajes').insert({
         emisor_telefono: profile.telefono,
         receptor_telefono: p.contacto_whatsapp,
@@ -253,7 +253,7 @@ export default function PartidosPage() {
 
       // Mensaje automático
       const msgText = `¡Hola ${u.nombre_interesado}! Te confirmo que ya estás anotado en el partido de las ${u.partidos_abiertos?.hora} hs. ¡Nos vemos en la cancha! ${sport === 'futbol' ? '⚽' : '🎾'}`;
-      
+
       await supabase.from('mensajes').insert({
         emisor_telefono: profile?.telefono || '',
         receptor_telefono: u.whatsapp_interesado,
@@ -274,8 +274,8 @@ export default function PartidosPage() {
 
         {/* Premium Header Banner Card */}
         <div className={`relative w-full overflow-hidden rounded-[2.5rem] border border-white/10 p-8 md:p-12 shadow-[0_25px_60px_rgba(0,0,0,0.5)] transition-all duration-500 ${sport === 'futbol'
-            ? 'bg-gradient-to-br from-[#07180e] via-[#090d0b] to-[#040507]'
-            : 'bg-gradient-to-br from-[#120a24] via-[#0b0714] to-[#040507]'
+          ? 'bg-gradient-to-br from-[#07180e] via-[#090d0b] to-[#040507]'
+          : 'bg-gradient-to-br from-[#120a24] via-[#0b0714] to-[#040507]'
           }`}>
           {/* Ambient radial glows */}
           <div className={`absolute -right-10 -top-10 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-500 ${sport === 'futbol' ? 'bg-green-500' : 'bg-primary'
@@ -315,8 +315,8 @@ export default function PartidosPage() {
                   setIsModalOpen(true);
                 }}
                 className={`w-full md:w-auto px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center gap-2 ${sport === 'futbol'
-                    ? 'bg-green-500 text-black shadow-green-500/20 hover:shadow-green-500/40 hover:bg-green-400'
-                    : 'bg-primary text-white shadow-primary/20 hover:shadow-primary/40 hover:opacity-95'
+                  ? 'bg-green-500 text-black shadow-green-500/20 hover:shadow-green-500/40 hover:bg-green-400'
+                  : 'bg-primary text-white shadow-primary/20 hover:shadow-primary/40 hover:opacity-95'
                   }`}
               >
                 + Publicar Partido
@@ -357,8 +357,8 @@ export default function PartidosPage() {
                       <button
                         onClick={() => handleConfirmPlayer(u)}
                         className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all ${sport === 'futbol'
-                            ? 'bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]'
-                            : 'bg-primary text-white shadow-[0_0_15px_rgba(136,130,220,0.3)]'
+                          ? 'bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]'
+                          : 'bg-primary text-white shadow-[0_0_15px_rgba(136,130,220,0.3)]'
                           }`}
                       >
                         <Check size={16} /> Confirmar

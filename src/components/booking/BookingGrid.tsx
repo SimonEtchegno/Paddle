@@ -30,7 +30,7 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: Boo
           .select('hora, cancha, nombre')
           .eq('dia_semana', dayOfWeek);
         if (error) throw error;
-        
+
         const transformed: Record<string, Record<number, string>> = {};
         data?.forEach((item: any) => {
           // Normalize hour (e.g. '19:00:00' -> '19:00' or '19:00')
@@ -91,7 +91,7 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: Boo
             <div className="flex items-center justify-center bg-white/[0.08] rounded-xl sm:rounded-2xl border border-white/20 font-mono text-sm sm:text-xl font-bold text-white shadow-inner py-2 backdrop-blur-md">
               {hora}
             </div>
-            
+
             {canchas.map((cancha) => {
               // Normalizar hora para la comparación (por si viene con segundos de la DB)
               const reserva = reservas.find(r => {
@@ -113,10 +113,10 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: Boo
                   onClick={() => onSelectSlot(hora, cancha)}
                   className={clsx(
                     "relative min-h-[70px] sm:min-h-[90px] rounded-xl sm:rounded-[1.5rem] p-2 sm:p-4 flex flex-col items-center justify-center transition-all border shadow-lg group overflow-hidden",
-                    ocupado 
+                    ocupado
                       ? isMine
                         ? "bg-primary/20 border-primary/50 cursor-default shadow-[0_0_20px_rgba(200,255,0,0.1)]"
-                        : "bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed grayscale" 
+                        : "bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed grayscale"
                       : "bg-white/[0.05] border-white/10 hover:border-primary/60 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
                   )}
                 >
@@ -127,7 +127,7 @@ export function BookingGrid({ reservas, onSelectSlot, selectedDate, sport }: Boo
                     {fijo && !isMine && <Lock size={10} className="inline-block opacity-50" />}
                     {ocupado ? (isMine ? 'Tu Reserva' : (fijo ? 'Turno Fijo' : 'Ocupado')) : 'Disponible'}
                   </div>
-                  
+
                   <div className={clsx(
                     "text-[10px] sm:text-xs font-bold truncate max-w-[95%] px-1 sm:px-2 mt-0.5",
                     ocupado ? isMine ? "text-white" : (fijo ? "text-white/30" : "text-white/10") : "text-white group-hover:text-primary transition-colors"

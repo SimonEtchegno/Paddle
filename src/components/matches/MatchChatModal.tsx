@@ -65,7 +65,7 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
           .from('perfiles')
           .select('telefono, nombre, apellido, avatar_url')
           .in('telefono', telefonos);
-        
+
         if (profs) {
           const profMap: Record<string, any> = {};
           profs.forEach(p => profMap[p.telefono] = p);
@@ -77,9 +77,9 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
     loadChat();
 
     const channel = supabase.channel(`chat_partido_${partido.id}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
         table: 'mensajes_partido',
         filter: `partido_id=eq.${partido.id}`
       }, async (payload) => {
@@ -92,7 +92,7 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
             Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 5000 &&
             !m.id.includes('-') // los IDs de Supabase son UUIDs con guiones; los temp son timestamps sin guiones
           );
-          
+
           if (tempIndex >= 0) {
             const updated = [...prev];
             updated[tempIndex] = newMsg;
@@ -101,23 +101,23 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
 
           // Evitar duplicados
           if (prev.some(m => m.id === newMsg.id)) return prev;
-          
+
           return [...prev, newMsg];
         });
         localStorage.setItem(`chat_read_${partido!.id}`, newMsg.created_at);
         window.dispatchEvent(new Event('chat_read_updated'));
-        
+
         // Si no tenemos el perfil, lo buscamos
         if (!perfiles[newMsg.emisor_telefono]) {
           const { data } = await supabase.from('perfiles').select('*').eq('telefono', newMsg.emisor_telefono).single();
           if (data) {
-            setPerfiles(prev => ({...prev, [data.telefono]: data}));
+            setPerfiles(prev => ({ ...prev, [data.telefono]: data }));
           }
         }
       })
-      .on('postgres_changes', { 
-        event: 'DELETE', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
         table: 'mensajes_partido',
         filter: `partido_id=eq.${partido.id}`
       }, (payload) => {
@@ -156,12 +156,12 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
       contenido: msgText,
       created_at: new Date().toISOString()
     };
-    
+
     setMessages(prev => [...prev, tempMsg]);
-    
+
     // Agregamos nuestro propio perfil si no está
     if (!perfiles[profile.telefono]) {
-      setPerfiles(prev => ({...prev, [profile.telefono]: profile}));
+      setPerfiles(prev => ({ ...prev, [profile.telefono]: profile }));
     }
 
     await supabase.from('mensajes_partido').insert({
@@ -207,33 +207,14 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
               </div>
               <div className="flex items-center gap-2">
                 {partido?.contacto_whatsapp === profile?.telefono && (
-                  <button 
-                    onClick={() => {
-                      toast.custom((t) => (
-                        <div className="bg-[#1a2235] border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-3 min-w-[250px]">
-                          <p className="text-sm font-bold text-white text-center">¿Vaciar este chat?</p>
-                          <div className="flex gap-2 justify-center">
-                            <button 
-                              onClick={() => toast.dismiss(t.id)}
-                              className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors"
-                            >
-                              Cancelar
-                            </button>
-                            <button 
-                              onClick={async () => {
-                                toast.dismiss(t.id);
-                                setMessages([]);
-                                if (partido?.id) {
-                                  await supabase.from('mensajes_partido').delete().eq('partido_id', partido.id);
-                                }
-                              }}
-                              className="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      ), { duration: Infinity, position: 'top-center' });
+                  <button
+                    onClick={async () => {
+                      if (confirm("¿Seguro que quieres borrar el historial de este chat?")) {
+                        setMessages([]);
+                        if (partido?.id) {
+                          await supabase.from('mensajes_partido').delete().eq('partido_id', partido.id);
+                        }
+                      }
                     }}
                     className="p-2 hover:bg-red-500/10 rounded-xl transition-colors text-zinc-400 hover:text-red-400"
                     title="Vaciar chat"
@@ -241,7 +222,7 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
                     <Trash2 size={20} />
                   </button>
                 )}
-                <button 
+                <button
                   onClick={onClose}
                   className="p-2 hover:bg-white/10 rounded-xl transition-colors text-zinc-400"
                 >
@@ -264,9 +245,9 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
                   const isMe = msg.emisor_telefono === profile?.telefono;
                   const sender = perfiles[msg.emisor_telefono];
                   const senderName = sender ? sender.nombre : 'Jugador';
-                  
+
                   // Agrupar mensajes del mismo usuario
-                  const showHeader = i === 0 || messages[i-1].emisor_telefono !== msg.emisor_telefono;
+                  const showHeader = i === 0 || messages[i - 1].emisor_telefono !== msg.emisor_telefono;
 
                   return (
                     <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group`}>
@@ -285,11 +266,10 @@ export function MatchChatModal({ isOpen, onClose, partido, profile }: MatchChatM
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <div className={`px-4 py-2.5 rounded-2xl text-sm ${
-                          isMe 
-                            ? 'bg-green-500 text-black rounded-tr-sm shadow-[0_4px_15px_rgba(34,197,94,0.2)]' 
+                        <div className={`px-4 py-2.5 rounded-2xl text-sm ${isMe
+                            ? 'bg-green-500 text-black rounded-tr-sm shadow-[0_4px_15px_rgba(34,197,94,0.2)]'
                             : 'bg-[#1a2235] border border-[var(--border)] text-gray-200 rounded-tl-sm'
-                        }`}>
+                          }`}>
                           <p style={{ wordBreak: 'break-word' }} className={isMe ? 'font-medium' : ''}>{msg.contenido}</p>
                         </div>
                         {isMe && (

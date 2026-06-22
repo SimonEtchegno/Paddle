@@ -18,7 +18,7 @@ export default function MisTurnosPage() {
   const { profile } = useGuestProfile();
   const [turnos, setTurnos] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
-  const [turnoToCancel, setTurnoToCancel] = useState<{id: string, fecha: string, hora: string} | null>(null);
+  const [turnoToCancel, setTurnoToCancel] = useState<{ id: string, fecha: string, hora: string } | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const fetchMisTurnos = async () => {
@@ -71,12 +71,12 @@ export default function MisTurnosPage() {
       localStorage.setItem(`user_cancelled_${turnoToCancel.id}`, 'true');
       const { error } = await supabase.from('reservas').delete().eq('id', turnoToCancel.id);
       if (error) throw error;
-      
+
       toast.success('Turno cancelado');
-      
+
       // Dispatch custom event for real-time live updates in the UI
       window.dispatchEvent(new CustomEvent('reserva_modificada', { detail: { fecha: turnoToCancel.fecha } }));
-      
+
       setTurnoToCancel(null);
       fetchMisTurnos();
     } catch (e) {
@@ -124,11 +124,11 @@ export default function MisTurnosPage() {
               const turnDate = new Date(`${t.fecha}T${t.hora}:00`);
               const isUpcoming = turnDate >= new Date();
               const dateObj = parseISO(t.fecha);
-              
+
               return (
                 <div key={t.id} className="glass p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-6 overflow-hidden relative group">
                   {!isUpcoming && <div className="absolute inset-0 bg-black/40 grayscale pointer-events-none" />}
-                  
+
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-primary/10 rounded-2xl flex flex-col items-center justify-center border border-primary/20">
                       <span className="text-[10px] font-black uppercase text-primary leading-none">{format(dateObj, 'MMM', { locale: es })}</span>
@@ -147,7 +147,7 @@ export default function MisTurnosPage() {
                   </div>
 
                   {isUpcoming && (
-                    <button 
+                    <button
                       onClick={() => handleCancelTrigger(t.id, t.fecha, t.hora)}
                       className="flex items-center justify-center gap-2 px-6 py-3 bg-error/10 text-error rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/10"
                     >
@@ -155,7 +155,7 @@ export default function MisTurnosPage() {
                       Cancelar Turno
                     </button>
                   )}
-                  
+
                   {!isUpcoming && (
                     <div className="flex items-center gap-2 text-white/20 font-black text-[10px] uppercase tracking-[0.2em] pr-4">
                       <CheckCircle2 size={16} /> Completado
@@ -171,14 +171,14 @@ export default function MisTurnosPage() {
       <AnimatePresence>
         {turnoToCancel && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setTurnoToCancel(null)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -192,13 +192,13 @@ export default function MisTurnosPage() {
                 <p className="text-xs font-bold uppercase tracking-widest opacity-40">Recordá avisar por WhatsApp si es sobre la hora.</p>
               </div>
               <div className="grid grid-cols-2 gap-4 pt-4">
-                <button 
+                <button
                   onClick={() => setTurnoToCancel(null)}
                   className="bg-white/5 border border-white/10 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all text-white"
                 >
                   Volver
                 </button>
-                <button 
+                <button
                   onClick={confirmCancel}
                   className="bg-error text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)]"
                 >
