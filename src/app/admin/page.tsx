@@ -119,7 +119,7 @@ export default function AdminPage() {
   const [espera, setEspera] = useState<ListaEspera[]>([]);
   const [loading, setLoading] = useState(false);
   const [systemMsg, setSystemMsg] = useState('');
-  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial' | 'estadisticas' | 'fijos'>('turnos');
+  const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial' | 'estadisticas' | 'fijos' | 'camaras'>('turnos');
   const [statsReservas, setStatsReservas] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsTimeRange, setStatsTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
@@ -1042,6 +1042,15 @@ export default function AdminPage() {
             )}
           >
             Historial Global
+          </button>
+          <button
+            onClick={() => setActiveTab('camaras')}
+            className={clsx(
+              "py-3.5 px-2 rounded-xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] transition-all border text-center flex items-center justify-center min-w-0 truncate",
+              activeTab === 'camaras' ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 opacity-40 hover:opacity-100"
+            )}
+          >
+            📹 Cámaras
           </button>
         </div>
 
@@ -1979,7 +1988,64 @@ export default function AdminPage() {
               )}
             </div>
           </div>
-        )}
+        ) : activeTab === 'camaras' ? (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="glass p-6 md:p-8 rounded-3xl border border-white/10">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-primary/20 text-primary rounded-2xl">
+                  <Camera size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-widest text-primary">Cámaras de Seguridad</h3>
+                  <p className="text-sm opacity-60 font-medium">Monitoreo en vivo de las canchas</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Cámara 1 */}
+                <div className="relative aspect-video bg-black/50 rounded-2xl border border-white/5 overflow-hidden group">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-xs font-black text-white/40 uppercase tracking-widest text-center px-4">
+                      Esperando transmisión de cámara...<br/>
+                      <span className="text-[10px] font-medium opacity-50 lowercase normal-case mt-2 block">(Requiere configuración RTSP)</span>
+                    </p>
+                  </div>
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-white/10">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Cámara 1</span>
+                  </div>
+                  <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-error animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+                </div>
+
+                {/* Cámara 2 */}
+                <div className="relative aspect-video bg-black/50 rounded-2xl border border-white/5 overflow-hidden group">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-xs font-black text-white/40 uppercase tracking-widest text-center px-4">
+                      Esperando transmisión de cámara...<br/>
+                      <span className="text-[10px] font-medium opacity-50 normal-case mt-2 block">(Requiere configuración RTSP)</span>
+                    </p>
+                  </div>
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-white/10">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Cámara 2</span>
+                  </div>
+                  <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-error animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+                </div>
+              </div>
+
+              <div className="mt-8 p-6 bg-primary/5 border border-primary/20 rounded-2xl">
+                <h4 className="text-sm font-black text-primary uppercase tracking-widest mb-2">Instrucciones de configuración (DMSS / Dahua)</h4>
+                <p className="text-sm text-white/70 mb-4">
+                  Para que el video se vea en la web, necesitas obtener la URL RTSP de tu DVR Dahua.
+                  El formato suele ser: <code className="px-2 py-1 bg-black/40 rounded text-primary text-xs break-all">rtsp://usuario:contraseña@IP:554/cam/realmonitor?channel=1&subtype=1</code>
+                </p>
+                <ul className="text-sm text-white/60 space-y-2 list-disc pl-4">
+                  <li>En la app DMSS, busca en <strong>Detalles del dispositivo</strong> o <strong>Información de Red</strong> para encontrar la IP local.</li>
+                  <li>Si vas a subir esta web a internet (ej. Vercel), necesitarás usar el <strong>DDNS</strong> o tener IP pública, y abrir el puerto RTSP (554) en tu router.</li>
+                  <li>Una vez que tengas la URL RTSP funcionando, conectaremos el reproductor de video aquí.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
       <TutorialModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
     </PageWrapper>

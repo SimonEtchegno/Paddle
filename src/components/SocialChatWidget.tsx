@@ -390,7 +390,10 @@ export function SocialChatWidget() {
       };
     });
 
-  const privateChats = contacts.filter(c => !c.isRequest && c.lastMsgTime > 0).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
+  const privateChats = contacts.filter(c => !c.isRequest).sort((a, b) => {
+    if (b.lastMsgTime !== a.lastMsgTime) return b.lastMsgTime - a.lastMsgTime;
+    return a.name.localeCompare(b.name);
+  });
   const requestChats = contacts.filter(c => c.isRequest).sort((a, b) => b.lastMsgTime - a.lastMsgTime);
 
   const displayedPrivateChats = searchQuery.trim() !== ''
@@ -513,38 +516,51 @@ export function SocialChatWidget() {
             {/* Header */}
             <div className="bg-[#1a2235] text-white p-3 flex justify-between items-center border-b border-[var(--border)] relative z-20">
               <div className="flex items-center gap-4">
-                {/* Tab Buttons */}
-                <button
-                  onClick={() => { setActiveTab('ai'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${activeTab === 'ai' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
-                >
-                  <Bot className="w-3.5 h-3.5" />
-                  <span className="text-xs font-bold tracking-wide">IA</span>
-                </button>
-                <button
-                  onClick={() => { setActiveTab('private'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'private' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span className="text-xs font-bold tracking-wide">Privado</span>
-                  {(privateUnread > 0 || requestChats.length > 0) && (
-                    <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">
-                      {privateUnread + requestChats.length}
+                {/* Tab Buttons or Contact Info */}
+                {!activeChat ? (
+                  <>
+                    <button
+                      onClick={() => { setActiveTab('ai'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${activeTab === 'ai' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
+                    >
+                      <Bot className="w-3.5 h-3.5" />
+                      <span className="text-xs font-bold tracking-wide">IA</span>
+                    </button>
+                    <button
+                      onClick={() => { setActiveTab('private'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'private' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span className="text-xs font-bold tracking-wide">Privado</span>
+                      {(privateUnread > 0 || requestChats.length > 0) && (
+                        <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">
+                          {privateUnread + requestChats.length}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => { setActiveTab('group'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'group' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span className="text-xs font-bold tracking-wide">Partidos</span>
+                      {groupUnread > 0 && (
+                        <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">
+                          {groupUnread}
+                        </span>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {activeContact?.avatar && (
+                      <img src={activeContact.avatar} alt="" className="w-8 h-8 rounded-full border border-white/10 object-cover" />
+                    )}
+                    <span className="font-bold text-sm tracking-wide text-white truncate max-w-[180px]">
+                      {activeContact?.name || 'Chat'}
                     </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => { setActiveTab('group'); setActiveChat(null); setGroupMatch(null); setShowRequestsOnly(false); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors relative ${activeTab === 'group' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : 'text-zinc-400 hover:bg-white/5'}`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span className="text-xs font-bold tracking-wide">Partidos</span>
-                  {groupUnread > 0 && (
-                    <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">
-                      {groupUnread}
-                    </span>
-                  )}
-                </button>
+                  </div>
+                )}
               </div>
 
               {activeChat ? (
