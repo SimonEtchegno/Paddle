@@ -56,12 +56,26 @@ export default function RankingPage() {
         dynamicPoints[cat][name] = (dynamicPoints[cat][name] || 0) + row.puntos;
       });
 
+      // Fetch Google Sheets base ranking
+      let baseRankingData = rankingData;
+      try {
+        const res = await fetch('/api/ranking');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && !data.error && Object.keys(data).length > 0) {
+            baseRankingData = data;
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching base ranking", err);
+      }
+
       const combinedRanking: Record<string, any[]> = {};
 
-      // Combinar con base estática
-      Object.keys(rankingData).forEach(cat => {
+      // Combinar con base
+      Object.keys(baseRankingData).forEach(cat => {
         if (!combinedRanking[cat]) combinedRanking[cat] = [];
-        rankingData[cat].forEach(basePlayer => {
+        baseRankingData[cat].forEach((basePlayer: any) => {
           const name = basePlayer.name.toUpperCase();
           const extraPts = dynamicPoints[cat]?.[name] || 0;
           combinedRanking[cat].push({

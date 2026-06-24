@@ -159,3 +159,18 @@ export const getPairScore = (p: { player1: string, player2: string }, targetCate
 
   return getPlayerScore(p.player1) + getPlayerScore(p.player2);
 };
+
+// Sincronización transparente del lado del cliente
+if (typeof window !== 'undefined') {
+  fetch('/api/ranking')
+    .then(res => res.json())
+    .then(data => {
+      if (data && !data.error && Object.keys(data).length > 0) {
+        // Vaciamos los fijos y ponemos los dinámicos
+        Object.keys(rankingData).forEach(k => delete rankingData[k]);
+        Object.assign(rankingData, data);
+        console.log("Ranking data sync con Google Sheets exitoso");
+      }
+    })
+    .catch(err => console.error("Error sincronizando ranking de google sheets:", err));
+}
