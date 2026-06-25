@@ -146,7 +146,7 @@ export default async function RootLayout({
             </main>
             <Footer />
             <Toaster
-              position="bottom-right"
+              position="bottom-center"
               toastOptions={{
                 style: {
                   background: '#1a2235',
