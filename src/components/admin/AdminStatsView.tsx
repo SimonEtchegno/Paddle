@@ -12,6 +12,7 @@ interface AdminStatsViewProps {
   reservas: any[];
   torneos: any[];
   inscripciones: any[];
+  totalRegistros?: number;
   timeRange: '7d' | '30d' | 'all';
   setTimeRange: (range: '7d' | '30d' | 'all') => void;
   loading: boolean;
@@ -20,7 +21,7 @@ interface AdminStatsViewProps {
 const MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
 
 export default function AdminStatsView({
-  reservas, torneos, inscripciones, timeRange, setTimeRange, loading
+  reservas, torneos, inscripciones, totalRegistros = 0, timeRange, setTimeRange, loading
 }: AdminStatsViewProps) {
 
   const [padelPrice, setPadelPrice] = React.useState<number>(() => {
@@ -156,6 +157,16 @@ export default function AdminStatsView({
       glow: 'shadow-[0_0_40px_rgba(200,255,0,0.15)]',
       featured: true,
     },
+    {
+      label: 'Total Registrados',
+      value: totalRegistros.toString(),
+      sub: 'Usuarios en plataforma',
+      icon: Users,
+      accent: 'text-emerald-400',
+      iconBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+      glow: '',
+      featured: false,
+    },
   ];
 
   return (
@@ -214,7 +225,7 @@ export default function AdminStatsView({
       ) : (
         <>
           {/* ── KPI CARDS ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {kpis.map((kpi, i) => (
               <motion.div
                 key={i}

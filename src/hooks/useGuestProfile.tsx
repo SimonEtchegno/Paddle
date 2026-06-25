@@ -195,31 +195,66 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // 2. Buscar en data estática
-        import('@/lib/rankingData').then(({ rankingData }) => {
-          Object.values(rankingData).forEach(cat => {
-            cat.forEach(p => {
+        // 2. Buscar en data del Drive (y fallback a data estática si falla)
+        let liveRankingData: any = null;
+        try {
+          const res = await fetch('/api/ranking');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && !data.error && Object.keys(data).length > 0) {
+              liveRankingData = data;
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching live ranking:", e);
+        }
+
+        const processRankingData = (rData: any) => {
+          Object.values(rData).forEach((cat: any) => {
+            cat.forEach((p: any) => {
               const pName = p.name.toUpperCase();
-              if (pName.includes(nUpper) && pName.includes(aUpper)) {
+              if (pName.includes(nUpper) && pName.includes(aUpper) && nUpper && aUpper) {
+                pts += p.pts;
+              } else if (nUpper && !aUpper && pName === nUpper) {
                 pts += p.pts;
               }
             });
           });
+        };
 
-          // 3. Buscar en Supabase
-          supabase.from('ranking_historial')
+        if (liveRankingData) {
+          processRankingData(liveRankingData);
+          // 3. Buscar en Supabase (historial dinámico)
+          const { data, error } = await supabase.from('ranking_historial')
             .select('puntos')
             .ilike('nombre', `%${profile.nombre}%`)
-            .ilike('nombre', `%${profile.apellido}%`)
-            .then(({ data, error }) => {
-              if (!error && data) {
-                data.forEach(row => {
-                  pts += row.puntos;
-                });
-              }
-              setRealPoints(pts > 0 ? pts : null);
+            .ilike('nombre', `%${profile.apellido}%`);
+            
+          if (!error && data) {
+            data.forEach(row => {
+              pts += row.puntos;
             });
-        });
+          }
+          setRealPoints(pts > 0 ? pts : null);
+        } else {
+          import('@/lib/rankingData').then(({ rankingData }) => {
+            processRankingData(rankingData);
+            
+            // 3. Buscar en Supabase (historial dinámico)
+            supabase.from('ranking_historial')
+              .select('puntos')
+              .ilike('nombre', `%${profile.nombre}%`)
+              .ilike('nombre', `%${profile.apellido}%`)
+              .then(({ data, error }) => {
+                if (!error && data) {
+                  data.forEach(row => {
+                    pts += row.puntos;
+                  });
+                }
+                setRealPoints(pts > 0 ? pts : null);
+              });
+          });
+        }
       };
       fetchRealPoints();
     } else {

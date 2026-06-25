@@ -16,6 +16,7 @@ import { Calendar } from '@/components/ui/Calendar';
 import dynamic from 'next/dynamic';
 import TutorialModal from '@/components/admin/TutorialModal';
 import { useTutorial } from '@/hooks/useTutorial';
+import { rankingData } from '@/lib/rankingData';
 
 const TournamentManager = dynamic(
   () => import('@/components/admin/TournamentManager'),
@@ -121,6 +122,7 @@ export default function AdminPage() {
   const [systemMsg, setSystemMsg] = useState('');
   const [activeTab, setActiveTab] = useState<'turnos' | 'torneos' | 'historial' | 'estadisticas' | 'fijos' | 'camaras'>('turnos');
   const [statsReservas, setStatsReservas] = useState<any[]>([]);
+  const [statsRegistros, setStatsRegistros] = useState<number>(0);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsTimeRange, setStatsTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
 
@@ -227,6 +229,14 @@ export default function AdminPage() {
       const { data, error } = await query.order('fecha', { ascending: false });
       if (error) throw error;
       setStatsReservas(data || []);
+
+      const { count: regCount, error: regError } = await supabase
+        .from('perfiles')
+        .select('*', { count: 'exact', head: true });
+        
+      if (!regError && regCount !== null) {
+        setStatsRegistros(regCount);
+      }
     } catch (err) {
       console.error('Error fetching stats:', err);
       toast.error('Error al cargar estadísticas');
@@ -346,12 +356,67 @@ export default function AdminPage() {
         .order('last_seen', { ascending: false })
         .limit(1000);
 
+      const { data: rankingHistorial } = await supabase.from('ranking_historial').select('nombre, puntos');
+
+      let liveRankingData: any = null;
+      try {
+        const res = await fetch('/api/ranking');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && !data.error && Object.keys(data).length > 0) {
+            liveRankingData = data;
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching live ranking:", e);
+      }
+
+      const activeRankingData = liveRankingData || rankingData;
+
+      const profilesWithPoints = (profileData || []).map(p => {
+        let pts = 0;
+        const nUpper = (p.nombre || '').toUpperCase();
+        const aUpper = (p.apellido || '').toUpperCase();
+
+        // Puntos del ranking estático/drive
+        Object.values(activeRankingData).forEach((cat: any) => {
+          cat.forEach((rp: any) => {
+            const rpName = rp.name.toUpperCase();
+            if (rpName.includes(nUpper) && rpName.includes(aUpper) && nUpper && aUpper) {
+              pts += rp.pts;
+            } else if (nUpper && !aUpper && rpName === nUpper) {
+              pts += rp.pts;
+            }
+          });
+        });
+
+        // Puntos del historial dinámico
+        if (rankingHistorial) {
+          rankingHistorial.forEach(row => {
+            const rowName = (row.nombre || '').toUpperCase();
+            if (rowName.includes(nUpper) && rowName.includes(aUpper) && nUpper && aUpper) {
+              pts += row.puntos;
+            } else if (nUpper && !aUpper && rowName === nUpper) {
+              pts += row.puntos;
+            }
+          });
+        }
+
+        return {
+          ...p,
+          category: 'registro',
+          created_at: p.last_seen,
+          nombre: `${p.nombre} ${p.apellido}`,
+          puntos: pts
+        };
+      });
+
       const combined = [
         ...(resData || []).map(r => ({ ...r, category: 'reserva' })),
         ...(inscData || []).map(i => ({ ...i, category: 'torneo' })),
         ...(joinData || []).map(j => ({ ...j, category: 'partido', nombre: j.nombre_interesado, telefono: j.whatsapp_interesado, fecha: j.partidos_abiertos?.fecha, hora: j.partidos_abiertos?.hora })),
         ...(matchData || []).map(m => ({ ...m, category: 'partido', nombre: m.nombre_creador, telefono: m.contacto_whatsapp, isCreation: true, fecha: m.fecha, hora: m.hora })),
-        ...(profileData || []).map(p => ({ ...p, category: 'registro', created_at: p.last_seen, nombre: `${p.nombre} ${p.apellido}` }))
+        ...profilesWithPoints
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setHistory(combined);
@@ -1659,11 +1724,12 @@ export default function AdminPage() {
             reservas={statsReservas}
             torneos={torneos}
             inscripciones={inscripciones}
+            totalRegistros={statsRegistros}
             timeRange={statsTimeRange}
             setTimeRange={setStatsTimeRange}
             loading={statsLoading}
           />
-        ) : (
+        ) : activeTab === 'historial' ? (
           /* TAB HISTORIAL */
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
             <div className="glass p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6">
@@ -1951,6 +2017,10 @@ export default function AdminPage() {
                                           <p className="text-xs font-bold flex justify-between">
                                             <span className="opacity-40">Localidad:</span>
                                             <span>{item.localidad}</span>
+                                          </p>
+                                          <p className="text-xs font-bold flex justify-between">
+                                            <span className="opacity-40">Puntos:</span>
+                                            <span className="text-emerald-400">{item.puntos} pts</span>
                                           </p>
                                         </>
                                       )}
